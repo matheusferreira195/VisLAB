@@ -202,7 +202,6 @@ root.title('Filter Listbox Test')
 app = Application(master=root)
 print ('Starting mainloop()')
 app.mainloop()
-   
   
 
 
