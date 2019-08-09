@@ -2,24 +2,8 @@ import pandas as pd
 from tkinter import *
 
 
-df = pd.read_csv(r"E:\Google Drive\Scripts\vistools\resources\parametros.csv", sep=";")
-
-file_in = open(r"E:\Google Drive\Scripts\vistools\resources\dados.txt", "r")
-file_out = open("file_out.txt", "w")
-lines = file_in.readlines()
-
-defaults = []
-
-for i in range(len(lines)):
-
-  if lines[i] == "Default value\n":
-
-    default = lines[i+2].replace('\n', '')
-    file_out.write(default)
-    defaults.append(default)    
-    
-df['Default'] = defaults
-
+df = pd.read_csv(r"E:\Google Drive\Scripts\vistools\resources\parameters.visdb", sep=",")
+print(df)
 '''
 #First create application class
 class DynamicSearch(Frame):

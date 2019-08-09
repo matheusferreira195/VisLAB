@@ -1,0 +1,81 @@
+,Identifier,Short Name,Long Name,Default
+0,AccDecelOwn,AccDecelOwn,Accepted deceleration (own),-1
+1,AccDecelTrail,AccDecelTrail,Accepted deceleration (trailing vehicle),-1
+2,AdvMerg,AdvMerg,Advanced merging,true
+3,AmberA,AmberA,Amber behavior alpha,1.58858
+4,AmberB1,AmberB1,Amber behavior beta 1,-0.261981
+5,AmberB2,AmberB2,Amber behavior beta 2,0.269453
+6,AmberBehav,AmberBehav,Amber behavior,OneDecision
+7,CarFollowModType,CarFollowModType,Car following model type,Wiedemann74
+8,ConsNextTurn,ConsNextTurn,Consider next turn,false
+9,CoopDecel,CoopDecel,Maximum cooperative deceleration,-3
+10,CoopLnChg,CoopLnChg,Cooperative lane change,false
+11,CoopLnChgCollTm,CoopLnChgCollTm,Cooperative lane change - maximum collision time,10
+12,CoopLnChgSpeedDiff,CoopLnChgSpeedDiff,Cooperative lane change - maximum speed difference,3
+13,DecelRedDistOwn,DecelRedDistOwn,Deceleration reduction distance (own),100
+14,DecelRedDistTrail,DecelRedDistTrail,Deceleration reduction distance (trailing vehicle),100
+15,DesLatPos,DesLatPos,Desired lateral position,Middle
+16,DiamQueu,DiamQueu,Diamond queuing,false
+17,DiffusTm,DiffusTm,Diffusion time,60
+18,DistractProb,DistractProb,Distraction probability (Lateral deviation),0
+19,EnforcAbsBrakDist,EnforcAbsBrakDist,Enforce absolute braking distance,false
+20,FreeDrivTm,FreeDrivTm,Free driving time,11
+21,IncrsAccel,IncrsAccel,Increased Acceleration,1.0
+22,LatDirChgMinTm,LatDirChgMinTm,Lateral direction change - minimum time,0
+23,LatDistDriv,LatDistDriv,Lateral minimum distance at 50 km/h,LatDistDrivDef
+24,LatDistDrivDef,LatDistDrivDef,Lateral minimum distance at 50 km/h (default),1
+25,LatDistStand,LatDistStand,Lateral minimum distance at 0 km/h,LatDistStandDef
+26,LatDistStandDef,LatDistStandDef,Lateral minimum distance at 0 km/h (default),1
+27,LnChgRule,LnChgRule,Lane change rule,FreeLaneSelection
+28,LookAheadDistMax,LookAheadDistMax,Look ahead distance (maximum),250
+29,LookAheadDistMin,LookAheadDistMin,Look ahead distance (minimum),0
+30,LookBackDistMax,LookBackDistMax,Look back distance (maximum),150
+31,LookBackDistMin,LookBackDistMin,Look back distance (minimum),0
+32,MaxDecelOwn,MaxDecelOwn,Maximum deceleration (own),-4
+33,MaxDecelTrail,MaxDecelTrail,Maximum deceleration (trailing vehicle),-3
+34,MesoMaxWaitTm,MesoMaxWaitTm,Meso maximum waiting time,120
+35,MesoReactTm,MesoReactTm,Meso - reaction time,1.2
+36,MesoStandDist,MesoStandDist,Meso standstill distance,2.0
+37,MinCollTmGain,MinCollTmGain,Minimum collision time gain,2
+38,MinHdwy,MinHdwy,Minimum headway,0.5
+39,MinSpeedForLat,MinSpeedForLat,Minimum longitudinal speed for lateral movement,1
+40,NumInteractObj,NumInteractObj,Number of interaction objects,2
+41,NumInteractVeh,NumInteractVeh,Number of interaction vehicles,99
+42,ObsrvAdjLn,ObsrvAdjLn,Observe adjacent lane(s),false
+43,OvtL,OvtL,Overtake left,OvtLDef
+44,OvtLDef,OvtLDef,Overtake left (default),false
+45,OvtR,OvtR,Overtake right,OvtRDef
+46,OvtRDef,OvtRDef,Overtake right (default),false
+47,OvtRedSpeedAreas,OvtRedSpeedAreas,Overtake reduced speed areas,false
+48,RearCorr,RearCorr,Rear correction of lateral position,false
+49,RearCorrEnd,RearCorrEnd,Rear correction - end,10
+50,RearCorrMaxSpeed,RearCorrMaxSpeed,Rear correction - maximum speed,3
+51,RearCorrStart,RearCorrStart,Rear correction - start,1
+52,RecovAcc,RecovAcc,Recovery acceleration,0.4
+53,RecovDist,RecovDist,Recovery distance,2000
+54,RecovSafDist,RecovSafDist,Recovery safety distance,1.1
+55,RecovSlow,RecovSlow,Recovery slow,false
+56,RecovSpeed,RecovSpeed,Recovery threshold speed,0.6
+57,RedAmberBehav,RedAmberBehav,Red-amber behavior,Go
+58,SafDistFactLnChg,SafDistFactLnChg,Safety distance reduction factor (lane change),0.6
+59,SafDistFactSig,SafDistFactSig,Safety distance reduction factor (signals),0.6
+60,SafDistFactSigEnd,SafDistFactSigEnd,Safety distance reduction factor end (signals),100
+61,SafDistFactSigStart,SafDistFactSigStart,Safety distance reduction factor start (signals),100
+62,SleepDur,SleepDur,Temporary lack of attention - sleep duration,0
+63,SleepProb,SleepProb,Temporary lack of attention - sleep probability,0
+64,StandDist,StandDist,Standstill distance in front of static obstacles,0.5
+65,StandDistIsFix,StandDistIsFix,Standstill distance (in front of static obstacles) is fix,false
+66,UseImplicStoch,UseImplicStoch,Use implicit stochastics,true
+67,VehRoutDecLookAhead,VehRoutDecLookAhead,Vehicle routing decisions look ahead,false
+68,W74ax,W74ax,W74ax: Average standstill distance (Wiedemann 74),2
+69,W74bxAdd,W74bxAdd,W74bxAdd: Additive factor for security distance (Wiedemann 74),2
+70,W74bxMult,W74bxMult,W74bxMult: Multiplicative factor for security distance (Wiedemann 74),3
+71,W99cc0,W99cc0,W99cc0: Standstill distance (Wiedemann 99),1.5
+72,W99cc2,W99cc2,W99cc2: 'Following' variation (Wiedemann 99),4
+73,W99cc3,W99cc3,W99cc3: Threshold for entering 'Following' (Wiedemann 99),-8
+74,W99cc4,W99cc4,W99cc4: Negative 'Following' threshold (Wiedemann 99),-0.35
+75,W99cc5,W99cc5,W99cc5: Positive 'Following' threshold (Wiedemann 99),0.35
+76,W99cc6,W99cc6,W99cc6: Speed dependency of oscillation (Wiedemann 99),11.44
+77,W99cc7,W99cc7,W99cc7: Oscillation acceleration(Wiedemann 99),0.25
+78,W99cc8,W99cc8,W99cc8: Standstill acceleration (Wiedemann 99),3.5
+79,W99cc9,W99cc9,W99cc9: Acceleration at 80 km/h (Wiedemann 99),1.5
