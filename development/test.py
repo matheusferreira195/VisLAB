@@ -3,7 +3,6 @@
 
 import tkinter
 from tkinter import *
-import MySQLdb
 
 #----------------------------------------------------------------------
 

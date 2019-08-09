@@ -3,8 +3,7 @@ from tkinter import *
 
 
 df = pd.read_csv(r"E:\Google Drive\Scripts\vistools\resources\parameters.visdb", sep=",")
-print(df)
-'''
+
 #First create application class
 class DynamicSearch(Frame):
     def __init__(self, master=None):
@@ -80,4 +79,3 @@ root.title('Filter Listbox Test')
 app = DynamicSearch(master=root)
 print ('Starting mainloop()')
 app.mainloop()
-'''
