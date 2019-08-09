@@ -2,9 +2,9 @@ import pandas as pd
 from tkinter import *
 
 
-df = pd.read_csv("E:\Google Drive\Scripts\AG_PG\parametros.csv", sep=";")
+df = pd.read_csv(r"E:\Google Drive\Scripts\vistools\resources\parametros.csv", sep=";")
 
-file_in = open("E:\Google Drive\Scripts\AG_PG\dados.txt", "r")
+file_in = open(r"E:\Google Drive\Scripts\vistools\resources\dados.txt", "r")
 file_out = open("file_out.txt", "w")
 lines = file_in.readlines()
 
