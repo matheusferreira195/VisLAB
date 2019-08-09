@@ -20,6 +20,7 @@ for i in range(len(lines)):
     
 df['Default'] = defaults
 
+'''
 #First create application class
 class DynamicSearch(Frame):
     def __init__(self, master=None):
@@ -95,3 +96,4 @@ root.title('Filter Listbox Test')
 app = DynamicSearch(master=root)
 print ('Starting mainloop()')
 app.mainloop()
+'''
