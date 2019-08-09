@@ -21,7 +21,7 @@ for i in range(len(lines)):
 df['Default'] = defaults
 
 #First create application class
-class Application(Frame):
+class DynamicSearch(Frame):
     def __init__(self, master=None):
         Frame.__init__(self, master)
 
@@ -92,6 +92,6 @@ class Application(Frame):
 
 root = Tk()
 root.title('Filter Listbox Test')
-app = Application(master=root)
+app = DynamicSearch(master=root)
 print ('Starting mainloop()')
 app.mainloop()

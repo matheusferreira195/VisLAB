@@ -11,7 +11,7 @@ Vissim = com.Dispatch("Vissim.Vissim")
 hwnd = win32gui.FindWindow(None, "PTV Vision Traffic & Pedestrian Simulation")  # Class or title
 win32gui.ShowWindow(hwnd, win32con.SW_HIDE) # Hide via Win32Api
 Path = os.getcwd()
-rede = r'E:\Google Drive\Scripts\vistools\development\teste.inpx' #os.path.join(Path, 'teste.inpx')
+rede = r'E:\Google Drive\Scripts\vistools\development\net\teste.inpx' #os.path.join(Path, 'teste.inpx')
 
 Vissim.LoadNet(rede,False)
 
