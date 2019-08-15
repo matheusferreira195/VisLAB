@@ -8,7 +8,7 @@ LARGE_FONT= ("Nexa", 12)
 screen_y = 200
 screen_x = 200
 
-class Teste(tk.Tk) :
+class Vistools(tk.Tk) :
 #classe principal, adiciona toda a logica "controller"
   def __init__(self, *args, **kwargs):
 
@@ -90,5 +90,5 @@ class PageTwo(tk.Frame):
     
 
 
-app = Teste()
+app = Vistools()
 app.mainloop()
