@@ -3,6 +3,7 @@
 
 import tkinter
 from tkinter import *
+import mysql.connector as MySQLdb
 
 #----------------------------------------------------------------------
 
