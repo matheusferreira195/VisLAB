@@ -3,19 +3,30 @@
 #the driving behavior's parameters and the search range.
 
 
-
+import win32com.client as com
 import tkinter as tk
 from tkinter import ttk
 from tkinter import *
 import pandas as pd
+import os
+
 NORM_FONT= ("Roboto", 10)
 
+#-------------------------------------------------------------------
+Vissim = com.Dispatch("Vissim.Vissim") #Abrindo o Vissim
+path_network = r'C:\Users\Matheus Ferreira\Google Drive\Scripts\vistools\development\net\teste.inpx'
+flag = False 
+Vissim.LoadNet(path_network, flag) #Carregando o arquivo
+#ctypes.windll.user32.MessageBoxW(0, "Net loaded", "Vissim ready", 1)
+print('net loaded\n')
 
+#--------------------------------------------------------------------
 #test data
-dc_data = pd.read_csv(r'E:\Google Drive\Scripts\vistools\resources\test.csv', sep=';')
+dc_data = pd.read_csv(r'C:\Users\Matheus Ferreira\Google Drive\Scripts\vistools\resources\test.csv', sep=';')
 dc_pm = ['velocity', 'flow']
 dc_timeinterval = ['300-600', '600-900']
 
+#---------------------------------------------------------------------
 #function that models a popupmsg
 def popupmsg(msg):
         popup = tk.Tk()
@@ -26,21 +37,44 @@ def popupmsg(msg):
         B1.pack()
         popup.mainloop()
 
-def datapoint_info(type):
+#-----------------------------------------------------------------------
+#Query functions that pull from vissim metadata about the data points
+
+#This one pulls the data and formats it to be presented by the user
+def datapoint_normalizer(dataset, type):
+    output=[]
+    for index, item in enumerate(dataset):
+        if item[0] == '':
+            output.append(str(type) + ' ' + str('N/A') + ' / #'+ str(item[1]))
+        else:
+            output.append(str(type) + ' ' + str(item[0]) + ' / #'+ str(item[1]))
+    return output
+
+#This one manage the querys for vissim
+def datapoint_info():
+    
+    output=[]
     attribute=['Name', 'No']
+    
+    data_collectors_raw = Vissim.Net.DataCollectionPoints.GetMultipleAttributes(attribute)
+    data_collectors = datapoint_normalizer(data_collectors_raw, 'Data Collector')
+    for item in data_collectors:
+        output.append(item)
 
-    if type == 'data_collector':
-        data_collectors = Vissim.Net.DataCollectionPoints.GetMultipleAttributes(attribute)
-        return data_collectors
-    if type == 'queue_counter':
-        queue_counters = Vissim.Net.QueueCounters.GetMultipleAttributes(attribute)
-        return queue_counters
-    else:
-        travel_times = Vissim.Net.VehicleTravelTimeMeasurements.GetMultipleAttributes(attribute)
-        return travel_times
+    queue_counters_raw = Vissim.Net.QueueCounters.GetMultipleAttributes(attribute)
+    queue_counters = datapoint_normalizer(queue_counters_raw, 'Queue Counter')
+    for item in queue_counters:
+        output.append(item)
 
+    
 
-        
+    travel_times_raw = Vissim.Net.VehicleTravelTimeMeasurements.GetMultipleAttributes(attribute)
+    travel_times = datapoint_normalizer(travel_times_raw, 'Vehicle Travel Time')
+    for item in travel_times:
+        output.append(item)
+
+    return output
+       
 class Window(Frame): #similar a StartPage
         
     def __init__(self, master): #master = parent class (BTC_app no exemplo. É none por que nao há classes superiores 'essa é só uma janela' )
@@ -100,7 +134,7 @@ class Window(Frame): #similar a StartPage
         #Datapoint fields
         self.datapoints_label = Label(self,text = 'Data Points')
         self.datapoints_ctype_dropdown = ttk.Combobox(self, width=25)
-        self.datapoints_ctype_dropdown['values'] = ['Data Collector \n Pontes Vieira \n #1', 'Data Collector \n Santos Dummont \n #1'] #maybe I will use this format to condense the selection process
+        self.datapoints_ctype_dropdown['values'] = datapoint_info()
         self.datapoints_ctype_dropdown.configure(font=('Roboto', 8))
         self.datapoints_ctype_dropdown.set('Select data collector type')
 

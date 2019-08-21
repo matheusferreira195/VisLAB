@@ -10,18 +10,30 @@ Vissim.LoadNet(path_network, flag) #Carregando o arquivo
 print('net loaded\n')
 
 #data collectors query
+
+def datapoint_normalizer(dataset):
+    output=[]
+    for index, item in enumerate(dataset):
+        output[index] = str(item[0]) + '/' str(item[1])
+    return output
+
+
 def datapoint_info(type):
     attribute=['Name', 'No']
 
     if type == 'data_collector':
-        data_collectors = Vissim.Net.DataCollectionPoints.GetMultipleAttributes(attribute)
+        data_collectors_raw = Vissim.Net.DataCollectionPoints.GetMultipleAttributes(attribute)
+        data_collectors = datapoint_normalizer(data_collectors_raw)
         return data_collectors
+
     if type == 'queue_counter':
-        queue_counters = Vissim.Net.QueueCounters.GetMultipleAttributes(attribute)
+        queue_counters_raw = Vissim.Net.QueueCounters.GetMultipleAttributes(attribute)
         return queue_counters
+
     else:
-        travel_times = Vissim.Net.VehicleTravelTimeMeasurements.GetMultipleAttributes(attribute)
+        travel_times_raw = Vissim.Net.VehicleTravelTimeMeasurements.GetMultipleAttributes(attribute)
         return travel_times
+
 print(datapoint_info('data_collector'))
 
 Vissim = None
