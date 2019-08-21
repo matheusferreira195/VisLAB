@@ -8,7 +8,7 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import *
 import pandas as pd
-NORM_FONT= ("Verdana", 10)
+NORM_FONT= ("Roboto", 10)
 
 
 #test data
@@ -55,7 +55,7 @@ class Window(Frame): #similar a StartPage
 
         self.init_window()
         
-            
+       
     def init_window(self):
         
         self.master.title("GUI")
@@ -78,33 +78,57 @@ class Window(Frame): #similar a StartPage
         edit.add_command(label = 'Undo', command = lambda:popupmsg("wow! such programmin'"))
         
         menu.add_cascade(label='Edit', menu=edit)
-        
+
+        #Experiment fields
         self.experiment_text = str('Experiment %i' % self.experiment)
         self.experiment_label = Label(self,text = self.experiment_text)
         
+        #Datapoint fields
         self.datapoints_label = Label(self,text = 'Data Points')
-        self.datapoints_ctype_dropdown = ttk.Combobox(self, width = 20)
+        self.datapoints_ctype_dropdown = ttk.Combobox(self, width=25)
         self.datapoints_ctype_dropdown['values'] = ['Data Collector \n Pontes Vieira \n #1', 'Data Collector \n Santos Dummont \n #1'] #maybe I will use this format to condense the selection process
-        self.datapoints_ctype_dropdown.configure(font=('Arial', 11))
-        
+        self.datapoints_ctype_dropdown.configure(font=('Roboto', 8))
+        self.datapoints_ctype_dropdown.set('Select data collector type')
+
+        self.datapoints_cperfmeasure_dropdown = ttk.Combobox(self, width=25)
+        self.datapoints_cperfmeasure_dropdown['values'] = ['Avg speed', 'Avg travel time', 'Max Queue Lenght', 'Avg flow speed']
+        self.datapoints_cperfmeasure_dropdown.configure(font=('Roboto', 8))
+        self.datapoints_cperfmeasure_dropdown.set('Select what you will measure')
+
+        self.datapoints_ctimeinterval_dropdown = ttk.Combobox(self, width=25)
+        self.datapoints_ctimeinterval_dropdown['values'] = ['300-600','600-900', '900-1200', 'All']
+        self.datapoints_ctimeinterval_dropdown.configure(font=('Roboto', 8))
+        self.datapoints_ctimeinterval_dropdown.set('Select what time interval we should consider')
+
+        self.datapoints_ctargetvalue_label=Label(self, text='Add the field data to compare')
+        self.datapoints_ctargetvalue_entry=Entry(self)
+
+        #separator
+
+        #self.separator_dataxparameters = ttk.Separator()
+
+        #Parameters field     
         self.parameters_label = Label(self,text = 'Parameters')      
         self.parameter_search_entry = Entry(self, textvariable=self.search_var, width=25)
         self.parameter_search_entry.insert(0, 'Search parameters here')
         self.parameter_search_listbox = Listbox(self, width=45, height=1)
-        
+                
         #self.OptionMenu(master, self.collector_type)
         
+        #Grid configuration
         self.experiment_label.grid(row=1, column=0, sticky=W)
         
         
-        self.datapoints_label.grid(row=2, column=0, sticky=W)
-        self.datapoints_ctype_dropdown.grid(row=3, column=0, sticky=W)
-        
-        
-        
-        self.parameters_label.grid(row=2, column=1, sticky=W, padx = 50)
-        self.parameter_search_entry.grid(row=3, column=1, sticky =W, padx = 50)
-        self.parameter_search_listbox.grid(row=4, column=1, sticky=W, padx = 50)
+        self.datapoints_label.grid(row=2, column=0, sticky=W, padx=10)
+        self.datapoints_ctype_dropdown.grid(row=4, column=0, sticky=W, padx=10)
+        self.datapoints_cperfmeasure_dropdown.grid(row=4, column=1, sticky=W, padx=10)
+        self.datapoints_ctimeinterval_dropdown.grid(row=4, column=2, sticky=W, padx=10)
+        self.datapoints_ctargetvalue_label.grid(row=3, column=3, sticky=W, padx=10)
+        self.datapoints_ctargetvalue_entry.grid(row=4, column=3, sticky=W, padx=10)
+
+        self.parameters_label.grid(row=2, column=5, sticky=W, padx = 50)
+        self.parameter_search_entry.grid(row=3, column=5, sticky =W, padx = 50)
+        self.parameter_search_listbox.grid(row=4, column=5, sticky=W, padx = 50)
         
         
         
@@ -118,6 +142,12 @@ class Window(Frame): #similar a StartPage
     def client_exit(self):
         root.destroy()
         print("oi")
+
+    def toggle_geom(self,event):
+        geom=self.master.winfo_geometry()
+        print(geom,self._geom)
+        self.master.geometry(self._geom)
+        self._geom=geom    
     
     #Runs every 50 milliseconds. 
     def poll(self):
@@ -160,7 +190,7 @@ class Window(Frame): #similar a StartPage
     
         
 root = Tk()
-root.geometry("800x600")
-
+root.geometry("1920x1080")
+root.state('zoomed')
 app = Window(master = root)
 root.mainloop()
