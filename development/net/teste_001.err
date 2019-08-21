@@ -1,1 +1,5 @@
-                  Warning	Vehicle input 2 could not be finished completely (remain: 104 vehicles).	Network object type: Vehicle Input	Network object keys: 2
+                     Note	Edit simulation parameters
+                    Error	This action cannot be performed during simulation.
+                     Note	Edit simulation parameters
+                    Error	This action cannot be performed during simulation.
+                  Warning	Vehicle input 2 could not be finished completely (remain: 39 vehicles).	Network object type: Vehicle Input	Network object keys: 2

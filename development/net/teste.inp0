@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<network version="603" vissimVersion="11.00 - 07 [76999]">
+<network version="603" vissimVersion="11.00 - 10 [79323]">
 	<anmDefaults colorDistr="1" crosswalkDisplayType="1" hgvPowerDistr="2" hgvWeightDistr="2" level="1" linkDisplayType="1" panmFilename="" panmRoutesFilename="" pedestrianVehicleType="510" zoneConnectorDisplayType="1">
 		<anmDefaultDrivingBehavior>
 			<anmDefaultDrivingBehavior anmDrivBehavDefType="NONE" drivBehav="1"/>
@@ -1047,7 +1047,7 @@
 			<geometry>
 				<linkPolyPts>
 					<linkPolyPoint x="172.44323719542706" y="4.2819151707170633" zOffset="0"/>
-					<linkPolyPoint x="177.19443831409222" y="0.56682467163994632" zOffset="0"/>
+					<linkPolyPoint x="177.19443831409222" y="0.56682467163994621" zOffset="0"/>
 				</linkPolyPts>
 			</geometry>
 			<lanes>
@@ -1838,7 +1838,7 @@
 		</priorityRule>
 	</priorityRules>
 	<queueCounters>
-		<queueCounter link="2" name="" no="1" pos="34.04506831375398"/>
+		<queueCounter link="2" name="fila" no="1" pos="34.04506831375398"/>
 	</queueCounters>
 	<simulation comment="" numCores="1" numRuns="1" randSeed="42" randSeedIncr="1" retroSync="false" simMode="MICRO" simPeriod="3600" simRes="10" simSpeed="10" startTm="0" useAllCores="true" useMaxSimSpeed="true" volumeIncrDynAssign="0"/>
 	<timeDistributions>
@@ -1953,7 +1953,7 @@
 		</vehicleInput>
 		<vehicleInput anmFlag="false" link="2" name="" no="2">
 			<timeIntVehVols>
-				<timeIntervalVehVolume cont="false" timeInt="1 0" vehComp="1" volType="STOCHASTIC" volume="8000"/>
+				<timeIntervalVehVolume cont="false" timeInt="1 0" vehComp="1" volType="STOCHASTIC" volume="800"/>
 			</timeIntVehVols>
 		</vehicleInput>
 	</vehicleInputs>

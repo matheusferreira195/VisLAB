@@ -16,7 +16,7 @@ dc_data = pd.read_csv(r'E:\Google Drive\Scripts\vistools\resources\test.csv', se
 dc_pm = ['velocity', 'flow']
 dc_timeinterval = ['300-600', '600-900']
 
-
+#function that models a popupmsg
 def popupmsg(msg):
         popup = tk.Tk()
         popup.wm_title("!")
@@ -25,6 +25,20 @@ def popupmsg(msg):
         B1 = ttk.Button(popup, text="Okay", command = popup.destroy)
         B1.pack()
         popup.mainloop()
+
+def datapoint_info(type):
+    attribute=['Name', 'No']
+
+    if type == 'data_collector':
+        data_collectors = Vissim.Net.DataCollectionPoints.GetMultipleAttributes(attribute)
+        return data_collectors
+    if type == 'queue_counter':
+        queue_counters = Vissim.Net.QueueCounters.GetMultipleAttributes(attribute)
+        return queue_counters
+    else:
+        travel_times = Vissim.Net.VehicleTravelTimeMeasurements.GetMultipleAttributes(attribute)
+        return travel_times
+
 
         
 class Window(Frame): #similar a StartPage
