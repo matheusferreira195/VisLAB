@@ -14,7 +14,10 @@ print('net loaded\n')
 def datapoint_normalizer(dataset):
     output=[]
     for index, item in enumerate(dataset):
-        output[index] = str(item[0]) + '/' str(item[1])
+        if item[0] == '':
+            output.append(str('N/A') + ' / #'+ str(item[1]))
+        else:
+            output.append(str(item[0]) + ' / #'+ str(item[1]))
     return output
 
 
@@ -28,10 +31,12 @@ def datapoint_info(type):
 
     if type == 'queue_counter':
         queue_counters_raw = Vissim.Net.QueueCounters.GetMultipleAttributes(attribute)
+        queue_counters = datapoint_normalizer(queue_counters_raw)
         return queue_counters
 
     else:
         travel_times_raw = Vissim.Net.VehicleTravelTimeMeasurements.GetMultipleAttributes(attribute)
+        travel_times = datapoint_normalizer(travel_times_raw)
         return travel_times
 
 print(datapoint_info('data_collector'))

@@ -22,9 +22,8 @@ print('net loaded\n')
 
 #--------------------------------------------------------------------
 #test data
-dc_data = pd.read_csv(r'C:\Users\Matheus Ferreira\Google Drive\Scripts\vistools\resources\test.csv', sep=';')
-dc_pm = ['velocity', 'flow']
-dc_timeinterval = ['300-600', '600-900']
+dc_data = pd.DataFrame(columns = ['Type', 'Name', 'No', 'Perf_measure', 'Time interval', 'Field data', 'Display'])
+
 
 #---------------------------------------------------------------------
 #function that models a popupmsg
@@ -43,12 +42,17 @@ def popupmsg(msg):
 #This one pulls the data and formats it to be presented by the user
 def datapoint_normalizer(dataset, type):
     output=[]
+    
     for index, item in enumerate(dataset):
         if item[0] == '':
-            output.append(str(type) + ' ' + str('N/A') + ' / #'+ str(item[1]))
+            operation = output.append(str(type) + '/ ' + str('N/A') + ' / #'+ str(item[1]))
+            dc_data.append({'Type':type, 'Name':'N/A', 'No':item[1], 'Display':operation}, ignore_index=True)
         else:
-            output.append(str(type) + ' ' + str(item[0]) + ' / #'+ str(item[1]))
+            operation = output.append(str(type) + '/ ' + str(item[0]) + ' / #'+ str(item[1]))
+            dc_data.append({'Type':type, 'Name':item[0], 'No':item[1], 'Display':operation}, ignore_index=(True))
+    print(dc_data)
     return output
+    
 
 #This one manage the querys for vissim
 def datapoint_info():
@@ -64,9 +68,7 @@ def datapoint_info():
     queue_counters_raw = Vissim.Net.QueueCounters.GetMultipleAttributes(attribute)
     queue_counters = datapoint_normalizer(queue_counters_raw, 'Queue Counter')
     for item in queue_counters:
-        output.append(item)
-
-    
+        output.append(item)    
 
     travel_times_raw = Vissim.Net.VehicleTravelTimeMeasurements.GetMultipleAttributes(attribute)
     travel_times = datapoint_normalizer(travel_times_raw, 'Vehicle Travel Time')
@@ -75,7 +77,7 @@ def datapoint_info():
 
     return output
        
-class Window(Frame): #similar a StartPage
+class Window(Frame): #similar a StartPage    
         
     def __init__(self, master): #master = parent class (BTC_app no exemplo. É none por que nao há classes superiores 'essa é só uma janela' )
         print(type(master))
@@ -104,7 +106,7 @@ class Window(Frame): #similar a StartPage
         self.init_window()
         
        
-    def init_window(self):
+    def init_window(self):        
         
         self.master.title("GUI")
         
@@ -137,6 +139,7 @@ class Window(Frame): #similar a StartPage
         self.datapoints_ctype_dropdown['values'] = datapoint_info()
         self.datapoints_ctype_dropdown.configure(font=('Roboto', 8))
         self.datapoints_ctype_dropdown.set('Select data collector type')
+        self.datapoints_ctype_dropdown.bind('<<ComboboxSelected>>', self.datapoints_ctype_callback)
 
         self.datapoints_cperfmeasure_dropdown = ttk.Combobox(self, width=25)
         self.datapoints_cperfmeasure_dropdown['values'] = ['Avg speed', 'Avg travel time', 'Max Queue Lenght', 'Avg flow speed']
@@ -185,8 +188,12 @@ class Window(Frame): #similar a StartPage
         self.update_list()
 
         self.poll()
-        
-        
+
+    def datapoints_ctype_callback(self, eventObject):
+        # you can also get the value off the eventObject
+        print(eventObject.widget.get())
+       
+
     def client_exit(self):
         root.destroy()
         print("oi")
