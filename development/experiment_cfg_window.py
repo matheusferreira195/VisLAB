@@ -22,9 +22,11 @@ print('net loaded\n')
 
 #--------------------------------------------------------------------
 #test data
-dc_data = pd.read_csv(r'C:\Users\Matheus Ferreira\Google Drive\Scripts\vistools\resources\test.csv', sep=';')
-dc_pm = ['velocity', 'flow']
-dc_timeinterval = ['300-600', '600-900']
+
+dc_data = pd.DataFrame(columns = ['Type', 'Name', 'No', 'Perf_measure', 'Time interval', 'Field data', 'Display'])
+
+
+
 
 #---------------------------------------------------------------------
 #function that models a popupmsg
@@ -38,53 +40,54 @@ def popupmsg(msg):
         popup.mainloop()
 
 #-----------------------------------------------------------------------
-#Query functions that pull from vissim metadata about the data points
+#Query functions that pull from vissim metadata about the data points and creates a dataframe
 
-#This one pulls the data and formats it to be presented by the user
-def datapoint_normalizer(dataset, type):
-    output=[]
-    for index, item in enumerate(dataset):
-        if item[0] == '':
-            output.append(str(type) + ' ' + str('N/A') + ' / #'+ str(item[1]))
-        else:
-            output.append(str(type) + ' ' + str(item[0]) + ' / #'+ str(item[1]))
-    return output
+def generate_dcdf():
 
-#This one manage the querys for vissim
-def datapoint_info():
-    
-    output=[]
+    dc_df = pd.DataFrame(columns = ['Type', 'Name', 'No', 'Display'])
     attribute=['Name', 'No']
-    
+
     data_collectors_raw = Vissim.Net.DataCollectionPoints.GetMultipleAttributes(attribute)
-    data_collectors = datapoint_normalizer(data_collectors_raw, 'Data Collector')
-    for item in data_collectors:
-        output.append(item)
-
     queue_counters_raw = Vissim.Net.QueueCounters.GetMultipleAttributes(attribute)
-    queue_counters = datapoint_normalizer(queue_counters_raw, 'Queue Counter')
-    for item in queue_counters:
-        output.append(item)
-
-    
-
     travel_times_raw = Vissim.Net.VehicleTravelTimeMeasurements.GetMultipleAttributes(attribute)
-    travel_times = datapoint_normalizer(travel_times_raw, 'Vehicle Travel Time')
-    for item in travel_times:
-        output.append(item)
+    
+    for item in data_collectors_raw:
+        if len(item[0]) == 0:
+            data = {'Type':'Data Collector', 'Name':'Empty', 'No':item[1], 'Display':('Data Collector' + '/ ' + 'N/A' + ' / #'+ str(item[1]))}
+        else:
+            data = {'Type':'Data Collector', 'Name':item[0], 'No':item[1], 'Display':('Data Collector' + '/ ' + str(item[0]) + ' / #'+ str(item[1]))}
+        dc_df = dc_df.append(data, ignore_index = True)
 
-    return output
-       
-class Window(Frame): #similar a StartPage
+    for item in queue_counters_raw:
+        if len(item[0]) == 0:
+            data = {'Type':'Queue Counter', 'Name':'Empty', 'No':item[1], 'Display':('Queue Counter' + '/ ' + 'N/A' + ' / #'+ str(item[1]))}
+        else:
+            data = {'Type':'Queue Counter', 'Name':item[0], 'No':item[1], 'Display':('Queue Counter' + '/ ' + str(item[0]) + ' / #'+ str(item[1]))}
+        dc_df = dc_df.append(data, ignore_index = True)
+
+    for item in travel_times_raw:
+        if len(item[0]) == 0:
+            data = {'Type':'Travel Time Collector', 'Name':'Empty', 'No':item[1], 'Display':('Travel Time Collector' + '/ ' + 'N/A' + ' / #'+ str(item[1]))}
+        else:
+            data = {'Type':'Travel Time Collector', 'Name':item[0], 'No':item[1], 'Display':('Travel Time Collector' + '/ ' + str(item[0]) + ' / #'+ str(item[1]))}
+        dc_df = dc_df.append(data, ignore_index = True)
+    #print(dc_df)
+    return dc_df
+
+class Window(Frame): #similar a StartPage    
         
     def __init__(self, master): #master = parent class (BTC_app no exemplo. É none por que nao há classes superiores 'essa é só uma janela' )
-        print(type(master))
+        #print(type(master))
         Frame.__init__(self, master)
         
         container = tk.Frame(self)
         container.grid_rowconfigure(0, weight=1) 
         container.grid_columnconfigure(0, weight=1)
-                
+        
+        self.dc_data = generate_dcdf()
+
+        self.experiment_data = pd.DataFrame({'Experiment', 'Data Point Type', 'DP Number', 'Perf_measure', 'Time interval', 'Field data'})
+        
         self.master = master
         
         self.search_var = StringVar()
@@ -104,7 +107,7 @@ class Window(Frame): #similar a StartPage
         self.init_window()
         
        
-    def init_window(self):
+    def init_window(self):        
         
         self.master.title("GUI")
         
@@ -134,22 +137,28 @@ class Window(Frame): #similar a StartPage
         #Datapoint fields
         self.datapoints_label = Label(self,text = 'Data Points')
         self.datapoints_ctype_dropdown = ttk.Combobox(self, width=25)
-        self.datapoints_ctype_dropdown['values'] = datapoint_info()
+        self.datapoints_ctype_dropdown['values'] = list(self.dc_data['Display'])
         self.datapoints_ctype_dropdown.configure(font=('Roboto', 8))
         self.datapoints_ctype_dropdown.set('Select data collector type')
+        self.datapoints_ctype_dropdown.bind('<<ComboboxSelected>>', self.datapoints_callback('ctype'))
 
         self.datapoints_cperfmeasure_dropdown = ttk.Combobox(self, width=25)
         self.datapoints_cperfmeasure_dropdown['values'] = ['Avg speed', 'Avg travel time', 'Max Queue Lenght', 'Avg flow speed']
         self.datapoints_cperfmeasure_dropdown.configure(font=('Roboto', 8))
         self.datapoints_cperfmeasure_dropdown.set('Select what you will measure')
+        self.datapoints_cperfmeasure_dropdown.bind('<<ComboboxSelected>>', self.datapoints_callback('cperfmeasure'))
 
         self.datapoints_ctimeinterval_dropdown = ttk.Combobox(self, width=25)
         self.datapoints_ctimeinterval_dropdown['values'] = ['300-600','600-900', '900-1200', 'All']
         self.datapoints_ctimeinterval_dropdown.configure(font=('Roboto', 8))
         self.datapoints_ctimeinterval_dropdown.set('Select what time interval we should consider')
+        self.datapoints_ctimeinterval_dropdown.bind('<<ComboboxSelected>>', self.datapoints_callback('ctimeinterval'))
 
         self.datapoints_ctargetvalue_label=Label(self, text='Add the field data to compare')
         self.datapoints_ctargetvalue_entry=Entry(self)
+
+        self.datapoint_ok_button = Button(self, image = )
+        #self.experiment_data['Target'] = self.datapoints_ctargetvalue_entry.get()
 
         #separator
 
@@ -185,8 +194,29 @@ class Window(Frame): #similar a StartPage
         self.update_list()
 
         self.poll()
+
+    def datapoints_callback(self, eventObject, type):
+        # you can also get the value off the eventObject
+        dc_selected = eventObject.widget.get()
+
+        if type == 'ctype':
+            dc_correspondent = self.dc_data.loc[self.dc_data['Display'] == dc_selected]
+            #print(dc_correpondent)
+            
+            experiment_entry = pd.Series(data={'Experiment':self.experiment, 'Data Point Type':dc_correspondent['Type'], 'DP Number':dc_correpondent['No']}, index=['Experiment', 'Data Point Type', 'Dp Number'])
+            self.experiment_data = self.experiment_data.append(experiment_entry, ignore_index = True)
+
+        if type == 'cperfmeasure':
+            experiment_data.at[self.experiment, 'Perf_measure'] = dc_selected
         
-        
+        if type == 'ctimeinterval':
+            experiment_data.at[self.experiment, 'Time Interval'] = dc_selected
+
+        if type == 'target':
+            experiment_data.at[self.experiment, 'Field Data'] = dc_selected
+
+        print(experiment_entry)
+
     def client_exit(self):
         root.destroy()
         print("oi")
