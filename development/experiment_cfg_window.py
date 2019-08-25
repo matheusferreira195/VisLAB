@@ -11,8 +11,9 @@ import pandas as pd
 import os
 
 NORM_FONT= ("Roboto", 10)
-
+check_icon = r'C:\Users\Matheus Ferreira\Google Drive\Scripts\vistools\resources\check.png'
 #-------------------------------------------------------------------
+
 Vissim = com.Dispatch("Vissim.Vissim") #Abrindo o Vissim
 path_network = r'C:\Users\Matheus Ferreira\Google Drive\Scripts\vistools\development\net\teste.inpx'
 flag = False 
@@ -24,10 +25,6 @@ print('net loaded\n')
 #test data
 
 dc_data = pd.DataFrame(columns = ['Type', 'Name', 'No', 'Perf_measure', 'Time interval', 'Field data', 'Display'])
-
-
-
-
 #---------------------------------------------------------------------
 #function that models a popupmsg
 def popupmsg(msg):
@@ -140,24 +137,24 @@ class Window(Frame): #similar a StartPage
         self.datapoints_ctype_dropdown['values'] = list(self.dc_data['Display'])
         self.datapoints_ctype_dropdown.configure(font=('Roboto', 8))
         self.datapoints_ctype_dropdown.set('Select data collector type')
-        self.datapoints_ctype_dropdown.bind('<<ComboboxSelected>>', self.datapoints_callback('ctype'))
+        self.datapoints_ctype_dropdown.bind('<<ComboboxSelected>>', self.datapoints_callback(eventObject = None, type='ctype'))
 
         self.datapoints_cperfmeasure_dropdown = ttk.Combobox(self, width=25)
         self.datapoints_cperfmeasure_dropdown['values'] = ['Avg speed', 'Avg travel time', 'Max Queue Lenght', 'Avg flow speed']
         self.datapoints_cperfmeasure_dropdown.configure(font=('Roboto', 8))
         self.datapoints_cperfmeasure_dropdown.set('Select what you will measure')
-        self.datapoints_cperfmeasure_dropdown.bind('<<ComboboxSelected>>', self.datapoints_callback('cperfmeasure'))
+        self.datapoints_cperfmeasure_dropdown.bind('<<ComboboxSelected>>', self.datapoints_callback(eventObject = None, type='cperfmeasure'))
 
         self.datapoints_ctimeinterval_dropdown = ttk.Combobox(self, width=25)
         self.datapoints_ctimeinterval_dropdown['values'] = ['300-600','600-900', '900-1200', 'All']
         self.datapoints_ctimeinterval_dropdown.configure(font=('Roboto', 8))
         self.datapoints_ctimeinterval_dropdown.set('Select what time interval we should consider')
-        self.datapoints_ctimeinterval_dropdown.bind('<<ComboboxSelected>>', self.datapoints_callback('ctimeinterval'))
+        self.datapoints_ctimeinterval_dropdown.bind('<<ComboboxSelected>>', self.datapoints_callback(eventObject = None, type='ctimeinterval'))
 
         self.datapoints_ctargetvalue_label=Label(self, text='Add the field data to compare')
         self.datapoints_ctargetvalue_entry=Entry(self)
 
-        self.datapoint_ok_button = Button(self, image = )
+        self.datapoint_ok_button = Button(self, image = check_icon, command = self.datapoints_callback(eventObject = self.datapoints_ctargetvalue_entry.eventObject,type='target'))
         #self.experiment_data['Target'] = self.datapoints_ctargetvalue_entry.get()
 
         #separator
@@ -182,6 +179,7 @@ class Window(Frame): #similar a StartPage
         self.datapoints_ctimeinterval_dropdown.grid(row=4, column=2, sticky=W, padx=10)
         self.datapoints_ctargetvalue_label.grid(row=3, column=3, sticky=W, padx=10)
         self.datapoints_ctargetvalue_entry.grid(row=4, column=3, sticky=W, padx=10)
+        self.datapoint_ok_button.grid(row=5, column=3, sticky=W, padx=10)
 
         self.parameters_label.grid(row=2, column=5, sticky=W, padx = 50)
         self.parameter_search_entry.grid(row=3, column=5, sticky =W, padx = 50)
@@ -196,9 +194,8 @@ class Window(Frame): #similar a StartPage
         self.poll()
 
     def datapoints_callback(self, eventObject, type):
-        # you can also get the value off the eventObject
-        dc_selected = eventObject.widget.get()
-
+        # you can also get the value off the eventObject        
+        
         if type == 'ctype':
             dc_correspondent = self.dc_data.loc[self.dc_data['Display'] == dc_selected]
             #print(dc_correpondent)
@@ -207,13 +204,13 @@ class Window(Frame): #similar a StartPage
             self.experiment_data = self.experiment_data.append(experiment_entry, ignore_index = True)
 
         if type == 'cperfmeasure':
-            experiment_data.at[self.experiment, 'Perf_measure'] = dc_selected
+            self.experiment_data.at[self.experiment, 'Perf_measure'] = dc_selected
         
         if type == 'ctimeinterval':
-            experiment_data.at[self.experiment, 'Time Interval'] = dc_selected
+            self.experiment_data.at[self.experiment, 'Time Interval'] = dc_selected
 
         if type == 'target':
-            experiment_data.at[self.experiment, 'Field Data'] = dc_selected
+            self.experiment_data.at[self.experiment, 'Field Data'] = dc_selected
 
         print(experiment_entry)
 
