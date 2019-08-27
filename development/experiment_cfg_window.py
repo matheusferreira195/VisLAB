@@ -15,7 +15,7 @@ NORM_FONT= ("Roboto", 10)
 #-------------------------------------------------------------------
 Vissim = com.Dispatch('Vissim.Vissim')
 #Vissim = com.Dispatch("Vissim.Vissim") #Abrindo o Vissim
-path_network = r'C:\Users\Matheus Ferreira\Google Drive\Scripts\vistools\development\net\teste.inpx'
+path_network =r'E:\Google Drive\Scripts\vistools\development\net\teste.inpx'
 flag = False 
 Vissim.LoadNet(path_network, flag) #Carregando o arquivo
 #ctypes.windll.user32.MessageBoxW(0, "Net loaded", "Vissim ready", 1)
@@ -84,7 +84,7 @@ class Window(Frame): #similar a StartPage
         self.dc_data = generate_dcdf()
         self.parameter_data = pd.DataFrame(columns = {'Experiment', 'Parameter', 'Lim. Inf', 'Lim. Sup', 'Step'})
         self.experiment_data = pd.DataFrame(columns = {'Experiment', 'Data Point Type', 'DP Number', 'Perf_measure', 'Time interval', 'Field data'}) 
-        self.parameter_db = pd.read_csv(r'C:\Users\Matheus Ferreira\Google Drive\Scripts\vistools\resources\parameters.visdb')
+        self.parameter_db = pd.read_csv(r'E:\Google Drive\Scripts\vistools\resources\parameters.visdb')
         self.master = master
 
         self.search_var = StringVar()
@@ -92,7 +92,7 @@ class Window(Frame): #similar a StartPage
         self.switch = False
         self.search_mem = ''
         self.experiment = 1
-        self.check_image = PhotoImage(file=r'C:\Users\Matheus Ferreira\Documents\Python Scripts\check.gif')
+        self.check_image = PhotoImage(file=r'E:\Google Drive\Scripts\vistools\resources\check.gif')
         
         self.collector_type = StringVar()
         self.collector_name = StringVar()
@@ -151,11 +151,11 @@ class Window(Frame): #similar a StartPage
         self.datapoints_cperfmeasure_dropdown.set('Select what you will measure')
         self.datapoints_cperfmeasure_dropdown.bind('<<ComboboxSelected>>', self.datapoints_callback)
 
-        self.datapoints_ctimeinterval_dropdown = ttk.Combobox(self, width=25)
-        self.datapoints_ctimeinterval_dropdown['values'] = list(Vissim.TimeIntervalSets.GetMultipleAttributes(['TmIntSet']))
-        self.datapoints_ctimeinterval_dropdown.configure(font=('Roboto', 8))
-        self.data points_ctimeinterval_dropdown.set('Select what time interval we should consider')
-        self.datapoints_ctimeinterval_dropdown.bind('<<ComboboxSelected>>', self.datapoints_callback)
+        #self.datapoints_ctimeinterval_dropdown = ttk.Combobox(self, width=25)
+        #self.datapoints_ctimeinterval_dropdown['values'] = 
+        #self.datapoints_ctimeinterval_dropdown.configure(font=('Roboto', 8))
+        #self.datapoints_ctimeinterval_dropdown.set('Select what time interval we should consider')
+        #self.datapoints_ctimeinterval_dropdown.bind('<<ComboboxSelected>>', self.datapoints_callback)
 
         self.datapoints_ctargetvalue_label=Label(self, text='Add the field data to compare')
         self.datapoints_ctargetvalue_entry=Entry(self)
@@ -192,7 +192,7 @@ class Window(Frame): #similar a StartPage
         self.datapoints_label.grid(row=2, column=0, sticky=W, padx=10)
         self.datapoints_ctype_dropdown.grid(row=4, column=0, sticky=W, padx=10)
         self.datapoints_cperfmeasure_dropdown.grid(row=4, column=1, sticky=W, padx=10)
-        self.datapoints_ctimeinterval_dropdown.grid(row=4, column=2, sticky=W, padx=10)
+        #self.datapoints_ctimeinterval_dropdown.grid(row=4, column=2, sticky=W, padx=10)
         self.datapoints_ctargetvalue_label.grid(row=3, column=3, sticky=W, padx=10)
         self.datapoints_ctargetvalue_entry.grid(row=4, column=3, sticky=W, padx=10)
         self.datapoint_ok_button.grid(row=4, column=4, sticky=W, padx=10)
