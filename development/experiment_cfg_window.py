@@ -11,10 +11,10 @@ import pandas as pd
 import os
 
 NORM_FONT= ("Roboto", 10)
-check_icon = r'C:\Users\Matheus Ferreira\Google Drive\Scripts\vistools\resources\check.png'
+#check_icon = r'C:\Users\Matheus Ferreira\Google Drive\Scripts\vistools\resources\check.png'
 #-------------------------------------------------------------------
-
-Vissim = com.Dispatch("Vissim.Vissim") #Abrindo o Vissim
+Vissim = com.Dispatch('Vissim.Vissim')
+#Vissim = com.Dispatch("Vissim.Vissim") #Abrindo o Vissim
 path_network = r'C:\Users\Matheus Ferreira\Google Drive\Scripts\vistools\development\net\teste.inpx'
 flag = False 
 Vissim.LoadNet(path_network, flag) #Carregando o arquivo
@@ -22,10 +22,8 @@ Vissim.LoadNet(path_network, flag) #Carregando o arquivo
 print('net loaded\n')
 
 #--------------------------------------------------------------------
-#test data
 
-dc_data = pd.DataFrame(columns = ['Type', 'Name', 'No', 'Perf_measure', 'Time interval', 'Field data', 'Display'])
-#---------------------------------------------------------------------
+
 #function that models a popupmsg
 def popupmsg(msg):
         popup = tk.Tk()
@@ -43,16 +41,18 @@ def generate_dcdf():
 
     dc_df = pd.DataFrame(columns = ['Type', 'Name', 'No', 'Display'])
     attribute=['Name', 'No']
-
-    data_collectors_raw = Vissim.Net.DataCollectionPoints.GetMultipleAttributes(attribute)
+    attributes_dcm=['Name', 'No', 'DataCollectionPoints']
+    attributes_ttm=['Name', 'No', 'VehTravTmMeas']
+    data_collectors_measurements_raw = Vissim.Net.DataCollectionMeasurements.GetMultipleAttributes(attributes_dcm)
     queue_counters_raw = Vissim.Net.QueueCounters.GetMultipleAttributes(attribute)
-    travel_times_raw = Vissim.Net.VehicleTravelTimeMeasurements.GetMultipleAttributes(attribute)
-    
-    for item in data_collectors_raw:
+    travel_time_measurements_raw = Vissim.Net.DelayMeasurements.GetMultipleAttributes(attributes_ttm)
+
+    for item in data_collectors_measurements_raw:
+
         if len(item[0]) == 0:
-            data = {'Type':'Data Collector', 'Name':'Empty', 'No':item[1], 'Display':('Data Collector' + '/ ' + 'N/A' + ' / #'+ str(item[1]))}
+            data = {'Type':'Data Collector', 'Name':'Empty', 'No':item[1], 'Data Collection Points':item[2], 'Display':('Data Collector' + '/ ' + 'N/A' + ' / #'+ str(item[1]))}
         else:
-            data = {'Type':'Data Collector', 'Name':item[0], 'No':item[1], 'Display':('Data Collector' + '/ ' + str(item[0]) + ' / #'+ str(item[1]))}
+            data = {'Type':'Data Collector', 'Name':item[0], 'No':item[1], 'Data Collection Points':item[2], 'Display':('Data Collector' + '/ ' + str(item[0]) + ' / #'+ str(item[1]))}
         dc_df = dc_df.append(data, ignore_index = True)
 
     for item in queue_counters_raw:
@@ -62,11 +62,11 @@ def generate_dcdf():
             data = {'Type':'Queue Counter', 'Name':item[0], 'No':item[1], 'Display':('Queue Counter' + '/ ' + str(item[0]) + ' / #'+ str(item[1]))}
         dc_df = dc_df.append(data, ignore_index = True)
 
-    for item in travel_times_raw:
+    for item in travel_time_measurements_raw:
         if len(item[0]) == 0:
-            data = {'Type':'Travel Time Collector', 'Name':'Empty', 'No':item[1], 'Display':('Travel Time Collector' + '/ ' + 'N/A' + ' / #'+ str(item[1]))}
+            data = {'Type':'Travel Time Collector', 'Name':'Empty', 'No':item[1], 'Time Travel Points':item[2], 'Display':('Travel Time Collector' + '/ ' + 'N/A' + ' / #'+ str(item[1]))}
         else:
-            data = {'Type':'Travel Time Collector', 'Name':item[0], 'No':item[1], 'Display':('Travel Time Collector' + '/ ' + str(item[0]) + ' / #'+ str(item[1]))}
+            data = {'Type':'Travel Time Collector', 'Name':item[0], 'No':item[1],'Time Travel Points':item[2], 'Display':('Travel Time Collector' + '/ ' + str(item[0]) + ' / #'+ str(item[1]))}
         dc_df = dc_df.append(data, ignore_index = True)
     #print(dc_df)
     return dc_df
@@ -82,16 +82,17 @@ class Window(Frame): #similar a StartPage
         container.grid_columnconfigure(0, weight=1)
         
         self.dc_data = generate_dcdf()
-
-        self.experiment_data = pd.DataFrame({'Experiment', 'Data Point Type', 'DP Number', 'Perf_measure', 'Time interval', 'Field data'})
-        
+        self.parameter_data = pd.DataFrame(columns = {'Experiment', 'Parameter', 'Lim. Inf', 'Lim. Sup', 'Step'})
+        self.experiment_data = pd.DataFrame(columns = {'Experiment', 'Data Point Type', 'DP Number', 'Perf_measure', 'Time interval', 'Field data'}) 
+        self.parameter_db = pd.read_csv(r'C:\Users\Matheus Ferreira\Google Drive\Scripts\vistools\resources\parameters.visdb')
         self.master = master
-        
+
         self.search_var = StringVar()
         
         self.switch = False
         self.search_mem = ''
         self.experiment = 1
+        self.check_image = PhotoImage(file=r'C:\Users\Matheus Ferreira\Documents\Python Scripts\check.gif')
         
         self.collector_type = StringVar()
         self.collector_name = StringVar()
@@ -106,8 +107,11 @@ class Window(Frame): #similar a StartPage
        
     def init_window(self):        
         
-        self.master.title("GUI")
-        
+        self.master.title("Vistools")
+        self.experiment_data_init = {'Experiment': 1}
+        self.experiment_data = self.experiment_data.append(self.experiment_data_init, ignore_index=True)
+        self.parameter_data = self.parameter_data.append(self.experiment_data_init, ignore_index=True)
+        #print(self.experiment_data)
         #quitButton = Button(self, text = "Quit", command=self.client_exit)
         
         #quitButton.place(x=245, y=170)
@@ -137,24 +141,26 @@ class Window(Frame): #similar a StartPage
         self.datapoints_ctype_dropdown['values'] = list(self.dc_data['Display'])
         self.datapoints_ctype_dropdown.configure(font=('Roboto', 8))
         self.datapoints_ctype_dropdown.set('Select data collector type')
-        self.datapoints_ctype_dropdown.bind('<<ComboboxSelected>>', self.datapoints_callback(eventObject = None, type='ctype'))
+        self.datapoints_ctype_dropdown.bind('<<ComboboxSelected>>', self.datapoints_callback)
+
+        self.separator = ttk.Separator(self, orient="vertical")
 
         self.datapoints_cperfmeasure_dropdown = ttk.Combobox(self, width=25)
-        self.datapoints_cperfmeasure_dropdown['values'] = ['Avg speed', 'Avg travel time', 'Max Queue Lenght', 'Avg flow speed']
+        self.datapoints_cperfmeasure_dropdown['values'] = []
         self.datapoints_cperfmeasure_dropdown.configure(font=('Roboto', 8))
         self.datapoints_cperfmeasure_dropdown.set('Select what you will measure')
-        self.datapoints_cperfmeasure_dropdown.bind('<<ComboboxSelected>>', self.datapoints_callback(eventObject = None, type='cperfmeasure'))
+        self.datapoints_cperfmeasure_dropdown.bind('<<ComboboxSelected>>', self.datapoints_callback)
 
         self.datapoints_ctimeinterval_dropdown = ttk.Combobox(self, width=25)
-        self.datapoints_ctimeinterval_dropdown['values'] = ['300-600','600-900', '900-1200', 'All']
+        self.datapoints_ctimeinterval_dropdown['values'] = list(Vissim.TimeIntervalSets.GetMultipleAttributes(['TmIntSet']))
         self.datapoints_ctimeinterval_dropdown.configure(font=('Roboto', 8))
         self.datapoints_ctimeinterval_dropdown.set('Select what time interval we should consider')
-        self.datapoints_ctimeinterval_dropdown.bind('<<ComboboxSelected>>', self.datapoints_callback(eventObject = None, type='ctimeinterval'))
+        self.datapoints_ctimeinterval_dropdown.bind('<<ComboboxSelected>>', self.datapoints_callback)
 
         self.datapoints_ctargetvalue_label=Label(self, text='Add the field data to compare')
         self.datapoints_ctargetvalue_entry=Entry(self)
 
-        self.datapoint_ok_button = Button(self, image = check_icon, command = self.datapoints_callback(eventObject = self.datapoints_ctargetvalue_entry.eventObject,type='target'))
+        self.datapoint_ok_button = Button(self, command = self.button_callback, image=self.check_image)
         #self.experiment_data['Target'] = self.datapoints_ctargetvalue_entry.get()
 
         #separator
@@ -166,12 +172,22 @@ class Window(Frame): #similar a StartPage
         self.parameter_search_entry = Entry(self, textvariable=self.search_var, width=25)
         self.parameter_search_entry.insert(0, 'Search parameters here')
         self.parameter_search_listbox = Listbox(self, width=45, height=1)
-                
+        self.parameter_search_listbox.bind('<<ListboxSelect>>', self.parameters_callback)
+
+        self.parameter_entry_liminf = Entry(self, width=10)
+        self.parameter_entry_liminf.bind('<FocusOut>', self.parameters_callback)
+
+        self.parameter_entry_limsup = Entry(self, width=10)
+        self.parameter_entry_limsup.bind('<FocusOut>', self.parameters_callback)
+
+        self.parameter_entry_step = Entry(self, width=10)
+        self.parameter_entry_step.bind('<FocusOut>', self.parameters_callback)
+
+       
         #self.OptionMenu(master, self.collector_type)
         
         #Grid configuration
         self.experiment_label.grid(row=1, column=0, sticky=W)
-        
         
         self.datapoints_label.grid(row=2, column=0, sticky=W, padx=10)
         self.datapoints_ctype_dropdown.grid(row=4, column=0, sticky=W, padx=10)
@@ -179,40 +195,123 @@ class Window(Frame): #similar a StartPage
         self.datapoints_ctimeinterval_dropdown.grid(row=4, column=2, sticky=W, padx=10)
         self.datapoints_ctargetvalue_label.grid(row=3, column=3, sticky=W, padx=10)
         self.datapoints_ctargetvalue_entry.grid(row=4, column=3, sticky=W, padx=10)
-        self.datapoint_ok_button.grid(row=5, column=3, sticky=W, padx=10)
+        self.datapoint_ok_button.grid(row=4, column=4, sticky=W, padx=10)
+        
+        self.separator.grid(row=2, column=5, sticky='ns', rowspan=100)
 
-        self.parameters_label.grid(row=2, column=5, sticky=W, padx = 50)
-        self.parameter_search_entry.grid(row=3, column=5, sticky =W, padx = 50)
-        self.parameter_search_listbox.grid(row=4, column=5, sticky=W, padx = 50)
-        
-        
+        self.parameters_label.grid(row=2, column=6, sticky=W, padx = 5)
+        self.parameter_search_entry.grid(row=3, column=6, sticky =W, padx = 5)
+        self.parameter_search_listbox.grid(row=4, column=6, sticky=W, padx = 5)
+        self.parameter_entry_liminf.grid(row=4, column=7, sticky=W, padx=5)
+        self.parameter_entry_limsup.grid(row=4, column=8, sticky=W, padx=5)
+        self.parameter_entry_step.grid(row=4, column=9, sticky=W, padx=5)
         
         #Function for updating the list/doing the search.
         #It needs to be called here to populate the listbox.
         self.update_list()
 
         self.poll()
+    
+    def button_callback(self):
 
-    def datapoints_callback(self, eventObject, type):
-        # you can also get the value off the eventObject        
-        
-        if type == 'ctype':
-            dc_correspondent = self.dc_data.loc[self.dc_data['Display'] == dc_selected]
-            #print(dc_correpondent)
+        entry_value = self.datapoints_ctargetvalue_entry.get()
+        print(entry_value)
+        experiment_index  = self.experiment_data.loc[self.experiment_data['Experiment']==self.experiment].index[0]
+        self.experiment_data.loc[experiment_index, 'Field data'] = entry_value
+        print(self.experiment_data)
+    
+    def parameters_callback(self, eventObject):
+        #print(eventObject)
+
+        # you can also get the value off the eventObject
+        caller = str(eventObject.widget)
+        parameter_index  = self.parameter_data.loc[self.parameter_data['Experiment']==self.experiment].index[0]
+
+        if 'listbox' in caller:
+            selected = self.parameter_search_listbox.curselection()
+            parameter_text = self.parameter_search_listbox.get(first=selected, last=None)
+            #print(parameter_text)
+            parameter_identifier_row = self.parameter_db.loc[self.parameter_db['Long Name']==parameter_text]
             
-            experiment_entry = pd.Series(data={'Experiment':self.experiment, 'Data Point Type':dc_correspondent['Type'], 'DP Number':dc_correpondent['No']}, index=['Experiment', 'Data Point Type', 'Dp Number'])
-            self.experiment_data = self.experiment_data.append(experiment_entry, ignore_index = True)
+            value = str(parameter_identifier_row['Identifier'].item())
+            
+            #print(value)          
 
-        if type == 'cperfmeasure':
-            self.experiment_data.at[self.experiment, 'Perf_measure'] = dc_selected
+            self.parameter_data.loc[parameter_index, 'Parameter'] = value
+
+            print(self.parameter_data)
+
+        else:
+            value = eventObject.widget.get()        
+
+        if 'entry3' in caller: #liminf          
+            self.parameter_data.loc[parameter_index, 'Lim. Inf'] = value
+            print(self.parameter_data)
+    
+        elif 'entry4' in caller: #limsup  
+            self.parameter_data.loc[parameter_index, 'Lim. Sup'] = value
+            print(self.parameter_data)
+
+        elif 'entry5' in caller: #step
+            self.parameter_data.loc[parameter_index, 'Step'] = value
+            print(self.parameter_data)
+        '''
+        else:
+            experiment_index  = self.experiment_data.loc[self.experiment_data['Experiment']==self.experiment].index[0]
+            dc_match = self.dc_data.loc[self.dc_data['Display'] == value]
+            data_point_type = dc_match['Type'].item()
+            Dc_Number = dc_match['No'].item()
+
+            self.experiment_data.loc[experiment_index, 'Data Point Type'] = data_point_type
+            self.experiment_data.loc[experiment_index, 'DP Number'] = Dc_Number
+            print(self.experiment_data)
+        '''  
+        #print(self.experiment_data)
         
-        if type == 'ctimeinterval':
-            self.experiment_data.at[self.experiment, 'Time Interval'] = dc_selected
+    def datapoints_callback(self, eventObject):
+        # you can also get the value off the eventObject
+        caller = str(eventObject.widget)
+        value = eventObject.widget.get()
 
-        if type == 'target':
-            self.experiment_data.at[self.experiment, 'Field Data'] = dc_selected
+        if caller == None:
+            entry_value = self.datapoints_ctargetvalue_entry.get()
+            print(entry_value)
+            experiment_index  = self.experiment_data.loc[self.experiment_data['Experiment']==self.experiment].index[0]
+            self.experiment_data.loc[experiment_index, 'Field data'] = entry_value
+            print(self.experiment_data)
+    
+        elif 'combobox2' in caller:  
+            print('selected1')       
+            experiment_index  = self.experiment_data.loc[self.experiment_data['Experiment']==self.experiment].index[0]
+            self.experiment_data.loc[experiment_index, 'Perf_measure'] = value
+            print(self.experiment_data)
 
-        print(experiment_entry)
+        elif 'combobox3' in caller:
+            experiment_index  = self.experiment_data.loc[self.experiment_data['Experiment']==self.experiment].index[0]
+            self.experiment_data.loc[experiment_index, 'Time interval'] = value
+            print(self.experiment_data)
+
+        else:
+            experiment_index  = self.experiment_data.loc[self.experiment_data['Experiment']==self.experiment].index[0]
+            dc_match = self.dc_data.loc[self.dc_data['Display'] == value]
+            data_point_type = dc_match['Type'].item()
+            Dc_Number = dc_match['No'].item()         
+            
+            self.experiment_data.loc[experiment_index, 'Data Point Type'] = data_point_type
+            self.experiment_data.loc[experiment_index, 'DP Number'] = Dc_Number
+
+            if data_point_type == 'Data Collector':
+                self.datapoints_cperfmeasure_dropdown['values'] = ['Queue Delay', 'Speed Avg', 'Occupancy Rate','Acceleration', 'Lenght', 'Vehs', 'Persons']
+
+            elif data_point_type == 'Travel Time Collector':
+                self.datapoints_cperfmeasure_dropdown['values'] = ['StopDelay', 'Stops', 'VehDelay', 'Vehs', 'Persons Delay', 'Persons']
+                
+            else:
+                self.datapoints_cperfmeasure_dropdown['values'] = ['Queue Lenght Avg', 'Queue Lenght Max', 'Queue Stops']
+
+            print(self.experiment_data)
+           
+        #print(self.experiment_data)
 
     def client_exit(self):
         root.destroy()
@@ -249,7 +348,9 @@ class Window(Frame): #similar a StartPage
             is_contact_search = False
 
         #Just a generic list to populate the listbox
-        lbox_list = ['Adam', 'Lucy', 'Barry', 'Bob', 'James', 'Frank', 'Susan', 'Amanda', 'Christie']
+                
+        lbox_list = list(self.parameter_db['Long Name'])
+        #print(lbox_list)
 
         self.parameter_search_listbox.delete(0, tk.END)
 
@@ -266,6 +367,6 @@ class Window(Frame): #similar a StartPage
         
 root = Tk()
 root.geometry("1920x1080")
-root.state('zoomed')
+#root.state('zoomed')
 app = Window(master = root)
 root.mainloop()

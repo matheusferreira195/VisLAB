@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<network version="603" vissimVersion="11.00 - 10 [79323]">
+<network version="603" vissimVersion="11.00 - 07 [76999]">
 	<anmDefaults colorDistr="1" crosswalkDisplayType="1" hgvPowerDistr="2" hgvWeightDistr="2" level="1" linkDisplayType="1" panmFilename="" panmRoutesFilename="" pedestrianVehicleType="510" zoneConnectorDisplayType="1">
 		<anmDefaultDrivingBehavior>
 			<anmDefaultDrivingBehavior anmDrivBehavDefType="NONE" drivBehav="1"/>
@@ -155,10 +155,40 @@
 		<conflictArea addStopDist="0" anticipRout="0" avoidBlockMajor="true" avoidBlockMinor="1" conflTypDetmAuto="true" conflTypMan="CROSSING" frontGapDef="0.5" link1="1" link2="10000" mesoCritGap="3.5" minGapBlockDef="3" no="2" obsAdjLns="false" rearGapDef="0.5" safDistFactDef="1.5" status="PASSIVE" visibLink1="100" visibLink2="100"/>
 		<conflictArea addStopDist="0" anticipRout="0" avoidBlockMajor="true" avoidBlockMinor="1" conflTypDetmAuto="true" conflTypMan="CROSSING" frontGapDef="0.5" link1="2" link2="10000" mesoCritGap="3.5" minGapBlockDef="3" no="3" obsAdjLns="false" rearGapDef="0.5" safDistFactDef="1.5" status="PASSIVE" visibLink1="100" visibLink2="100"/>
 	</conflictAreas>
+	<dataCollectionMeasurements>
+		<dataCollectionMeasurement name="" no="1">
+			<dataCollectionPoints>
+				<intObjectRef key="1"/>
+			</dataCollectionPoints>
+		</dataCollectionMeasurement>
+		<dataCollectionMeasurement name="" no="2">
+			<dataCollectionPoints>
+				<intObjectRef key="2"/>
+			</dataCollectionPoints>
+		</dataCollectionMeasurement>
+		<dataCollectionMeasurement name="" no="3">
+			<dataCollectionPoints>
+				<intObjectRef key="3"/>
+			</dataCollectionPoints>
+		</dataCollectionMeasurement>
+		<dataCollectionMeasurement name="" no="4">
+			<dataCollectionPoints>
+				<intObjectRef key="4"/>
+			</dataCollectionPoints>
+		</dataCollectionMeasurement>
+		<dataCollectionMeasurement name="agregado" no="5">
+			<dataCollectionPoints>
+				<intObjectRef key="1"/>
+				<intObjectRef key="2"/>
+				<intObjectRef key="3"/>
+				<intObjectRef key="4"/>
+			</dataCollectionPoints>
+		</dataCollectionMeasurement>
+	</dataCollectionMeasurements>
 	<dataCollectionPoints>
-		<dataCollectionPoint lane="1 1" name="" no="1" pos="11.773754734993975"/>
-		<dataCollectionPoint lane="2 1" name="" no="2" pos="11.350483255120739"/>
-		<dataCollectionPoint lane="2 1" name="" no="3" pos="66.624745940047802"/>
+		<dataCollectionPoint lane="1 1" name="rua1n" no="1" pos="11.773754734993975"/>
+		<dataCollectionPoint lane="2 1" name="rua2n" no="2" pos="11.350483255120739"/>
+		<dataCollectionPoint lane="2 1" name="rua1s" no="3" pos="66.624745940047802"/>
 		<dataCollectionPoint lane="1 1" name="" no="4" pos="265.27013998963054"/>
 	</dataCollectionPoints>
 	<desAccelerationFunctions>
@@ -1970,7 +2000,7 @@
 		</vehicleRoutingDecisionStatic>
 	</vehicleRoutingDecisionsStatic>
 	<vehicleTravelTimeMeasurements>
-		<vehicleTravelTimeMeasurement name="" no="1">
+		<vehicleTravelTimeMeasurement name="rua1" no="1">
 			<end link="1" pos="313.49252186196111"/>
 			<start link="1" pos="4.5168273429244286"/>
 		</vehicleTravelTimeMeasurement>
