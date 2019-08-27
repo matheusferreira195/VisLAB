@@ -154,7 +154,7 @@ class Window(Frame): #similar a StartPage
         self.datapoints_ctimeinterval_dropdown = ttk.Combobox(self, width=25)
         self.datapoints_ctimeinterval_dropdown['values'] = list(Vissim.TimeIntervalSets.GetMultipleAttributes(['TmIntSet']))
         self.datapoints_ctimeinterval_dropdown.configure(font=('Roboto', 8))
-        self.datapoints_ctimeinterval_dropdown.set('Select what time interval we should consider')
+        self.data points_ctimeinterval_dropdown.set('Select what time interval we should consider')
         self.datapoints_ctimeinterval_dropdown.bind('<<ComboboxSelected>>', self.datapoints_callback)
 
         self.datapoints_ctargetvalue_label=Label(self, text='Add the field data to compare')
