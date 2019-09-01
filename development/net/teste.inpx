@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<network version="603" vissimVersion="11.00 - 07 [76999]">
+<network version="603" vissimVersion="11.00 - 10 [79323]">
 	<anmDefaults colorDistr="1" crosswalkDisplayType="1" hgvPowerDistr="2" hgvWeightDistr="2" level="1" linkDisplayType="1" panmFilename="" panmRoutesFilename="" pedestrianVehicleType="510" zoneConnectorDisplayType="1">
 		<anmDefaultDrivingBehavior>
 			<anmDefaultDrivingBehavior anmDrivBehavDefType="NONE" drivBehav="1"/>
@@ -186,7 +186,7 @@
 		</dataCollectionMeasurement>
 	</dataCollectionMeasurements>
 	<dataCollectionPoints>
-		<dataCollectionPoint lane="1 1" name="rua1n" no="1" pos="11.773754734993975"/>
+		<dataCollectionPoint lane="1 1" name="rua1n" no="1" pos="11.666759965882553"/>
 		<dataCollectionPoint lane="2 1" name="rua2n" no="2" pos="11.350483255120739"/>
 		<dataCollectionPoint lane="2 1" name="rua1s" no="3" pos="66.624745940047802"/>
 		<dataCollectionPoint lane="1 1" name="" no="4" pos="265.27013998963054"/>
@@ -1938,6 +1938,9 @@
 		<timeIntervalSet no="AREABEHAVIORTYPE">
 			<timeInts>
 				<timeInterval start="0"/>
+				<timeInterval start="900"/>
+				<timeInterval start="1800"/>
+				<timeInterval start="2700"/>
 			</timeInts>
 		</timeIntervalSet>
 		<timeIntervalSet no="MANAGEDLANESFACILITY">

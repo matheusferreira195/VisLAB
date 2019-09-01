@@ -21,6 +21,11 @@ Vissim.LoadNet(path_network, flag) #Carregando o arquivo
 #ctypes.windll.user32.MessageBoxW(0, "Net loaded", "Vissim ready", 1)
 print('net loaded\n')
 
+attributes_tt = ['Start', 'End']
+
+#time_intervals = Vissim.Net.TimeIntervalSets.ItemByKey(1).TimeInts.GetMultipleAttributes('TimeIntervalSet')
+
+#print(time_intervals)
 #--------------------------------------------------------------------
 
 
@@ -174,12 +179,15 @@ class Window(Frame): #similar a StartPage
         self.parameter_search_listbox = Listbox(self, width=45, height=1)
         self.parameter_search_listbox.bind('<<ListboxSelect>>', self.parameters_callback)
 
+        self.parameter_label_liminf = Label(self, text = 'Inferior Limit')
         self.parameter_entry_liminf = Entry(self, width=10)
         self.parameter_entry_liminf.bind('<FocusOut>', self.parameters_callback)
 
+        self.parameter_label_limsup = Label(self, text = 'Superior Limit')
         self.parameter_entry_limsup = Entry(self, width=10)
         self.parameter_entry_limsup.bind('<FocusOut>', self.parameters_callback)
 
+        self.parameter_label_step = Label(self, text = 'Step')
         self.parameter_entry_step = Entry(self, width=10)
         self.parameter_entry_step.bind('<FocusOut>', self.parameters_callback)
 
@@ -202,8 +210,11 @@ class Window(Frame): #similar a StartPage
         self.parameters_label.grid(row=2, column=6, sticky=W, padx = 5)
         self.parameter_search_entry.grid(row=3, column=6, sticky =W, padx = 5)
         self.parameter_search_listbox.grid(row=4, column=6, sticky=W, padx = 5)
+        self.parameter_label_liminf.grid(row=3, column=7, sticky=W, padx=5)
         self.parameter_entry_liminf.grid(row=4, column=7, sticky=W, padx=5)
+        self.parameter_label_limsup.grid(row=3, column=8, sticky=W, padx=5)
         self.parameter_entry_limsup.grid(row=4, column=8, sticky=W, padx=5)
+        self.parameter_label_step.grid(row=3, column=9, sticky=W, padx=5)
         self.parameter_entry_step.grid(row=4, column=9, sticky=W, padx=5)
         
         #Function for updating the list/doing the search.
@@ -255,7 +266,7 @@ class Window(Frame): #similar a StartPage
         elif 'entry5' in caller: #step
             self.parameter_data.loc[parameter_index, 'Step'] = value
             print(self.parameter_data)
-        '''
+        
         else:
             experiment_index  = self.experiment_data.loc[self.experiment_data['Experiment']==self.experiment].index[0]
             dc_match = self.dc_data.loc[self.dc_data['Display'] == value]
@@ -265,7 +276,7 @@ class Window(Frame): #similar a StartPage
             self.experiment_data.loc[experiment_index, 'Data Point Type'] = data_point_type
             self.experiment_data.loc[experiment_index, 'DP Number'] = Dc_Number
             print(self.experiment_data)
-        '''  
+          
         #print(self.experiment_data)
         
     def datapoints_callback(self, eventObject):
