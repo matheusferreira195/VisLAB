@@ -88,7 +88,8 @@ class Window(Frame): #similar a StartPage
         
         self.dc_data = generate_dcdf()
         self.parameter_data = pd.DataFrame(columns = {'Experiment', 'Parameter', 'Lim. Inf', 'Lim. Sup', 'Step'})
-        self.experiment_data = pd.DataFrame(columns = {'Experiment', 'Data Point Type', 'DP Number', 'Perf_measure', 'Time interval', 'Field data'}) 
+        self.experiment_data = pd.DataFrame(columns = {'Experiment', 'Data Point Type', 'DP Number', 'Perf_measure', 'Time interval', 'Field data', 'Runs'}) 
+        self.results_data = pd.DataFrame(columns = {'Experiment', 'Data Point Type', 'DP Number','Perf_measure','Time Interval','Run'})
         self.parameter_db = pd.read_csv(r'E:\Google Drive\Scripts\vistools\resources\parameters.visdb')
         self.master = master
 
@@ -136,11 +137,11 @@ class Window(Frame): #similar a StartPage
         
         menu.add_cascade(label='Edit', menu=edit)
 
-        #Experiment fields
+         ##------Experiments section------##
         self.experiment_text = str('Experiment %i' % self.experiment)
         self.experiment_label = Label(self,text = self.experiment_text)
         
-        #Datapoint fields
+         ##------Datapoints section------##
         self.datapoints_label = Label(self,text = 'Data Points')
         self.datapoints_ctype_dropdown = ttk.Combobox(self, width=25)
         self.datapoints_ctype_dropdown['values'] = list(self.dc_data['Display'])
@@ -156,20 +157,15 @@ class Window(Frame): #similar a StartPage
         self.datapoints_cperfmeasure_dropdown.set('Select what you will measure')
         self.datapoints_cperfmeasure_dropdown.bind('<<ComboboxSelected>>', self.datapoints_callback)
 
-        self.datapoints_ctimeinterval_label = Label(self, text='Add time interval number(1,2...), avg, max or min')
+        self.datapoints_ctimeinterval_label = Label(self, text='Add time interval number or agregation \n eg: 1,2,3,avg,min,max')
         self.datapoints_ctimeinterval_entry = Entry(self)
 
         self.datapoints_ctargetvalue_label=Label(self, text='Add the field data to compare')
         self.datapoints_ctargetvalue_entry=Entry(self)
 
         self.datapoint_ok_button = Button(self, command = self.button_callback, image=self.check_image)
-        #self.experiment_data['Target'] = self.datapoints_ctargetvalue_entry.get()
 
-        #separator
-
-        #self.separator_dataxparameters = ttk.Separator()
-
-        #Parameters field     
+        ##------Parameters section------##   
         self.parameters_label = Label(self,text = 'Parameters')      
         self.parameter_search_entry = Entry(self, textvariable=self.search_var, width=25)
         self.parameter_search_entry.insert(0, 'Search parameters here')
@@ -188,10 +184,13 @@ class Window(Frame): #similar a StartPage
         self.parameter_entry_step = Entry(self, width=10)
         self.parameter_entry_step.bind('<FocusOut>', self.parameters_callback)
 
-       
-        #self.OptionMenu(master, self.collector_type)
-        
-        #Grid configuration
+        ##------Simulation section------##
+        self.simulation_label = Label(self, text = 'Simulation Configs')
+
+        self.simulation_label_replications = Label(self, text = 'How many runs?')
+        self.simulation_entry_replications = Entry(self, width=5)
+
+        ##------Grid configuration------##
         self.experiment_label.grid(row=1, column=0, sticky=W)
         
         self.datapoints_label.grid(row=2, column=0, sticky=W, padx=10)
@@ -214,6 +213,10 @@ class Window(Frame): #similar a StartPage
         self.parameter_entry_limsup.grid(row=4, column=8, sticky=W, padx=5)
         self.parameter_label_step.grid(row=3, column=9, sticky=W, padx=5)
         self.parameter_entry_step.grid(row=4, column=9, sticky=W, padx=5)
+
+        self.simulation_label.grid(row=5,column=0)
+        self.simulation_label_replications.grid(row=6,column=0)
+        self.simulation_entry_replications.grid(row=6,column=1)
         
         #Function for updating the list/doing the search.
         #It needs to be called here to populate the listbox.
@@ -225,9 +228,11 @@ class Window(Frame): #similar a StartPage
 
         ctarget_entry = self.datapoints_ctargetvalue_entry.get()
         ctimeinterval_entry = self.datapoints_ctimeinterval_entry.get()
+        simruns_entry = self.simulation_entry_replications.get()
         experiment_index  = self.experiment_data.loc[self.experiment_data['Experiment']==self.experiment].index[0]
         self.experiment_data.loc[experiment_index, 'Field data'] = ctarget_entry
         self.experiment_data.loc[experiment_index, 'Time interval'] = ctimeinterval_entry
+        self.experiment_data.loc[experiment_index, 'Runs'] = simruns_entry
 
         print(self.experiment_data)
     
@@ -330,10 +335,10 @@ class Window(Frame): #similar a StartPage
 
     def toggle_geom(self,event):
         geom=self.master.winfo_geometry()
-        print(geom,self._geom)
+        self._geom=geom
+        print(geom, self._geom)
         self.master.geometry(self._geom)
-        self._geom=geom    
-    
+           
     #Runs every 50 milliseconds. 
     def poll(self):
         #Get value of the entry box
@@ -375,7 +380,9 @@ class Window(Frame): #similar a StartPage
             else:
                 self.parameter_search_listbox.insert(tk.END, item)
     
-    #def vissim_output(self,  )
+    def vissim_simulation(self):
+
+
     
         
 root = Tk()
