@@ -19,18 +19,8 @@
 		</vehicleCategoryANMDefaults>
 	</anmDefaults>
 	<areaBehaviorTypes>
-		<areaBehaviorType name="Elevator (In Cab)" no="1">
-			<areaBehavTypeElements>
-				<areaBehaviorTypeElement pedClass="10" timeInt="8 0" walkBehav="2"/>
-				<areaBehaviorTypeElement pedClass="30" timeInt="8 0" walkBehav="2"/>
-			</areaBehavTypeElements>
-		</areaBehaviorType>
-		<areaBehaviorType name="Elevator (Alighting)" no="2">
-			<areaBehavTypeElements>
-				<areaBehaviorTypeElement pedClass="10" timeInt="8 0" walkBehav="3"/>
-				<areaBehaviorTypeElement pedClass="30" timeInt="8 0" walkBehav="3"/>
-			</areaBehavTypeElements>
-		</areaBehaviorType>
+		<areaBehaviorType name="Elevator (In Cab)" no="1"/>
+		<areaBehaviorType name="Elevator (Alighting)" no="2"/>
 	</areaBehaviorTypes>
 	<colorDistributions>
 		<colorDistribution name="Default" no="1">
@@ -1012,7 +1002,7 @@
 		<areaMeasResults collectData="false" fromTime="0" interval="99999" toTime="99999"/>
 		<areaResults collectData="false" fromTime="0" interval="99999" toTime="99999"/>
 		<convergence writeFile="false"/>
-		<dataColl collectData="true" fromTime="0" interval="99999" toTime="99999"/>
+		<dataColl collectData="true" fromTime="300" interval="600" toTime="3600"/>
 		<dataCollRawData fromTime="0" toTime="99999" writeFile="true"/>
 		<delays collectData="false" fromTime="0" interval="99999" toTime="99999"/>
 		<dischRec fromTime="0" toTime="99999" writeFile="false"/>
@@ -1038,12 +1028,12 @@
 		<pedTravTmODData fromTime="0" interval="99999" toTime="99999" writeFile="false"/>
 		<pedTravTmRawData fromTime="0" toTime="99999" writeFile="false"/>
 		<pedTravTms collectData="false" fromTime="0" interval="99999" toTime="99999"/>
-		<queues collectData="true" fromTime="0" interval="99999" toTime="99999"/>
+		<queues collectData="true" fromTime="300" interval="600" toTime="3600"/>
 		<scDetRec writeFile="false"/>
 		<ssam writeFile="false"/>
 		<sigChgs writeDatabase="false" writeFile="false"/>
 		<vehInpData writeFile="false"/>
-		<vehNetPerf collectData="true" fromTime="0" interval="99999" toTime="99999"/>
+		<vehNetPerf collectData="true" fromTime="300" interval="600" toTime="3600"/>
 		<vehRec filterType="ALL" fromTime="0" inclParkVehs="false" resolution="1" toTime="99999" writeDatabase="false" writeFile="false">
 			<attributes>
 				<attributeSelection attributeID="SIMSEC" decimals="2" format="SECONDS" showUnits="false"/>
@@ -1055,7 +1045,7 @@
 			</attributes>
 		</vehRec>
 		<vehTravTmRawData fromTime="0" toTime="99999" writeDatabase="false" writeFile="true"/>
-		<vehTravTms aggrBySect="DESTINATION" collectData="true" fromTime="0" interval="99999" toTime="99999"/>
+		<vehTravTms aggrBySect="DESTINATION" collectData="true" fromTime="300" interval="600" toTime="3600"/>
 	</evaluation>
 	<levels>
 		<level name="Base" no="1" zCoord="0"/>
@@ -1938,9 +1928,6 @@
 		<timeIntervalSet no="AREABEHAVIORTYPE">
 			<timeInts>
 				<timeInterval start="0"/>
-				<timeInterval start="900"/>
-				<timeInterval start="1800"/>
-				<timeInterval start="2700"/>
 			</timeInts>
 		</timeIntervalSet>
 		<timeIntervalSet no="MANAGEDLANESFACILITY">

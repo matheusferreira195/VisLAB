@@ -156,11 +156,8 @@ class Window(Frame): #similar a StartPage
         self.datapoints_cperfmeasure_dropdown.set('Select what you will measure')
         self.datapoints_cperfmeasure_dropdown.bind('<<ComboboxSelected>>', self.datapoints_callback)
 
-        #self.datapoints_ctimeinterval_dropdown = ttk.Combobox(self, width=25)
-        #self.datapoints_ctimeinterval_dropdown['values'] = 
-        #self.datapoints_ctimeinterval_dropdown.configure(font=('Roboto', 8))
-        #self.datapoints_ctimeinterval_dropdown.set('Select what time interval we should consider')
-        #self.datapoints_ctimeinterval_dropdown.bind('<<ComboboxSelected>>', self.datapoints_callback)
+        self.datapoints_ctimeinterval_label = Label(self, text='Add time interval number(1,2...), avg, max or min')
+        self.datapoints_ctimeinterval_entry = Entry(self)
 
         self.datapoints_ctargetvalue_label=Label(self, text='Add the field data to compare')
         self.datapoints_ctargetvalue_entry=Entry(self)
@@ -200,7 +197,8 @@ class Window(Frame): #similar a StartPage
         self.datapoints_label.grid(row=2, column=0, sticky=W, padx=10)
         self.datapoints_ctype_dropdown.grid(row=4, column=0, sticky=W, padx=10)
         self.datapoints_cperfmeasure_dropdown.grid(row=4, column=1, sticky=W, padx=10)
-        #self.datapoints_ctimeinterval_dropdown.grid(row=4, column=2, sticky=W, padx=10)
+        self.datapoints_ctimeinterval_label.grid(row=3, column=2, sticky=W, padx=10)
+        self.datapoints_ctimeinterval_entry.grid(row=4, column=2, sticky=W, padx=10)
         self.datapoints_ctargetvalue_label.grid(row=3, column=3, sticky=W, padx=10)
         self.datapoints_ctargetvalue_entry.grid(row=4, column=3, sticky=W, padx=10)
         self.datapoint_ok_button.grid(row=4, column=4, sticky=W, padx=10)
@@ -225,10 +223,12 @@ class Window(Frame): #similar a StartPage
     
     def button_callback(self):
 
-        entry_value = self.datapoints_ctargetvalue_entry.get()
-        print(entry_value)
+        ctarget_entry = self.datapoints_ctargetvalue_entry.get()
+        ctimeinterval_entry = self.datapoints_ctimeinterval_entry.get()
         experiment_index  = self.experiment_data.loc[self.experiment_data['Experiment']==self.experiment].index[0]
-        self.experiment_data.loc[experiment_index, 'Field data'] = entry_value
+        self.experiment_data.loc[experiment_index, 'Field data'] = ctarget_entry
+        self.experiment_data.loc[experiment_index, 'Time interval'] = ctimeinterval_entry
+
         print(self.experiment_data)
     
     def parameters_callback(self, eventObject):
@@ -374,6 +374,8 @@ class Window(Frame): #similar a StartPage
                     self.parameter_search_listbox.insert(tk.END, item)
             else:
                 self.parameter_search_listbox.insert(tk.END, item)
+    
+    #def vissim_output(self,  )
     
         
 root = Tk()

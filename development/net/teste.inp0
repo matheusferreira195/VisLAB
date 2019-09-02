@@ -186,7 +186,7 @@
 		</dataCollectionMeasurement>
 	</dataCollectionMeasurements>
 	<dataCollectionPoints>
-		<dataCollectionPoint lane="1 1" name="rua1n" no="1" pos="11.773754734993975"/>
+		<dataCollectionPoint lane="1 1" name="rua1n" no="1" pos="11.666759965882553"/>
 		<dataCollectionPoint lane="2 1" name="rua2n" no="2" pos="11.350483255120739"/>
 		<dataCollectionPoint lane="2 1" name="rua1s" no="3" pos="66.624745940047802"/>
 		<dataCollectionPoint lane="1 1" name="" no="4" pos="265.27013998963054"/>
@@ -1012,7 +1012,7 @@
 		<areaMeasResults collectData="false" fromTime="0" interval="99999" toTime="99999"/>
 		<areaResults collectData="false" fromTime="0" interval="99999" toTime="99999"/>
 		<convergence writeFile="false"/>
-		<dataColl collectData="true" fromTime="0" interval="99999" toTime="99999"/>
+		<dataColl collectData="true" fromTime="300" interval="600" toTime="3600"/>
 		<dataCollRawData fromTime="0" toTime="99999" writeFile="true"/>
 		<delays collectData="false" fromTime="0" interval="99999" toTime="99999"/>
 		<dischRec fromTime="0" toTime="99999" writeFile="false"/>
@@ -1038,12 +1038,12 @@
 		<pedTravTmODData fromTime="0" interval="99999" toTime="99999" writeFile="false"/>
 		<pedTravTmRawData fromTime="0" toTime="99999" writeFile="false"/>
 		<pedTravTms collectData="false" fromTime="0" interval="99999" toTime="99999"/>
-		<queues collectData="true" fromTime="0" interval="99999" toTime="99999"/>
+		<queues collectData="true" fromTime="300" interval="600" toTime="3600"/>
 		<scDetRec writeFile="false"/>
 		<ssam writeFile="false"/>
 		<sigChgs writeDatabase="false" writeFile="false"/>
 		<vehInpData writeFile="false"/>
-		<vehNetPerf collectData="true" fromTime="0" interval="99999" toTime="99999"/>
+		<vehNetPerf collectData="true" fromTime="300" interval="600" toTime="3600"/>
 		<vehRec filterType="ALL" fromTime="0" inclParkVehs="false" resolution="1" toTime="99999" writeDatabase="false" writeFile="false">
 			<attributes>
 				<attributeSelection attributeID="SIMSEC" decimals="2" format="SECONDS" showUnits="false"/>
@@ -1055,7 +1055,7 @@
 			</attributes>
 		</vehRec>
 		<vehTravTmRawData fromTime="0" toTime="99999" writeDatabase="false" writeFile="true"/>
-		<vehTravTms aggrBySect="DESTINATION" collectData="true" fromTime="0" interval="99999" toTime="99999"/>
+		<vehTravTms aggrBySect="DESTINATION" collectData="true" fromTime="300" interval="600" toTime="3600"/>
 	</evaluation>
 	<levels>
 		<level name="Base" no="1" zCoord="0"/>
