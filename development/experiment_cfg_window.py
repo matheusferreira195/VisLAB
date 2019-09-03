@@ -9,6 +9,9 @@ from tkinter import ttk
 from tkinter import *
 import pandas as pd
 import os
+import itertools as it
+import numpy as np
+
 
 NORM_FONT= ("Roboto", 10)
 #check_icon = r'C:\Users\Matheus Ferreira\Google Drive\Scripts\vistools\resources\check.png'
@@ -105,6 +108,10 @@ class Window(Frame): #similar a StartPage
         self.collector_no = StringVar()
         self.collector_pm = StringVar()
         self.collector_timeinterval = StringVar()
+
+        self.fake_data_data = {'Experiment': [1,1,1], 'Parameter': ['W74ax', 'W74bxAdd', 'W74bxMult'], 'Lim. Inf': [1,1,1], 'Lim. Sup': [3,5,5], 'Step': [0.5, 0.5, 0.5]}
+        self.fake_data = pd.DataFrame(self.fake_data_data, columns = ['Experiment', 'Parameter', 'Lim. Inf', 'Lim. Sup', 'Step'])
+
         
         self.grid(row=0, column=0)
 
@@ -190,6 +197,8 @@ class Window(Frame): #similar a StartPage
         self.simulation_label_replications = Label(self, text = 'How many runs?')
         self.simulation_entry_replications = Entry(self, width=5)
 
+        self.test_button =  Button(self, command = self.test_buttom, image=self.check_image)
+
         ##------Grid configuration------##
         self.experiment_label.grid(row=1, column=0, sticky=W)
         
@@ -217,6 +226,8 @@ class Window(Frame): #similar a StartPage
         self.simulation_label.grid(row=5,column=0)
         self.simulation_label_replications.grid(row=6,column=0)
         self.simulation_entry_replications.grid(row=6,column=1)
+
+        self.test_button.grid(row=9, column=5)
         
         #Function for updating the list/doing the search.
         #It needs to be called here to populate the listbox.
@@ -225,7 +236,7 @@ class Window(Frame): #similar a StartPage
         self.poll()
     
     def button_callback(self):
-
+        
         ctarget_entry = self.datapoints_ctargetvalue_entry.get()
         ctimeinterval_entry = self.datapoints_ctimeinterval_entry.get()
         simruns_entry = self.simulation_entry_replications.get()
@@ -234,10 +245,15 @@ class Window(Frame): #similar a StartPage
         self.experiment_data.loc[experiment_index, 'Time interval'] = ctimeinterval_entry
         self.experiment_data.loc[experiment_index, 'Runs'] = simruns_entry
 
-        print(self.experiment_data)
+        
+        #print(self.experiment_data)
     
+    def test_buttom(self):
+
+        self.vissim_simulation(experiment=1)
+
     def parameters_callback(self, eventObject):
-        #print(eventObject)
+        #print(eventObject.widget)
 
         # you can also get the value off the eventObject
         caller = str(eventObject.widget)
@@ -260,15 +276,15 @@ class Window(Frame): #similar a StartPage
         else:
             value = eventObject.widget.get()        
 
-        if 'entry3' in caller: #liminf          
+        if 'entry4' in caller: #liminf          
             self.parameter_data.loc[parameter_index, 'Lim. Inf'] = value
             print(self.parameter_data)
     
-        elif 'entry4' in caller: #limsup  
+        elif 'entry5' in caller: #limsup  
             self.parameter_data.loc[parameter_index, 'Lim. Sup'] = value
             print(self.parameter_data)
 
-        elif 'entry5' in caller: #step
+        elif 'entry6' in caller: #step
             self.parameter_data.loc[parameter_index, 'Step'] = value
             print(self.parameter_data)
         
@@ -379,12 +395,70 @@ class Window(Frame): #similar a StartPage
                     self.parameter_search_listbox.insert(tk.END, item)
             else:
                 self.parameter_search_listbox.insert(tk.END, item)
-    
-    def vissim_simulation(self):
 
+    def vissim_simulation(self, experiment):
 
-    
+        #runs = int(self.experiment_data.loc[self.experiment_data['Experiment']==experiment]['Runs'])
+        runs = 2
+
+        Vissim.Simulation.SetAttValue('RandSeed', 42)
+
+        selected_parameters = self.fake_data.loc[self.fake_data.Experiment == experiment]
+
+        print(selected_parameters)
+
+        raw_possibilities = {}
+        for index, item in self.fake_data.iterrows():
+            
+            #print(item)
+            
+            parameter = item['Parameter']
+            inf = item['Lim. Inf']
+            sup = item['Lim. Sup']
+            step = item['Step']
+            
+            if type(inf) == type(sup) == int or type(inf) == type(sup) == float:
+                #print(type(inf))
+                total_values = np.arange(inf, sup+step, step)
+                
+            else:
+                #print(inf)
+                total_values = [inf, sup]
+                
+            #print(total_values)
+            
+            raw_possibilities[parameter] = total_values
+        #print(raw_possibilities)
+        allNames = sorted(raw_possibilities)
+        combinations = list(it.product(*(raw_possibilities[Name] for Name in allNames)))
+        #print(combinations)
+        #print(list(df.Parameter))
+
+        selected_parameters = list(self.fake_data.Parameter) 
+        parameters_df = pd.DataFrame(combinations, columns=selected_parameters)
+        #print(parameters_df)
+
+        for simulation in range(len(combinations)):
+            
+            parameters_names = list(self.fake_data.Parameter)
+                
+            for index, item in parameters_df.iterrows():
+                
+                for run in range(runs):
+                    
+                    for i in range(len(list(item))):           
+                    
+                        print('Simulation {} Parameter {} set to {}'.format(run+simulation,parameters_names[i], item[i]))
+                        #cfg simulation here 
+
         
+
+        
+
+        
+        
+    
+
 root = Tk()
 root.geometry("1920x1080")
 #root.state('zoomed')

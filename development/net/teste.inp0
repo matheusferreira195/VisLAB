@@ -19,18 +19,8 @@
 		</vehicleCategoryANMDefaults>
 	</anmDefaults>
 	<areaBehaviorTypes>
-		<areaBehaviorType name="Elevator (In Cab)" no="1">
-			<areaBehavTypeElements>
-				<areaBehaviorTypeElement pedClass="10" timeInt="8 0" walkBehav="2"/>
-				<areaBehaviorTypeElement pedClass="30" timeInt="8 0" walkBehav="2"/>
-			</areaBehavTypeElements>
-		</areaBehaviorType>
-		<areaBehaviorType name="Elevator (Alighting)" no="2">
-			<areaBehavTypeElements>
-				<areaBehaviorTypeElement pedClass="10" timeInt="8 0" walkBehav="3"/>
-				<areaBehaviorTypeElement pedClass="30" timeInt="8 0" walkBehav="3"/>
-			</areaBehavTypeElements>
-		</areaBehaviorType>
+		<areaBehaviorType name="Elevator (In Cab)" no="1"/>
+		<areaBehaviorType name="Elevator (Alighting)" no="2"/>
 	</areaBehaviorTypes>
 	<colorDistributions>
 		<colorDistribution name="Default" no="1">
@@ -1938,9 +1928,6 @@
 		<timeIntervalSet no="AREABEHAVIORTYPE">
 			<timeInts>
 				<timeInterval start="0"/>
-				<timeInterval start="900"/>
-				<timeInterval start="1800"/>
-				<timeInterval start="2700"/>
 			</timeInts>
 		</timeIntervalSet>
 		<timeIntervalSet no="MANAGEDLANESFACILITY">
