@@ -174,9 +174,21 @@
 				<intObjectRef key="4"/>
 			</dataCollectionPoints>
 		</dataCollectionMeasurement>
+		<dataCollectionMeasurement name="rua principal" no="6">
+			<dataCollectionPoints>
+				<intObjectRef key="1"/>
+				<intObjectRef key="4"/>
+			</dataCollectionPoints>
+		</dataCollectionMeasurement>
+		<dataCollectionMeasurement name="rua secundaria" no="7">
+			<dataCollectionPoints>
+				<intObjectRef key="2"/>
+				<intObjectRef key="3"/>
+			</dataCollectionPoints>
+		</dataCollectionMeasurement>
 	</dataCollectionMeasurements>
 	<dataCollectionPoints>
-		<dataCollectionPoint lane="1 1" name="rua1n" no="1" pos="11.666759965882553"/>
+		<dataCollectionPoint lane="1 1" name="rua1n" no="1" pos="12.074271294424817"/>
 		<dataCollectionPoint lane="2 1" name="rua2n" no="2" pos="11.350483255120739"/>
 		<dataCollectionPoint lane="2 1" name="rua1s" no="3" pos="66.624745940047802"/>
 		<dataCollectionPoint lane="1 1" name="" no="4" pos="265.27013998963054"/>

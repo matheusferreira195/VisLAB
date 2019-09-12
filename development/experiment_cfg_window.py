@@ -109,9 +109,12 @@ class Window(Frame): #similar a StartPage
         self.collector_pm = StringVar()
         self.collector_timeinterval = StringVar()
 
-        self.fake_data_data = {'Experiment': [1,1,1], 'Parameter': ['W74ax', 'W74bxAdd', 'W74bxMult'], 'Lim. Inf': [1,1,1], 'Lim. Sup': [3,5,5], 'Step': [0.5, 0.5, 0.5]}
+        self.fake_data_data = {'Experiment': [1,1,1,2,2], 'Parameter': ['W74ax', 'W74bxAdd', 'W74bxMult','W74bxAdd', 'W74bxMult'], 'Lim. Inf': [1,1,1,2,2], 'Lim. Sup': [3,5,5,7,7], 'Step': [0.5, 0.5, 0.5, 0.1, 0.1]}
         self.fake_data = pd.DataFrame(self.fake_data_data, columns = ['Experiment', 'Parameter', 'Lim. Inf', 'Lim. Sup', 'Step'])
 
+        #self.fake_dc_data_data = {'Experiment': [1,1,1,2,2], 'Data Point Type': [''], 'Lim. Inf': [1,1,1], 'Lim. Sup': [3,5,5], 'Step': [0.5, 0.5, 0.5]}
+        #self.fake_dc_data = pd.DataFrame(self.fake_dc_data_data, columns = ['Experiment', 'Data Point Type', 'DP Number', 'Perf_measure', 'Time interval', 'Field data']) 
+        self.fake_dc_data = None
         
         self.grid(row=0, column=0)
 
@@ -333,13 +336,13 @@ class Window(Frame): #similar a StartPage
             self.experiment_data.loc[experiment_index, 'DP Number'] = Dc_Number
 
             if data_point_type == 'Data Collector':
-                self.datapoints_cperfmeasure_dropdown['values'] = ['Queue Delay', 'Speed Avg', 'Occupancy Rate','Acceleration', 'Lenght', 'Vehs', 'Persons']
+                self.datapoints_cperfmeasure_dropdown['values'] = ['QueueDelay', 'SpeedAvgArith', 'OccupRate','Acceleration', 'Lenght', 'Vehs', 'Pers']
 
             elif data_point_type == 'Travel Time Collector':
                 self.datapoints_cperfmeasure_dropdown['values'] = ['StopDelay', 'Stops', 'VehDelay', 'Vehs', 'Persons Delay', 'Persons']
                 
             else:
-                self.datapoints_cperfmeasure_dropdown['values'] = ['Queue Lenght Avg', 'Queue Lenght Max', 'Queue Stops']
+                self.datapoints_cperfmeasure_dropdown['values'] = ['QLen', 'QLenMax', 'QStops']
 
             print(self.experiment_data)
            
@@ -397,18 +400,20 @@ class Window(Frame): #similar a StartPage
                 self.parameter_search_listbox.insert(tk.END, item)
 
     def vissim_simulation(self, experiment):
-
+        #This function sets up an runs the simulation for the selected experiment
         #runs = int(self.experiment_data.loc[self.experiment_data['Experiment']==experiment]['Runs'])
         runs = 2
+        seed = 42
+        Vissim.Simulation.SetAttValue('RandSeed', seed)
 
-        Vissim.Simulation.SetAttValue('RandSeed', 42)
-
-        selected_parameters = self.fake_data.loc[self.fake_data.Experiment == experiment]
+        #Filtering parameter and data points meta data
+        selected_parameters = self.fake_data.loc[self.fake_data.Experiment == experiment] #temporary test experiment cfg
+        selected_datapts = self.fake_dc_data.loc[self.fake_dc_data.Experiment == experiment] #temporary test experiment cfg
 
         print(selected_parameters)
 
         raw_possibilities = {}
-        for index, item in self.fake_data.iterrows():
+        for index, item in self.fake_data.iterrows(): #gets the parameter data for the selected experiment
             
             #print(item)
             
@@ -417,8 +422,8 @@ class Window(Frame): #similar a StartPage
             sup = item['Lim. Sup']
             step = item['Step']
             
-            if type(inf) == type(sup) == int or type(inf) == type(sup) == float:
-                #print(type(inf))
+            if type(inf) == type(sup) == int or type(inf) == type(sup) == float: #verifies if the parameter is a int/float type or str/bool
+                #print(type(inf))                                                #and processes accordingly
                 total_values = np.arange(inf, sup+step, step)
                 
             else:
@@ -427,37 +432,46 @@ class Window(Frame): #similar a StartPage
                 
             #print(total_values)
             
-            raw_possibilities[parameter] = total_values
+            raw_possibilities[parameter] = total_values #stores all the parameters values to be used later
+
         #print(raw_possibilities)
         allNames = sorted(raw_possibilities)
-        combinations = list(it.product(*(raw_possibilities[Name] for Name in allNames)))
-        #print(combinations)
+        combinations = list(it.product(*(raw_possibilities[Name] for Name in allNames))) #generates a list with all possible permutations
+        #print(combinations)                                                             #of parameters
         #print(list(df.Parameter))
 
-        selected_parameters = list(self.fake_data.Parameter) 
-        parameters_df = pd.DataFrame(combinations, columns=selected_parameters)
+        selected_parameters = list(selected_parameters.Parameter)  #stores the parameter's names
+        parameters_df = pd.DataFrame(combinations, columns=selected_parameters) #organizes all runs cfg data
         #print(parameters_df)
 
-        for simulation in range(len(combinations)):
+        #------------------------------------#
+
+        for simulation in range(len(combinations)): #iterate over all the runs cfg data to make the simulations
             
-            parameters_names = list(self.fake_data.Parameter)
+            parameters_names = selected_parameters
                 
             for index, item in parameters_df.iterrows():
                 
                 for run in range(runs):
+                    seed += 1
+                    Vissim.Simulation.SetAttValue('RandSeed', seed)
                     
                     for i in range(len(list(item))):           
                     
-                        print('Simulation {} Parameter {} set to {}'.format(run+simulation,parameters_names[i], item[i]))
-                        #cfg simulation here 
+                        print('Simulation {} Parameter {} set to {} with seed{}'.format(run+simulation,parameters_names[i], item[i], seed))
+                        #cfg simulation here
+                        Vissim.Net.DrivingBehaviors[0].SetAttValue(str(parameters_names[i]),item[i])
 
-        
+                    Vissim.Graphics.CurrentNetworkWindow.SetAttValue("QuickMode",1) #Ativando Quick Mode
+                    Vissim.Simulation.RunContinuous() #Iniciando Simulação
 
-        
 
-        
-        
-    
+
+
+                    
+
+
+
 
 root = Tk()
 root.geometry("1920x1080")
