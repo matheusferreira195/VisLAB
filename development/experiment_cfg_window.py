@@ -466,6 +466,7 @@ class Window(Frame): #similar a StartPage
                 Vissim.Simulation.SetAttValue('RandSeed', seed)
 
                 Vissim.Graphics.CurrentNetworkWindow.SetAttValue("QuickMode",1) #Ativando Quick Mode
+                
                 Vissim.Simulation.RunContinuous() #Iniciando Simulação 
 
                 for index, dc_data in self.fake_dc_data.iterrows():
