@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<sc version="201801" id="1" name="" frequency="1" steps="0" defaultIntergreenMatrix="0" interstagesUsingMinDurations="true" checkSum="1644766407">
+<sc version="201801" id="1" name="" frequency="1" steps="0" defaultIntergreenMatrix="0" interstagesUsingMinDurations="true" checkSum="3819511311">
   <signaldisplays>
     <display id="1" name="Red" state="RED">
       <patterns>
@@ -33,12 +33,16 @@
       <state display="3" isFixedDuration="false" isClosed="false" defaultDuration="5000" />
       <state display="4" isFixedDuration="true" isClosed="true" defaultDuration="3000" />
     </signalsequence>
+    <signalsequence id="7" name="Red-Green-Amber">
+      <state display="1" isFixedDuration="false" isClosed="true" defaultDuration="1000" />
+      <state display="3" isFixedDuration="false" isClosed="false" defaultDuration="5000" />
+      <state display="4" isFixedDuration="true" isClosed="true" defaultDuration="3000" />
+    </signalsequence>
   </signalsequences>
   <sgs>
-    <sg id="1" name="Signal group 1" defaultSignalSequence="3">
+    <sg id="1" name="Signal group 1" defaultSignalSequence="7">
       <defaultDurations>
         <defaultDuration display="1" duration="1000" />
-        <defaultDuration display="2" duration="1000" />
         <defaultDuration display="3" duration="5000" />
         <defaultDuration display="4" duration="3000" />
       </defaultDurations>
