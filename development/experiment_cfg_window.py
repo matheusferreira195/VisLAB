@@ -160,7 +160,7 @@ class Window(Frame): #similar a StartPage
         self.datapoints_ctype_dropdown.set('Select data collector type')
         self.datapoints_ctype_dropdown.bind('<<ComboboxSelected>>', self.datapoints_callback)
 
-        self.separator = ttk.Separator(self, orient="vertical")
+        self.separator = ttk.Separato]r(self, orient="vertical")
 
         self.datapoints_cperfmeasure_dropdown = ttk.Combobox(self, width=25)
         self.datapoints_cperfmeasure_dropdown['values'] = []
