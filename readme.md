@@ -1,4 +1,4 @@
-# Vistools
+# VisLab
 
 This GUI application is design to help analysts model and calibrate traffic on a fast, reliable and organized manner.
 It's a work in progress, but the final product will be a .exe, and made on Python 3.6 with Tkinter for the GUI programming.
