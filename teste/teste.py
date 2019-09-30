@@ -27,33 +27,46 @@ cleaned_mer = mer_data[(mer_data['t(Entry)'] !=0 )]
   
 green_windows=[]
 interval=[]
-headways_df = pd.DataFrame(columns=['Cicle','Positions','Headways'])
+headways_df = pd.DataFrame(columns=['Cicle','Position','Headway'])
 for i in range(len(raw_green_windows['SimSec']) -1):
 
     if raw_green_windows['Aspect'][i] == 'green':
               
         interval = [raw_green_windows['SimSec'][i],raw_green_windows['SimSec'][i+1]]    
         green_windows.append(interval)
+        
 for i in range(len(green_windows)):
     
-    headways = []
+    headways_to_bar = []
 
     
-    df = cleaned_mer[(cleaned_mer['t(Entry)']>green_windows[i][0]) & (cleaned_mer['t(Entry)']<green_windows[i][1])]
-    filtrados = list(df['t(Entry)'])
-    nao_filtrados = df['t(Entry)']
-    #print(filtrados)
-    #print(nao_filtrados)
-
-    for i in range(1,len(filtrados)):
-        headway = filtrados[i] - filtrados[i-1]
+    df = cleaned_mer[(cleaned_mer['t(Entry)']>green_windows[i][0]) 
+                    & (cleaned_mer['t(Entry)']<green_windows[i][1]) 
+                    & (cleaned_mer['tQueue'] != 0)]
+    
+    if not df.empty:
         
-        headways.append(headway)
-    x = list(range(1,len(filtrados)))
-    print(x)
-    y = headways
-    print(y)
-    plt.bar(x,y)
-    plt.show()
+        #print(df)
+        
+        filtrados = list(df['t(Entry)'])
+        nao_filtrados = df['t(Entry)']
+        print(filtrados)
+        #print(nao_filtrados)
+    
+        for i in range(1,len(filtrados)):
+            
+            headway = filtrados[i] - filtrados[i-1]
+            headways_dict = {'Cicle':green_windows[i],'Position':i, 'Headway': headway}
+            headways_to_bar.append(headway)
+            
+            headways_df = headways_df.append(headways_dict, ignore_index = True)
+
+        x = list(range(1,len(filtrados)))
+        #print(x)
+        y = headways_to_bar
+        #print(y)
+        plt.bar(x,y)
+        plt.show()
+print(headways_df)
         
     
