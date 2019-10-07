@@ -5,3 +5,6 @@
 *.inpx
 *.layx
 *.db
+*.sig
+*.lsa
+*.lzv

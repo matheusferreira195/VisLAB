@@ -11,6 +11,7 @@ import pandas as pd
 import os
 import itertools as it
 import numpy as np
+from saturation_headway import calculate_shdwy
 
 
 NORM_FONT= ("Roboto", 10)
@@ -160,7 +161,7 @@ class Window(Frame): #similar a StartPage
         self.datapoints_ctype_dropdown.set('Select data collector type')
         self.datapoints_ctype_dropdown.bind('<<ComboboxSelected>>', self.datapoints_callback)
 
-        self.separator = ttk.Separato]r(self, orient="vertical")
+        self.separator = ttk.Separator(self, orient="vertical")
 
         self.datapoints_cperfmeasure_dropdown = ttk.Combobox(self, width=25)
         self.datapoints_cperfmeasure_dropdown['values'] = []
@@ -337,7 +338,7 @@ class Window(Frame): #similar a StartPage
             self.experiment_data.loc[experiment_index, 'DP Number'] = Dc_Number
 
             if data_point_type == 'Data Collector':
-                self.datapoints_cperfmeasure_dropdown['values'] = ['QueueDelay', 'SpeedAvgArith', 'OccupRate','Acceleration', 'Lenght', 'Vehs', 'Pers']
+                self.datapoints_cperfmeasure_dropdown['values'] = ['QueueDelay', 'SpeedAvgArith', 'OccupRate','Acceleration', 'Lenght', 'Vehs', 'Pers','Saturation Headway']
 
             elif data_point_type == 'Travel Time Collector':
                 self.datapoints_cperfmeasure_dropdown['values'] = ['StopDelay', 'Stops', 'VehDelay', 'Vehs', 'Persons Delay', 'Persons']
@@ -444,7 +445,6 @@ class Window(Frame): #similar a StartPage
 
         self.selected_parameters = list(selected_parameters.Parameter)  #stores the parameter's names
         parameters_df = pd.DataFrame(combinations, columns=self.selected_parameters) #organizes all runs cfg data
-        print(parameters_df)
 
         #------------------------------------#
                 
@@ -473,8 +473,10 @@ class Window(Frame): #similar a StartPage
 
                     if dc_data['Data Point Type'] == 'Data Collector':
 
-                        if dc_data['Perf_measure'] == 'Saturation Hdwy':
-                            None
+                        if dc_data['Perf_measure'] == 'Saturation Headway':
+                            
+                            calculate_shdwy()
+                            
                         else:
                             selected_dc = Vissim.Net.DataCollectionMeasurements.ItemByKey(int(dc_data['DP Number']))
                             result = selected_dc.AttValue('{}(Current,{},All)'.format(str(dc_data['Perf_measure']), str(dc_data['Time Interval'])))
@@ -491,7 +493,6 @@ class Window(Frame): #similar a StartPage
                         
                     results = {'Experiment':1, 'Data Point Type':str(dc_data['Data Point Type']), 'DP Number':str(dc_data['DP Number']),'Perf_measure':str(dc_data['Perf_measure']),
                             'Time Interval':str(dc_data['Time Interval']),'Run':str(run),'Read data':str(result)}
-                    print(results)
 
                     self.results_data = self.results_data.append(results, ignore_index=True)
 

@@ -1,69 +1,27 @@
-#!/usr/bin/python
-#-*- coding: utf-8 -*-
+import win32com.client as com
+import pandas as pd
 
-import tkinter
-from tkinter import *
-import mysql.connector as MySQLdb
-
-#----------------------------------------------------------------------
-
-class MainWindow():
-
-    def __init__(self, root):
-        frame = Frame(root, width=500, height=500)
-        #root.minsize(300,300)
-        frame.pack()
+Vissim = com.Dispatch('Vissim.Vissim')
+#Vissim = com.Dispatch("Vissim.Vissim") #Abrindo o Vissim
+path_network =r'E:\Google Drive\Scripts\vistools\development\net\teste\teste.inpx'
+flag = False 
+Vissim.LoadNet(path_network, flag) #Carregando o arquivo
+#ctypes.windll.user32.MessageBoxW(0, "Net loaded", "Vissim ready", 1)
+print('net loaded\n')
 
 
-        # here we make  text input field
+Vissim.Simulation.SetAttValue('RandSeed', 42)
 
-        self.E1 = Entry(frame, bd=2)
-        self.E1.pack(side=TOP)
+Vissim.Graphics.CurrentNetworkWindow.SetAttValue("QuickMode",1) #Ativando Quick Mode
 
-        # here the list generated from entry but covering it completely is bad ?? 
+n_dc = 5
 
-        self.Lb1 = Listbox(frame, bd=2)
-        #Lb1.pack(side=BOTTOM)
-
-        root.bind("<Key>", self.clickme)
-
-        # open database (only once) at start program
-        self.db = MySQLdb.connect("127.0.0.1", "root", "34064031", "test", use_unicode=True, charset="utf8")
-
-    #-------------------
-
-    def __del__(self): 
-        # close database on exit
-        self.db.close()
-
-    #-------------------
-
-    def clickme(self, x):
-
-        txt = self.E1.get()
-
-        self.Lb1.delete(0, END) # delete all on list
-
-        if txt == '':
-            self.Lb1.pack_forget() # hide list
-        else:
-            self.Lb1.pack(side=BOTTOM) # show list
-
-            txt_for_query = txt + "%"  
-
-            cursor = self.db.cursor()
-
-            cursor.execute("SELECT name FROM `table` WHERE name LIKE '%s'" % (txt_for_query))
-
-            res = cursor.fetchall() 
-
-            for line in res: 
-                self.Lb1.insert(END, line[0].encode('utf-8')) # append list
-
-            cursor.close()
-
-#----------------------------------------------------------------------
-
-root = Tk()
-MainWindow(root)
-root.mainloop()
+for i in range(10):
+    Vissim.Simulation.SetAttValue('RandSeed', 42+i)
+    
+    Vissim.Simulation.RunContinuous() 
+    
+    mer = r'E:\Google Drive\Scripts\vistools\development\net\teste\teste_001.mer'
+    mer_data_raw = pd.read_csv(mer, sep=';', skiprows=(8+n_dc), skipinitialspace=True, index_col=False)
+    mer_data = mer_data_raw.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
+    mer_data.to_csv(r'E:\Google Drive\Scripts\vistools\development\net\teste\output%i.csv' % (i),sep=';')
