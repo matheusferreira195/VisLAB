@@ -123,10 +123,10 @@ class Window(Frame): #similar a StartPage
         self.init_window()
         
        
-    def init_window(self):        
+    def init_window(self):  #TODO mudar para "experiment window"      
         
         self.master.title("Vistools")
-        self.experiment_data_init = {'Experiment': 1}
+        self.experiment_data_init = {'Experiment': 1} #TODO criar objeto "experiment"
         self.experiment_data = self.experiment_data.append(self.experiment_data_init, ignore_index=True)
         self.parameter_data = self.parameter_data.append(self.experiment_data_init, ignore_index=True)
         #print(self.experiment_data)
@@ -147,6 +147,8 @@ class Window(Frame): #similar a StartPage
                 
         edit.add_command(label = 'Undo', command = lambda:popupmsg("wow! such programmin'"))
         
+        #TODO adicionar botao para passar pra pagina de results
+
         menu.add_cascade(label='Edit', menu=edit)
 
          ##------Experiments section------##
@@ -475,7 +477,7 @@ class Window(Frame): #similar a StartPage
 
                         if dc_data['Perf_measure'] == 'Saturation Headway':
                             
-                            calculate_shdwy()
+                            headways = calculate_shdwy(path_network, dc_data['DP Number'].item) #TODO Como lidar com as varias replicacoes?
                             
                         else:
                             selected_dc = Vissim.Net.DataCollectionMeasurements.ItemByKey(int(dc_data['DP Number']))
@@ -494,11 +496,11 @@ class Window(Frame): #similar a StartPage
                     results = {'Experiment':1, 'Data Point Type':str(dc_data['Data Point Type']), 'DP Number':str(dc_data['DP Number']),'Perf_measure':str(dc_data['Perf_measure']),
                             'Time Interval':str(dc_data['Time Interval']),'Run':str(run),'Read data':str(result)}
 
-                    self.results_data = self.results_data.append(results, ignore_index=True)
+                    self.results_data = self.results_data.append(results, ignore_index=True) #TODO Formatar para exportar pra dashboard
 
         self.results_data.to_csv(r"E:\Google Drive\Scripts\vistools\output.csv", sep = ';')
 
-                    
+#TODO Adicionar a pagina dos resultados                    
 
 
 
