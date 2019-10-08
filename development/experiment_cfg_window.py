@@ -455,6 +455,7 @@ class Window(Frame): #similar a StartPage
 
             parameter_names = list(parameters_df)
 
+            #Configures the simulation
             for i in range(len(parameter_names)):
 
                 parameter_name = str(parameter_names[i])
@@ -463,40 +464,47 @@ class Window(Frame): #similar a StartPage
                 Vissim.Net.DrivingBehaviors[0].SetAttValue(parameter_name,parameter_data_)
                 #Vissim.Net.DrivingBehaviors[0].SetAttValue('W74ax',1)
                 
-            for run in range(runs):
-                seed += 1
-                Vissim.Simulation.SetAttValue('RandSeed', seed)
+            
+            Vissim.Simulation.SetAttValue('RandSeed', seed)
 
-                Vissim.Graphics.CurrentNetworkWindow.SetAttValue("QuickMode",1) #Ativando Quick Mode
-                
-                Vissim.Simulation.RunContinuous() #Iniciando Simulação 
+            Vissim.Graphics.CurrentNetworkWindow.SetAttValue("QuickMode",1) #Ativando Quick Mode
+            
+            Vissim.Simulation.RunContinuous() #Iniciando Simulação 
 
-                for index, dc_data in self.fake_dc_data.iterrows():
+            for index, dc_data in self.fake_dc_data.iterrows(): #Collects perf_measure data
 
-                    if dc_data['Data Point Type'] == 'Data Collector':
+                if dc_data['Data Point Type'] == 'Data Collector':
 
-                        if dc_data['Perf_measure'] == 'Saturation Headway':
-                            
-                            headways = calculate_shdwy(path_network, dc_data['DP Number'].item) #TODO Como lidar com as varias replicacoes?
-                            
-                        else:
-                            selected_dc = Vissim.Net.DataCollectionMeasurements.ItemByKey(int(dc_data['DP Number']))
-                            result = selected_dc.AttValue('{}(Current,{},All)'.format(str(dc_data['Perf_measure']), str(dc_data['Time Interval'])))
-
+                    if dc_data['Perf_measure'] == 'Saturation Headway':
                         
-                    elif dc_data['Data Point Type'] == 'Travel Time Collector':
+                        #A função ja tem replication handling
+                        headways = calculate_shdwy(path_network, dc_data['DP Number'].item) 
                         
-                        selected_ttc = Vissim.Net.DelayMeasurements.ItemByKey(int(dc_data['DP Number']))
-                        result = selected_ttc.AttValue('{}(Current,{},All)'.format(str(dc_data['Perf_measure']), str(dc_data['Time Interval'])))
-                                                    
                     else:
-                        selected_qc = Vissim.Net.QueueCounters.ItemByKey(int(dc_data['DP Number']))
-                        result = selected_qc.AttValue('{}(Current,{})'.format(str(dc_data['Perf_measure']), str(dc_data['Time Interval'])))
-                        
-                    results = {'Experiment':1, 'Data Point Type':str(dc_data['Data Point Type']), 'DP Number':str(dc_data['DP Number']),'Perf_measure':str(dc_data['Perf_measure']),
-                            'Time Interval':str(dc_data['Time Interval']),'Run':str(run),'Read data':str(result)}
 
-                    self.results_data = self.results_data.append(results, ignore_index=True) #TODO Formatar para exportar pra dashboard
+                        #FIXME adicionar clausula de replication handling
+                        selected_dc = Vissim.Net.DataCollectionMeasurements.ItemByKey(int(dc_data['DP Number'])) 
+                        result = selected_dc.AttValue('{}(Current,{},All)'.format(str(dc_data['Perf_measure']), str(dc_data['Time Interval'])))
+
+                    
+                elif dc_data['Data Point Type'] == 'Travel Time Collector':
+
+                    #FIXME adicionar clausula de replication handling
+                    
+                    selected_ttc = Vissim.Net.DelayMeasurements.ItemByKey(int(dc_data['DP Number']))
+                    result = selected_ttc.AttValue('{}(Current,{},All)'.format(str(dc_data['Perf_measure']), str(dc_data['Time Interval'])))
+                                                
+                else:
+
+                    #FIXME adicionar clausula de replication handling
+                    
+                    selected_qc = Vissim.Net.QueueCounters.ItemByKey(int(dc_data['DP Number']))
+                    result = selected_qc.AttValue('{}(Current,{})'.format(str(dc_data['Perf_measure']), str(dc_data['Time Interval'])))
+                    
+                results = {'Experiment':1, 'Data Point Type':str(dc_data['Data Point Type']), 'DP Number':str(dc_data['DP Number']),'Perf_measure':str(dc_data['Perf_measure']),
+                        'Time Interval':str(dc_data['Time Interval']),'Run':str(run),'Read data':str(result)}
+
+                self.results_data = self.results_data.append(results, ignore_index=True) #TODO Formatar para exportar pra dashboard
 
         self.results_data.to_csv(r"E:\Google Drive\Scripts\vistools\output.csv", sep = ';')
 
