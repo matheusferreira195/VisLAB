@@ -11,7 +11,6 @@ from os import listdir
 from os.path import isfile, join
 import glob
 import os
-
 def formatting(tipe, path):
     skipline = 0
     
@@ -38,7 +37,7 @@ def formatting(tipe, path):
         return skipline
     
 
-def calculate_shdwy(path, dc):
+def calculate_shdwy(path, dc, replication):
     lsa_columns = ['SimSec', 'CycleSec', 'SC', 'SG', 'Aspect', 'Prev', 'Crit', 'duetoSG']
     os.chdir(path)
     mers = [file for file in glob.glob("*.mer")]
@@ -48,7 +47,6 @@ def calculate_shdwy(path, dc):
     #print(len(mers))
     for i in range(len(mers)):
 
-        print(mers[i])
 
         mer_data_raw = pd.read_csv(mers[i], sep=';', skiprows=formatting('.mer',mers[i]), skipinitialspace=True, index_col=False) 
         mer_data = mer_data_raw.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
@@ -91,13 +89,15 @@ def calculate_shdwy(path, dc):
                     for k in range(1,len(filtrados)):
                         
                         headway = filtrados[k] - filtrados[k-1]
-                        headways_dict = {'Replication':i,'Cicle':green_windows[j],'Position':k, 'Headway': headway}
+                        headways_dict = {'Replication':i+1,'Cicle':green_windows[j],'Position':k, 'Headway': headway}
                         headways_to_bar.append(headway)
                         
                         headways_df = headways_df.append(headways_dict, ignore_index = True)
+                        headways_df = headways_df[headways_df['Replication'] == replication]
+                        headway_mean = headways_df[headways_df['Position'] == 4]['Headway'].mean()
                 
-    return headways_df 
+    return headway_mean 
         
 
-#h = calculate_shdwy("E:\\Google Drive\\Scripts\\vistools\\development\\net\\teste\\",5) 
-#print(h) 
+h = calculate_shdwy("E:\\Google Drive\\Scripts\\vistools\\development\\net\\teste\\",5,2) 
+print(h) 

@@ -13,15 +13,16 @@ import itertools as it
 import numpy as np
 from saturation_headway import calculate_shdwy
 
-
+Vissim = None
 NORM_FONT= ("Roboto", 10)
-#check_icon = r'C:\Users\Matheus Ferreira\Google Drive\Scripts\vistools\resources\check.png'
+check_icon = r'C:\Users\Matheus Ferreira\Google Drive\Scripts\vistools\resources\check.png'
 #-------------------------------------------------------------------
-Vissim = None #com.Dispatch('Vissim.Vissim')
-#Vissim = com.Dispatch("Vissim.Vissim") #Abrindo o Vissim
-path_network ='E:\\Google Drive\\Scripts\\istools\\development\\net\\teste.inpx'
+#Vissim = None #com.Dispatch('Vissim.Vissim')
+Vissim = com.Dispatch("Vissim.Vissim") #Abrindo o Vissim
+path_network =r'E:\Google Drive\Scripts\vistools\development\net\teste\teste.inpx'
+print(path_network)
 flag = False 
-#Vissim.LoadNet(path_network, flag) #Carregando o arquivo
+Vissim.LoadNet(path_network, flag) #Carregando o arquivo
 #ctypes.windll.user32.MessageBoxW(0, "Net loaded", "Vissim ready", 1)
 print('net loaded\n')
 
@@ -50,9 +51,10 @@ def generate_dcdf_test():
 
     for i in range(3):
         data = {'Type':'Data Collector', 'Name':'dc#%i' % i, 'No':'%i' % i, 'Data Collection Points':None, 'Display':('Data Collector' + '/ ' + 'N/A' + ' / #'+ str(i))}
-        dc_df.append(data,ignore_index=True)
+        dc_df = dc_df.append(data,ignore_index=True)
     return dc_df
-
+teste = generate_dcdf_test()
+print(teste)
 def generate_dcdf():
 
     dc_df = pd.DataFrame(columns = ['Type', 'Name', 'No', 'Display'])
@@ -97,7 +99,8 @@ class Window(Frame): #similar a StartPage
         container.grid_rowconfigure(0, weight=1) 
         container.grid_columnconfigure(0, weight=1)
         
-        self.dc_data = generate_dcdf_test()
+        self.dc_data = generate_dcdf_test()#generate_dcdf()#
+        
         self.parameter_data = pd.DataFrame(columns = {'Experiment', 'Parameter', 'Lim. Inf', 'Lim. Sup', 'Step'})
         self.experiment_data = pd.DataFrame(columns = {'Experiment', 'Data Point Type', 'DP Number', 'Perf_measure', 'Time interval', 'Field data', 'Runs'}) 
         self.results_data = pd.DataFrame(columns = {'Experiment', 'Data Point Type', 'DP Number','Perf_measure','Time Interval','Run'})
@@ -184,7 +187,7 @@ class Window(Frame): #similar a StartPage
         self.datapoints_ctargetvalue_label=Label(self, text='Add the field data to compare')
         self.datapoints_ctargetvalue_entry=Entry(self)
 
-        self.datapoint_ok_button = Button(self, command = self.button_callback, image=self.check_image)
+        self.datapoint_ok_button = Button(self, command = self.button_callback)# image=self.check_image)
 
         ##------Parameters section------##   
         self.parameters_label = Label(self,text = 'Parameters')      
@@ -211,7 +214,7 @@ class Window(Frame): #similar a StartPage
         self.simulation_label_replications = Label(self, text = 'How many runs?')
         self.simulation_entry_replications = Entry(self, width=5)
 
-        self.test_button =  Button(self, command = self.test_buttom, image=self.check_image)
+        self.test_button =  Button(self, command = self.test_buttom)#, image=self.check_image)
 
         ##------Grid configuration------##
         self.experiment_label.grid(row=1, column=0, sticky=W)
@@ -416,6 +419,7 @@ class Window(Frame): #similar a StartPage
         runs = 2
         seed = 42
         Vissim.Simulation.SetAttValue('RandSeed', seed)
+        Vissim.Simulation.SetAttValue('NumRuns', runs)
 
         #Filtering parameter and data points meta data
         selected_parameters = self.fake_data.loc[self.fake_data.Experiment == experiment] #temporary test experiment cfg
@@ -454,7 +458,7 @@ class Window(Frame): #similar a StartPage
 
         self.selected_parameters = list(selected_parameters.Parameter)  #stores the parameter's names
         parameters_df = pd.DataFrame(combinations, columns=self.selected_parameters) #organizes all runs cfg data
-
+        print(parameters_df)
         #------------------------------------#
                 
         for index, parameter_data in parameters_df.iterrows():
@@ -479,42 +483,58 @@ class Window(Frame): #similar a StartPage
             Vissim.Simulation.RunContinuous() #Iniciando Simulação 
 
             for index, dc_data in self.fake_dc_data.iterrows(): #Collects perf_measure data
+                
+                for replication in range(1,runs+1):
 
-                if dc_data['Data Point Type'] == 'Data Collector':
-
-                    if dc_data['Perf_measure'] == 'Saturation Headway':
+                    if dc_data['Data Point Type'] == 'Data Collector':
+    
+                        if dc_data['Perf_measure'] == 'Saturation Headway':
+                            
+                            #A função ja tem replication handling
+                            result = calculate_shdwy(path_network, dc_data['DP Number'].item, replication) 
+                            
+                        else:
+    
+                            selected_dc = Vissim.Net.DataCollectionMeasurements.ItemByKey(int(dc_data['DP Number'])) 
+                            result = selected_dc.AttValue('{}({},{},All)'.format(str(dc_data['Perf_measure']), 
+                                                          str(replication), 
+                                                          str(dc_data['Time Interval'])))
+    
                         
-                        #A função ja tem replication handling
-                        headways = calculate_shdwy(path_network, dc_data['DP Number'].item) 
+                    elif dc_data['Data Point Type'] == 'Travel Time Collector':
+    
                         
-                    else:
-
-                        #FIXME adicionar clausula de replication handling
-                        selected_dc = Vissim.Net.DataCollectionMeasurements.ItemByKey(int(dc_data['DP Number'])) 
-                        result = selected_dc.AttValue('{}(Current,{},All)'.format(str(dc_data['Perf_measure']), str(dc_data['Time Interval'])))
-
-                    
-                elif dc_data['Data Point Type'] == 'Travel Time Collector':
-
-                    #FIXME adicionar clausula de replication handling
-                    
-                    selected_ttc = Vissim.Net.DelayMeasurements.ItemByKey(int(dc_data['DP Number']))
-                    result = selected_ttc.AttValue('{}(Current,{},All)'.format(str(dc_data['Perf_measure']), str(dc_data['Time Interval'])))
-                                                
-                else:
-
-                    #FIXME adicionar clausula de replication handling
-                    
-                    selected_qc = Vissim.Net.QueueCounters.ItemByKey(int(dc_data['DP Number']))
-                    result = selected_qc.AttValue('{}(Current,{})'.format(str(dc_data['Perf_measure']), str(dc_data['Time Interval'])))
-                    
-                results = {'Experiment':1, 'Data Point Type':str(dc_data['Data Point Type']), 'DP Number':str(dc_data['DP Number']),'Perf_measure':str(dc_data['Perf_measure']),
-                        'Time Interval':str(dc_data['Time Interval']),'Run':str(run),'Read data':str(result)}
-
-                self.results_data = self.results_data.append(results, ignore_index=True) #TODO Formatar para exportar pra dashboard
+                        selected_ttc = Vissim.Net.DelayMeasurements.ItemByKey(int(dc_data['DP Number']))
+                        result = selected_ttc.AttValue('{}({},{},All)'.format(str(dc_data['Perf_measure']), 
+                                                       str(replication), 
+                                                       str(dc_data['Time Interval'])))
+                                                    
+                    else:    
+                        
+                        selected_qc = Vissim.Net.QueueCounters.ItemByKey(int(dc_data['DP Number']))
+                        result = selected_qc.AttValue('{}({},{})'.format(str(dc_data['Perf_measure']), 
+                                                      str(replication), 
+                                                      str(dc_data['Time Interval'])))
+                        
+                    results = {'Experiment':1, 
+                               'Data Point Type':str(dc_data['Data Point Type']), 
+                               'DP Number':str(dc_data['DP Number']),
+                               'Perf_measure':str(dc_data['Perf_measure']),
+                               'Time Interval':str(dc_data['Time Interval']),
+                               'Run':str(replication),
+                               'Read data':str(result)}
+    
+                    self.results_data = self.results_data.append(results, ignore_index=True) #TODO Formatar para exportar pra dashboard
 
         self.results_data.to_csv(r"E:\Google Drive\Scripts\vistools\output.csv", sep = ';')
 
+    def plotter(self,parameter_data,result_data):
+        
+
+        
+        
+
+        None
 #TODO Adicionar a pagina dos resultados                    
 
 
