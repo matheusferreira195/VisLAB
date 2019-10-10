@@ -95,10 +95,9 @@ def calculate_shdwy(path, dc):
                         headways_to_bar.append(headway)
                         
                         headways_df = headways_df.append(headways_dict, ignore_index = True)
-
                 
     return headways_df 
         
 
-h = calculate_shdwy("E:\\Google Drive\Scripts\\vistools\\development\\net\\teste\\",5) 
-print(h)
+#h = calculate_shdwy("E:\\Google Drive\\Scripts\\vistools\\development\\net\\teste\\",5) 
+#print(h) 

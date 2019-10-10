@@ -17,11 +17,11 @@ from saturation_headway import calculate_shdwy
 NORM_FONT= ("Roboto", 10)
 #check_icon = r'C:\Users\Matheus Ferreira\Google Drive\Scripts\vistools\resources\check.png'
 #-------------------------------------------------------------------
-Vissim = com.Dispatch('Vissim.Vissim')
+Vissim = None #com.Dispatch('Vissim.Vissim')
 #Vissim = com.Dispatch("Vissim.Vissim") #Abrindo o Vissim
-path_network =r'E:\Google Drive\Scripts\vistools\development\net\teste.inpx'
+path_network ='E:\\Google Drive\\Scripts\\istools\\development\\net\\teste.inpx'
 flag = False 
-Vissim.LoadNet(path_network, flag) #Carregando o arquivo
+#Vissim.LoadNet(path_network, flag) #Carregando o arquivo
 #ctypes.windll.user32.MessageBoxW(0, "Net loaded", "Vissim ready", 1)
 print('net loaded\n')
 
@@ -45,6 +45,13 @@ def popupmsg(msg):
 
 #-----------------------------------------------------------------------
 #Query functions that pull from vissim metadata about the data points and creates a dataframe
+def generate_dcdf_test():
+    dc_df = pd.DataFrame(columns = ['Type', 'Name', 'No', 'Display'])
+
+    for i in range(3):
+        data = {'Type':'Data Collector', 'Name':'dc#%i' % i, 'No':'%i' % i, 'Data Collection Points':None, 'Display':('Data Collector' + '/ ' + 'N/A' + ' / #'+ str(i))}
+        dc_df.append(data,ignore_index=True)
+    return dc_df
 
 def generate_dcdf():
 
@@ -90,7 +97,7 @@ class Window(Frame): #similar a StartPage
         container.grid_rowconfigure(0, weight=1) 
         container.grid_columnconfigure(0, weight=1)
         
-        self.dc_data = generate_dcdf()
+        self.dc_data = generate_dcdf_test()
         self.parameter_data = pd.DataFrame(columns = {'Experiment', 'Parameter', 'Lim. Inf', 'Lim. Sup', 'Step'})
         self.experiment_data = pd.DataFrame(columns = {'Experiment', 'Data Point Type', 'DP Number', 'Perf_measure', 'Time interval', 'Field data', 'Runs'}) 
         self.results_data = pd.DataFrame(columns = {'Experiment', 'Data Point Type', 'DP Number','Perf_measure','Time Interval','Run'})
