@@ -73,46 +73,52 @@ def generate_dcdf():
         dc_df = dc_df.append(data, ignore_index = True)
     #print(dc_df)
     return dc_df
-class VisLab(tk.Tk):
 
-    def __init__(self, *args, **kwargs):
-
-        tk.Tk.__init__(self, *args, **kwargs)
+class Window(Frame): #similar a StartPage    
+        
+    def __init__(self, master): #master = parent class (BTC_app no exemplo. É none por que nao há classes superiores 'essa é só uma janela' )
+        #print(type(master))
+        Frame.__init__(self, master)
+        
         container = tk.Frame(self)
-        container.grid(row=0, column=0)
-        #container.grid_rowconfigure(0, weight=1)
-        #container.grid_columnconfigure(0, weight=1)
-        self.frames = {}
-        frame = StartPage(self, container)
-        self.frames[StartPage] = frame
-        frame.grid(row=0, column=0, sticky="nsew")
-        self.show_frame(StartPage)
-
-    def show_frame(self, cont):
-
-        frame = self.frames[cont]
-        frame.tkraise()
-    
-
-class StartPage(tk.Frame): #similar a StartPage     
+        container.grid_rowconfigure(0, weight=1) 
+        container.grid_columnconfigure(0, weight=1)
         
-    def __init__(self, parent, controller): #master = parent class (BTC_app no exemplo. É none por que nao há classes superiores 'essa é só uma janela' )
+        self.dc_data = generate_dcdf_test()#generate_dcdf()#
         
-        tk.Frame.__init__(self,parent)
+        self.parameter_data = pd.DataFrame(columns = {'Experiment', 'Parameter', 'Lim. Inf', 'Lim. Sup', 'Step'})
+        self.experiment_data = pd.DataFrame(columns = {'Experiment', 'Data Point Type', 'DP Number', 'Perf_measure', 'Time interval', 'Field data', 'Runs'}) 
+        self.results_data = pd.DataFrame(columns = {'Experiment', 'Data Point Type', 'DP Number','Perf_measure','Time Interval','Run'})
+        self.parameter_db = pd.read_csv(r'E:\Google Drive\Scripts\vistools\resources\parameters.visdb')
+        self.master = master
 
-        label = tk.Label(self, text="Start Page", font=LARGE_FONT)
-        label.grid(row=0,column=0)
+        self.search_var = StringVar()
+        
+        self.switch = False
+        self.search_mem = ''
+        self.experiment = 1
+        self.check_image = PhotoImage(file=r'E:\Google Drive\Scripts\vistools\resources\check.gif')
+        
+        self.collector_type = StringVar()
+        self.collector_name = StringVar()
+        self.collector_no = StringVar()
+        self.collector_pm = StringVar()
+        self.collector_timeinterval = StringVar()
 
-        button_next = tk.Button(self, text="Next Page", command=lambda:controller.show_frame(PageOne))
-        button_next.grid(row=0,column=2)
+        self.fake_data_data = {'Experiment': [1,1,1,2,2], 'Parameter': ['W74ax', 'W74bxAdd', 'W74bxMult','W74bxAdd', 'W74bxMult'], 'Lim. Inf': [1,1,1,2,2], 'Lim. Sup': [2,2,2,3,3], 'Step': [1, 1, 1, 1, 1]}
+        self.fake_data = pd.DataFrame(self.fake_data_data, columns = ['Experiment', 'Parameter', 'Lim. Inf', 'Lim. Sup', 'Step'])
 
+        fake_dc_data_data = {'Experiment': [1,1,1], 'Data Point Type': ['Data Collector', 'Travel Time Collector', 'Queue Counter'], 'DP Number': [6,3,1], 'Perf_measure': ['SpeedAvgArith','VehDelay','QLen'], 'Time Interval': ['Avg','Avg','Avg'], 'Field data': ['30','3.2','10']}
+        self.fake_dc_data = pd.DataFrame(fake_dc_data_data, columns = ['Experiment', 'Data Point Type', 'DP Number', 'Perf_measure', 'Time Interval', 'Field data']) 
 
-class PageOne(tk.Frame): #TODO Colocar tutorial e botões pras páginas
+        self.results_data = pd.DataFrame(columns = {'Experiment', 'Data Point Type', 'DP Number','Perf_measure','Time Interval','Run','Read data'})
+        
+        self.grid(row=0, column=0)
 
-    def __init__(self, parent,controller):
-
-        tk.Frame.__init__(self, parent)
-
+        self.init_window()
+        
+       
+    def init_window(self):  #TODO mudar para "experiment window" 
         self.master.title("Vistools")
         self.experiment_data_init = {'Experiment': 1} #TODO criar objeto "experiment"
         self.experiment_data = self.experiment_data.append(self.experiment_data_init, ignore_index=True)
@@ -139,10 +145,10 @@ class PageOne(tk.Frame): #TODO Colocar tutorial e botões pras páginas
 
         menu.add_cascade(label='Edit', menu=edit)
 
-        ##------Experiments section------##
+         ##------Experiments section------##
         self.experiment_text = str('Experiment %i' % self.experiment)
         self.experiment_label = Label(self,text = self.experiment_text)
-        
+
         ##------Datapoints section------##
         self.datapoints_label = Label(self,text = 'Data Points')
         self.datapoints_ctype_dropdown = ttk.Combobox(self, width=25)
@@ -629,5 +635,5 @@ class Results_page(tk.Frame):
 root = Tk()
 root.geometry("1920x1080")
 #root.state('zoomed')
-app = VisLab()
-app.mainloop()
+app = Window(master = root)
+root.mainloop()
