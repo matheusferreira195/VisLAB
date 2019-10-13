@@ -12,6 +12,8 @@ import os
 import itertools as it
 import numpy as np
 from saturation_headway import calculate_shdwy
+import matplotlib as plt
+
 
 NORM_FONT= ("Roboto", 10)
 LARGE_FONT = ("Roboto", 20)
@@ -39,7 +41,7 @@ def generate_dcdf_test():
         dc_df = dc_df.append(data,ignore_index=True)
     return dc_df
 teste = generate_dcdf_test()
-print(teste)
+#print(teste)
 def generate_dcdf():
 
     dc_df = pd.DataFrame(columns = ['Type', 'Name', 'No', 'Display'])
@@ -134,8 +136,6 @@ class PageOne(tk.Frame):
                             command=lambda: controller.show_frame(PageTwo))
         button2.grid(row=0,column=2)
         
-       
-        
         self.dc_data = generate_dcdf_test()#generate_dcdf()#
         
         self.parameter_data = pd.DataFrame(columns = {'Experiment', 'Parameter', 'Lim. Inf', 'Lim. Sup', 'Step'})
@@ -160,10 +160,7 @@ class PageOne(tk.Frame):
         self.fake_data = pd.DataFrame(self.fake_data_data, columns = ['Experiment', 'Parameter', 'Lim. Inf', 'Lim. Sup', 'Step'])
 
         fake_dc_data_data = {'Experiment': [1,1,1], 'Data Point Type': ['Data Collector', 'Travel Time Collector', 'Queue Counter'], 'DP Number': [6,3,1], 'Perf_measure': ['SpeedAvgArith','VehDelay','QLen'], 'Time Interval': ['Avg','Avg','Avg'], 'Field data': ['30','3.2','10']}
-        self.fake_dc_data = pd.DataFrame(fake_dc_data_data, columns = ['Experiment', 'Data Point Type', 'DP Number', 'Perf_measure', 'Time Interval', 'Field data']) 
-
-        self.results_data = pd.DataFrame(columns = {'Experiment', 'Data Point Type', 'DP Number','Perf_measure','Time Interval','Run','Read data'})
-        
+        self.fake_dc_data = pd.DataFrame(fake_dc_data_data, columns = ['Experiment', 'Data Point Type', 'DP Number', 'Perf_measure', 'Time Interval', 'Field data'])         
         self.grid(row=0, column=0)
 
         self.init_window()
@@ -178,8 +175,6 @@ class PageOne(tk.Frame):
         #quitButton = Button(self, text = "Quit", command=self.client_exit)
         
         #quitButton.place(x=245, y=170)
-        
-       
 
          ##------Experiments section------##
         self.experiment_text = str('Experiment %i' % self.experiment)
@@ -267,47 +262,14 @@ class PageOne(tk.Frame):
         self.test_button.grid(row=9, column=5)
         
         #Function for updating the list/doing the search.
-        #It needs to be called here to populate the listbox.
-        self.update_list()
+        #It needs to be called here to populate the listbox
 
+        self.update_list()
         self.poll()
 
-        self.dc_data = generate_dcdf_test()#generate_dcdf()#
-        
-        self.parameter_data = pd.DataFrame(columns = {'Experiment', 'Parameter', 'Lim. Inf', 'Lim. Sup', 'Step'})
-        self.experiment_data = pd.DataFrame(columns = {'Experiment', 'Data Point Type', 'DP Number', 'Perf_measure', 'Time interval', 'Field data', 'Runs'}) 
-        self.results_data = pd.DataFrame(columns = {'Experiment', 'Data Point Type', 'DP Number','Perf_measure','Time Interval','Run'})
-        self.parameter_db = pd.read_csv(r'E:\Google Drive\Scripts\vistools\resources\parameters.visdb')
-        #self.master = master
-
-        self.search_var = tk.StringVar()
-        
-        self.switch = False
-        self.search_mem = ''
-        self.experiment = 1
-        self.check_image = tk.PhotoImage(file=r'E:\Google Drive\Scripts\vistools\resources\check.gif')
-        
-        self.collector_type = tk.StringVar()
-        self.collector_name = tk.StringVar()
-        self.collector_no = tk.StringVar()
-        self.collector_pm = tk.StringVar()
-        self.collector_timeinterval = tk.StringVar()
-
-        self.fake_data_data = {'Experiment': [1,1,1,2,2], 'Parameter': ['W74ax', 'W74bxAdd', 'W74bxMult','W74bxAdd', 'W74bxMult'], 'Lim. Inf': [1,1,1,2,2], 'Lim. Sup': [2,2,2,3,3], 'Step': [1, 1, 1, 1, 1]}
-        self.fake_data = pd.DataFrame(self.fake_data_data, columns = ['Experiment', 'Parameter', 'Lim. Inf', 'Lim. Sup', 'Step'])
-
-        fake_dc_data_data = {'Experiment': [1,1,1], 'Data Point Type': ['Data Collector', 'Travel Time Collector', 'Queue Counter'], 'DP Number': [6,3,1], 'Perf_measure': ['SpeedAvgArith','VehDelay','QLen'], 'Time Interval': ['Avg','Avg','Avg'], 'Field data': ['30','3.2','10']}
-        self.fake_dc_data = pd.DataFrame(fake_dc_data_data, columns = ['Experiment', 'Data Point Type', 'DP Number', 'Perf_measure', 'Time Interval', 'Field data']) 
-
-        self.results_data = pd.DataFrame(columns = {'Experiment', 'Data Point Type', 'DP Number','Perf_measure','Time Interval','Run','Read data'})
-
-    def show_frame(self,count):
-        
-        frame = self.frames(count)
-        frame.tkraise()
-    
     def button_callback(self):
-        
+
+        print('pressde')
         ctarget_entry = self.datapoints_ctargetvalue_entry.get()
         ctimeinterval_entry = self.datapoints_ctimeinterval_entry.get()
         simruns_entry = self.simulation_entry_replications.get()
@@ -316,8 +278,7 @@ class PageOne(tk.Frame):
         self.experiment_data.loc[experiment_index, 'Time interval'] = ctimeinterval_entry
         self.experiment_data.loc[experiment_index, 'Runs'] = simruns_entry
 
-        
-        #print(self.experiment_data)
+        print(self.experiment_data)
     
     def test_buttom(self):
 
@@ -329,8 +290,11 @@ class PageOne(tk.Frame):
         # you can also get the value off the eventObject
         caller = str(eventObject.widget)
         parameter_index  = self.parameter_data.loc[self.parameter_data['Experiment']==self.experiment].index[0]
+        #print(parameter_index)
+        #print(self.parameter_data)
 
         if 'listbox' in caller:
+            #print(self.parameter_search_listbox)
             selected = self.parameter_search_listbox.curselection()
             parameter_text = self.parameter_search_listbox.get(first=selected, last=None)
 
@@ -342,22 +306,23 @@ class PageOne(tk.Frame):
 
             self.parameter_data.loc[parameter_index, 'Parameter'] = value
 
-            print(self.parameter_data)
+            #print(self.parameter_data)
 
         else:
+
             value = eventObject.widget.get()        
 
         if 'entry4' in caller: #liminf          
             self.parameter_data.loc[parameter_index, 'Lim. Inf'] = value
-            print(self.parameter_data)
+            #print(self.parameter_data)
     
         elif 'entry5' in caller: #limsup  
             self.parameter_data.loc[parameter_index, 'Lim. Sup'] = value
-            print(self.parameter_data)
+            #print(self.parameter_data)
 
         elif 'entry6' in caller: #step
             self.parameter_data.loc[parameter_index, 'Step'] = value
-            print(self.parameter_data)
+           # print(self.parameter_data)
         
         else:
             experiment_index  = self.experiment_data.loc[self.experiment_data['Experiment']==self.experiment].index[0]
@@ -367,7 +332,7 @@ class PageOne(tk.Frame):
 
             self.experiment_data.loc[experiment_index, 'Data Point Type'] = data_point_type
             self.experiment_data.loc[experiment_index, 'DP Number'] = Dc_Number
-            print(self.experiment_data)
+            #print(self.experiment_data)
         
         #print(self.experiment_data)
         
@@ -378,7 +343,7 @@ class PageOne(tk.Frame):
 
         if caller == None:
             entry_value = self.datapoints_ctargetvalue_entry.get()
-            print(entry_value)
+            #print(entry_value)
             experiment_index  = self.experiment_data.loc[self.experiment_data['Experiment']==self.experiment].index[0]
             self.experiment_data.loc[experiment_index, 'Field data'] = entry_value
             print(self.experiment_data)
@@ -395,7 +360,7 @@ class PageOne(tk.Frame):
             print(self.experiment_data)
 
         else:
-            
+            print(self.experiment_data)
             experiment_index  = self.experiment_data.loc[self.experiment_data['Experiment']==self.experiment].index[0]
             dc_match = self.dc_data.loc[self.dc_data['Display'] == value]
             data_point_type = dc_match['Type'].item()
@@ -429,8 +394,10 @@ class PageOne(tk.Frame):
         
     #Runs every 50 milliseconds. 
     def poll(self):
+
         #Get value of the entry box
         self.search = self.search_var.get()
+        print(self.search)
         if self.search != self.search_mem: #self.search_mem = '' at start of program.
             self.update_list(is_contact_search=True)
             #set switch and search memory
@@ -513,7 +480,7 @@ class PageOne(tk.Frame):
 
         self.selected_parameters = list(selected_parameters.Parameter)  #stores the parameter's names
         parameters_df = pd.DataFrame(combinations, columns=self.selected_parameters) #organizes all runs cfg data
-        print(parameters_df)
+        #print(parameters_df)
         #------------------------------------#
                 
         for index_par, parameter_data in parameters_df.iterrows():
@@ -585,27 +552,31 @@ class PageOne(tk.Frame):
         self.results_data.to_csv(r"E:\Google Drive\Scripts\vistools\output.csv", sep = ';')
 
 
-
-class Results_page(tk.Frame):
+#TODO Adicionar a pagina dos resultados                    
+class PageTwo(PageOne):
 
     def __init__(self, parent, controller):
-
         tk.Frame.__init__(self, parent)
-        label = tk.Label(self, text="Results", font=LARGE_FONT).grid(row=0,column=0)
-        button_back = tk.Button(self, text="Back",
-                                command=lambda:controller.show_frame(StartPage))
-        button_back.grid(row=1, column=0)
-        
+        label = tk.Label(self, text="Page Two!!!", font=LARGE_FONT)
+        label.pack(pady=10,padx=10)
 
-    def plots_single(parameter, perf_measure, p_type, title, experiment):
+        button1 = tk.Button(self, text="Back to Home",
+                            command=lambda: controller.show_frame(StartPage))
+        button1.pack()
+
+        button2 = tk.Button(self, text="Page One",
+                            command=lambda: controller.show_frame(PageOne))
+        button2.pack()
+
+    def plots_single(self, parameter, perf_measure, p_type, title, experiment, *kwargs):
         
         #getting the parameters and results data by selected experiment
         #parameters_df_by_experiment = parameters_df.loc[parameters_df['Experiment']==experiment]
-        data_by_experiment = data.loc[data['Experiment']==experiment]
+        data_by_experiment = self.data.loc[self.data['Experiment']==experiment]
         
         #getting the data of the max/min parameter value
-        parameter_min = parameters_df[parameter].idxmin()
-        parameter_max = parameters_df[parameter].idxmax()
+        parameter_min = self.parameters_df[parameter].idxmin()
+        parameter_max = self.parameters_df[parameter].idxmax()
         
         #if the graph is a scatterplot
         if p_type == 0:        
@@ -644,23 +615,6 @@ class Results_page(tk.Frame):
             plt.xticks(rep)
             plt.title(parameter)
             plt.show()
-
-#TODO Adicionar a pagina dos resultados                    
-class PageTwo(tk.Frame):
-
-    def __init__(self, parent, controller):
-        tk.Frame.__init__(self, parent)
-        label = tk.Label(self, text="Page Two!!!", font=LARGE_FONT)
-        label.pack(pady=10,padx=10)
-
-        button1 = tk.Button(self, text="Back to Home",
-                            command=lambda: controller.show_frame(StartPage))
-        button1.pack()
-
-        button2 = tk.Button(self, text="Page One",
-                            command=lambda: controller.show_frame(PageOne))
-        button2.pack()
-        
 
 
 app = SeaofBTCapp()
