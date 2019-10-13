@@ -13,24 +13,9 @@ import itertools as it
 import numpy as np
 from saturation_headway import calculate_shdwy
 
-Vissim = None
 NORM_FONT= ("Roboto", 10)
-check_icon = r'C:\Users\Matheus Ferreira\Google Drive\Scripts\vistools\resources\check.png'
-#-------------------------------------------------------------------
-#Vissim = None #com.Dispatch('Vissim.Vissim')
-Vissim = com.Dispatch("Vissim.Vissim") #Abrindo o Vissim
-path_network =r'E:\Google Drive\Scripts\vistools\development\net\teste\teste.inpx'
-print(path_network)
-flag = False 
-Vissim.LoadNet(path_network, flag) #Carregando o arquivo
-#ctypes.windll.user32.MessageBoxW(0, "Net loaded", "Vissim ready", 1)
-print('net loaded\n')
+LARGE_FONT = ("Roboto", 20)
 
-attributes_tt = ['Start', 'End']
-
-#time_intervals = Vissim.Net.TimeIntervalSets.ItemByKey(1).TimeInts.GetMultipleAttributes('TimeIntervalSet')
-
-#print(time_intervals)
 #--------------------------------------------------------------------
 
 
@@ -88,53 +73,46 @@ def generate_dcdf():
         dc_df = dc_df.append(data, ignore_index = True)
     #print(dc_df)
     return dc_df
+class VisLab(tk.Tk):
 
-class Window(Frame): #similar a StartPage    
-        
-    def __init__(self, master): #master = parent class (BTC_app no exemplo. É none por que nao há classes superiores 'essa é só uma janela' )
-        #print(type(master))
-        Frame.__init__(self, master)
-        
+    def __init__(self, *args, **kwargs):
+
+        tk.Tk.__init__(self, *args, **kwargs)
         container = tk.Frame(self)
-        container.grid_rowconfigure(0, weight=1) 
+        container.pack(side="top", fill="both", expand=True)
+        container.grid_rowconfigure(0, weight=1)
         container.grid_columnconfigure(0, weight=1)
-        
-        self.dc_data = generate_dcdf_test()#generate_dcdf()#
-        
-        self.parameter_data = pd.DataFrame(columns = {'Experiment', 'Parameter', 'Lim. Inf', 'Lim. Sup', 'Step'})
-        self.experiment_data = pd.DataFrame(columns = {'Experiment', 'Data Point Type', 'DP Number', 'Perf_measure', 'Time interval', 'Field data', 'Runs'}) 
-        self.results_data = pd.DataFrame(columns = {'Experiment', 'Data Point Type', 'DP Number','Perf_measure','Time Interval','Run'})
-        self.parameter_db = pd.read_csv(r'E:\Google Drive\Scripts\vistools\resources\parameters.visdb')
-        self.master = master
+        self.frames = {}
+        frame = StartPage(container, self)
+        self.frames[StartPage] = frame
+        frame.grid(row=0, column=0, sticky="nsew")
+        self.show_frame(StartPage)
 
-        self.search_var = StringVar()
-        
-        self.switch = False
-        self.search_mem = ''
-        self.experiment = 1
-        self.check_image = PhotoImage(file=r'E:\Google Drive\Scripts\vistools\resources\check.gif')
-        
-        self.collector_type = StringVar()
-        self.collector_name = StringVar()
-        self.collector_no = StringVar()
-        self.collector_pm = StringVar()
-        self.collector_timeinterval = StringVar()
+    def show_frame(self, cont):
 
-        self.fake_data_data = {'Experiment': [1,1,1,2,2], 'Parameter': ['W74ax', 'W74bxAdd', 'W74bxMult','W74bxAdd', 'W74bxMult'], 'Lim. Inf': [1,1,1,2,2], 'Lim. Sup': [2,2,2,3,3], 'Step': [1, 1, 1, 1, 1]}
-        self.fake_data = pd.DataFrame(self.fake_data_data, columns = ['Experiment', 'Parameter', 'Lim. Inf', 'Lim. Sup', 'Step'])
+        frame = self.frames[cont]
+        frame.tkraise()
+    
 
-        fake_dc_data_data = {'Experiment': [1,1,1], 'Data Point Type': ['Data Collector', 'Travel Time Collector', 'Queue Counter'], 'DP Number': [6,3,1], 'Perf_measure': ['SpeedAvgArith','VehDelay','QLen'], 'Time Interval': ['Avg','Avg','Avg'], 'Field data': ['30','3.2','10']}
-        self.fake_dc_data = pd.DataFrame(fake_dc_data_data, columns = ['Experiment', 'Data Point Type', 'DP Number', 'Perf_measure', 'Time Interval', 'Field data']) 
+class StartPage(tk.Frame): #similar a StartPage     
+        
+    def __init__(self, master,controller): #master = parent class (BTC_app no exemplo. É none por que nao há classes superiores 'essa é só uma janela' )
+        
+        tk.Frame.__init__(self,master)
 
-        self.results_data = pd.DataFrame(columns = {'Experiment', 'Data Point Type', 'DP Number','Perf_measure','Time Interval','Run','Read data'})
-        
-        self.grid(row=0, column=0)
+        label = tk.Label(self, text="Start Page", font=LARGE_FONT)
+        label.grid(row=0,column=0)
 
-        self.init_window()
-        
-       
-    def init_window(self):  #TODO mudar para "experiment window"      
-        
+        button_next = tk.Button(self, text="Next Page", command=controller.show_frame(PageOne))
+        button_next.grid(row=0,column=2)
+
+
+class PageOne(tk.Frame): #TODO Colocar tutorial e botões pras páginas
+
+    def __init__(self, parent,controller):
+
+        tk.Frame.__init__(self, parent)
+
         self.master.title("Vistools")
         self.experiment_data_init = {'Experiment': 1} #TODO criar objeto "experiment"
         self.experiment_data = self.experiment_data.append(self.experiment_data_init, ignore_index=True)
@@ -161,11 +139,11 @@ class Window(Frame): #similar a StartPage
 
         menu.add_cascade(label='Edit', menu=edit)
 
-         ##------Experiments section------##
+        ##------Experiments section------##
         self.experiment_text = str('Experiment %i' % self.experiment)
         self.experiment_label = Label(self,text = self.experiment_text)
         
-         ##------Datapoints section------##
+        ##------Datapoints section------##
         self.datapoints_label = Label(self,text = 'Data Points')
         self.datapoints_ctype_dropdown = ttk.Combobox(self, width=25)
         self.datapoints_ctype_dropdown['values'] = list(self.dc_data['Display'])
@@ -251,6 +229,44 @@ class Window(Frame): #similar a StartPage
         self.update_list()
 
         self.poll()
+
+        self.dc_data = generate_dcdf_test()#generate_dcdf()#
+        
+        self.parameter_data = pd.DataFrame(columns = {'Experiment', 'Parameter', 'Lim. Inf', 'Lim. Sup', 'Step'})
+        self.experiment_data = pd.DataFrame(columns = {'Experiment', 'Data Point Type', 'DP Number', 'Perf_measure', 'Time interval', 'Field data', 'Runs'}) 
+        self.results_data = pd.DataFrame(columns = {'Experiment', 'Data Point Type', 'DP Number','Perf_measure','Time Interval','Run'})
+        self.parameter_db = pd.read_csv(r'E:\Google Drive\Scripts\vistools\resources\parameters.visdb')
+        #self.master = master
+
+        self.search_var = StringVar()
+        
+        self.switch = False
+        self.search_mem = ''
+        self.experiment = 1
+        self.check_image = PhotoImage(file=r'E:\Google Drive\Scripts\vistools\resources\check.gif')
+        
+        self.collector_type = StringVar()
+        self.collector_name = StringVar()
+        self.collector_no = StringVar()
+        self.collector_pm = StringVar()
+        self.collector_timeinterval = StringVar()
+
+        self.fake_data_data = {'Experiment': [1,1,1,2,2], 'Parameter': ['W74ax', 'W74bxAdd', 'W74bxMult','W74bxAdd', 'W74bxMult'], 'Lim. Inf': [1,1,1,2,2], 'Lim. Sup': [2,2,2,3,3], 'Step': [1, 1, 1, 1, 1]}
+        self.fake_data = pd.DataFrame(self.fake_data_data, columns = ['Experiment', 'Parameter', 'Lim. Inf', 'Lim. Sup', 'Step'])
+
+        fake_dc_data_data = {'Experiment': [1,1,1], 'Data Point Type': ['Data Collector', 'Travel Time Collector', 'Queue Counter'], 'DP Number': [6,3,1], 'Perf_measure': ['SpeedAvgArith','VehDelay','QLen'], 'Time Interval': ['Avg','Avg','Avg'], 'Field data': ['30','3.2','10']}
+        self.fake_dc_data = pd.DataFrame(fake_dc_data_data, columns = ['Experiment', 'Data Point Type', 'DP Number', 'Perf_measure', 'Time Interval', 'Field data']) 
+
+        self.results_data = pd.DataFrame(columns = {'Experiment', 'Data Point Type', 'DP Number','Perf_measure','Time Interval','Run','Read data'})
+
+    def show_frame(self,count):
+        
+        frame = self.frames(count)
+        frame.tkraise()
+    
+    #def init_window(self):  #TODO mudar para "experiment window"      
+        
+        
     
     def button_callback(self):
         
@@ -314,7 +330,7 @@ class Window(Frame): #similar a StartPage
             self.experiment_data.loc[experiment_index, 'Data Point Type'] = data_point_type
             self.experiment_data.loc[experiment_index, 'DP Number'] = Dc_Number
             print(self.experiment_data)
-          
+        
         #print(self.experiment_data)
         
     def datapoints_callback(self, eventObject):
@@ -359,7 +375,7 @@ class Window(Frame): #similar a StartPage
                 self.datapoints_cperfmeasure_dropdown['values'] = ['QLen', 'QLenMax', 'QStops']
 
             print(self.experiment_data)
-           
+        
         #print(self.experiment_data)
 
     def client_exit(self):
@@ -371,7 +387,7 @@ class Window(Frame): #similar a StartPage
         self._geom=geom
         print(geom, self._geom)
         self.master.geometry(self._geom)
-           
+        
     #Runs every 50 milliseconds. 
     def poll(self):
         #Get value of the entry box
@@ -423,7 +439,7 @@ class Window(Frame): #similar a StartPage
 
         #Filtering parameter and data points meta data
         selected_parameters = self.fake_data.loc[self.fake_data.Experiment == experiment] #temporary test experiment cfg
-        #selected_datapts = self.fake_dc_data.loc[self.fake_dc_data.Experiment == experiment] #temporary test experiment cfg
+        selected_datapts = self.fake_dc_data.loc[self.fake_dc_data.Experiment == experiment] #temporary test experiment cfg
 
         #print(selected_parameters)
 
@@ -461,7 +477,7 @@ class Window(Frame): #similar a StartPage
         print(parameters_df)
         #------------------------------------#
                 
-        for index, parameter_data in parameters_df.iterrows():
+        for index_par, parameter_data in parameters_df.iterrows():
             #print(parameter_data)
 
             parameter_names = list(parameters_df)
@@ -469,11 +485,11 @@ class Window(Frame): #similar a StartPage
             #Configures the simulation
             for i in range(len(parameter_names)):
 
-                parameter_name = str(parameter_names[i])
-                parameter_data_ = int(parameter_data[i])
+                    parameter_name = str(parameter_names[i])
+                    parameter_data_ = int(parameter_data[i])
 
-                Vissim.Net.DrivingBehaviors[0].SetAttValue(parameter_name,parameter_data_)
-                #Vissim.Net.DrivingBehaviors[0].SetAttValue('W74ax',1)
+                    Vissim.Net.DrivingBehaviors[0].SetAttValue(parameter_name,parameter_data_)
+                    #Vissim.Net.DrivingBehaviors[0].SetAttValue('W74ax',1)
                 
             
             Vissim.Simulation.SetAttValue('RandSeed', seed)
@@ -482,7 +498,7 @@ class Window(Frame): #similar a StartPage
             
             Vissim.Simulation.RunContinuous() #Iniciando Simulação 
 
-            for index, dc_data in self.fake_dc_data.iterrows(): #Collects perf_measure data
+            for index, dc_data in selected_datapts.iterrows(): #Collects perf_measure data #FIXME Trocar pra pegar os dc_data filtrados por experiemnto
                 
                 for replication in range(1,runs+1):
 
@@ -497,8 +513,8 @@ class Window(Frame): #similar a StartPage
     
                             selected_dc = Vissim.Net.DataCollectionMeasurements.ItemByKey(int(dc_data['DP Number'])) 
                             result = selected_dc.AttValue('{}({},{},All)'.format(str(dc_data['Perf_measure']), 
-                                                          str(replication), 
-                                                          str(dc_data['Time Interval'])))
+                                                        str(replication), 
+                                                        str(dc_data['Time Interval'])))
     
                         
                     elif dc_data['Data Point Type'] == 'Travel Time Collector':
@@ -506,35 +522,100 @@ class Window(Frame): #similar a StartPage
                         
                         selected_ttc = Vissim.Net.DelayMeasurements.ItemByKey(int(dc_data['DP Number']))
                         result = selected_ttc.AttValue('{}({},{},All)'.format(str(dc_data['Perf_measure']), 
-                                                       str(replication), 
-                                                       str(dc_data['Time Interval'])))
+                                                    str(replication), 
+                                                    str(dc_data['Time Interval'])))
                                                     
                     else:    
                         
                         selected_qc = Vissim.Net.QueueCounters.ItemByKey(int(dc_data['DP Number']))
                         result = selected_qc.AttValue('{}({},{})'.format(str(dc_data['Perf_measure']), 
-                                                      str(replication), 
-                                                      str(dc_data['Time Interval'])))
+                                                    str(replication), 
+                                                    str(dc_data['Time Interval'])))
                         
                     results = {'Experiment':1, 
-                               'Data Point Type':str(dc_data['Data Point Type']), 
-                               'DP Number':str(dc_data['DP Number']),
-                               'Perf_measure':str(dc_data['Perf_measure']),
-                               'Time Interval':str(dc_data['Time Interval']),
-                               'Run':str(replication),
-                               'Read data':str(result)}
+                            'Data Point Type':str(dc_data['Data Point Type']), 
+                            'DP Number':str(dc_data['DP Number']),
+                            'Perf_measure':str(dc_data['Perf_measure']),
+                            'Time Interval':str(dc_data['Time Interval']),
+                            'Run':str(replication),
+                            'Read data':str(result),
+                            'Parameters':str(index_par)}
     
                     self.results_data = self.results_data.append(results, ignore_index=True) #TODO Formatar para exportar pra dashboard
 
         self.results_data.to_csv(r"E:\Google Drive\Scripts\vistools\output.csv", sep = ';')
 
-    def plotter(self,parameter_data,result_data):
+
+
+class Results_page(tk.Frame):
+
+    def __init__(self, parent, controller):
+
+        tk.Frame.__init__(self, parent)
+        label = tk.Label(self, text="Results", font=LARGE_FONT).grid(row=0,column=0)
+        button_back = tk.Button(self, text="Back",
+                                command=lambda:controller.show_frame(StartPage))
+        button_back.grid(row=1, column=0)
+        
+
+    def plots_single(parameter, perf_measure, p_type, title, experiment):
+        
+        #getting the parameters and results data by selected experiment
+        #parameters_df_by_experiment = parameters_df.loc[parameters_df['Experiment']==experiment]
+        data_by_experiment = data.loc[data['Experiment']==experiment]
+        
+        #getting the data of the max/min parameter value
+        parameter_min = parameters_df[parameter].idxmin()
+        parameter_max = parameters_df[parameter].idxmax()
+        
+        #if the graph is a scatterplot
+        if p_type == 0:        
+        
+            results_min = list(data_by_experiment.loc[(data_by_experiment['Parameters']==parameter_min) & (data_by_experiment['Perf_measure']==perf_measure)]['Read data'])
+            results_max = list(data_by_experiment.loc[(data_by_experiment['Parameters']==parameter_max) & (data_by_experiment['Perf_measure']==perf_measure)]['Read data'])
+            
+            print(results_min)
+            print(results_max)
+            
+            plt.scatter(results_min, results_max, color='g')
+            plt.xlabel(perf_measure + ' Min.')
+            plt.ylabel(perf_measure + ' Máx.')
+            plt.title(parameter)
+            plt.show()
+        
+        #if the graph is a line chart, by runs
+        if p_type == 1:
+            
+            results_min = np.asarray(list(data_by_experiment.loc[(data['Parameters']==parameter_min) & (data_by_experiment['Perf_measure']==perf_measure)]['Read data']))
+            results_max = np.asarray(list(data_by_experiment.loc[(data['Parameters']==parameter_max) & (data_by_experiment['Perf_measure']==perf_measure)]['Read data']))
+            
+            print(results_min)
+            print(results_max)
+            
+            rep = np.asarray(list(set(list(data_by_experiment['Run'].loc[data_by_experiment['Parameters']==parameter_min]))))
+            
+            print(rep)
+            #results_min = [1,2]
+            #results_max = [3,4]
+            #rep = [9,8]
+            plt.plot(rep, results_min, color='green')
+            plt.plot(rep, results_max, color='blue')
+            plt.xlabel(perf_measure)
+            plt.ylabel('# Simulations')
+            plt.xticks(rep)
+            plt.title(parameter)
+            plt.show()
+
+
+
+
+
+        
+
+
         
 
         
-        
-
-        None
 #TODO Adicionar a pagina dos resultados                    
 
 
@@ -548,5 +629,5 @@ class Window(Frame): #similar a StartPage
 root = Tk()
 root.geometry("1920x1080")
 #root.state('zoomed')
-app = Window(master = root)
-root.mainloop()
+app = VisLab()
+app.mainloop()

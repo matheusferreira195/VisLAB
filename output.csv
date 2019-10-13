@@ -1,49 +1,49 @@
-;Perf_measure;Read data;DP Number;Experiment;Time Interval;Run;Data Point Type
-0;SpeedAvgArith;37.17873281591491;6;1;Avg;1;Data Collector
-1;SpeedAvgArith;37.21336643998919;6;1;Avg;2;Data Collector
-2;VehDelay;94.93531658863867;3;1;Avg;1;Travel Time Collector
-3;VehDelay;91.46734181364415;3;1;Avg;2;Travel Time Collector
-4;QLen;1.3274063018830538;1;1;Avg;1;Queue Counter
-5;QLen;1.679749649481896;1;1;Avg;2;Queue Counter
-6;SpeedAvgArith;37.39214816044433;6;1;Avg;1;Data Collector
-7;SpeedAvgArith;37.16218477346019;6;1;Avg;2;Data Collector
-8;VehDelay;95.46179627641588;3;1;Avg;1;Travel Time Collector
-9;VehDelay;93.43873580344108;3;1;Avg;2;Travel Time Collector
-10;QLen;1.3339945867229195;1;1;Avg;1;Queue Counter
-11;QLen;1.6917290692378337;1;1;Avg;2;Queue Counter
-12;SpeedAvgArith;37.54174684136446;6;1;Avg;1;Data Collector
-13;SpeedAvgArith;37.24933823717153;6;1;Avg;2;Data Collector
-14;VehDelay;96.61271811507821;3;1;Avg;1;Travel Time Collector
-15;VehDelay;93.89679398463407;3;1;Avg;2;Travel Time Collector
-16;QLen;1.3415702240580094;1;1;Avg;1;Queue Counter
-17;QLen;1.7228581791921396;1;1;Avg;2;Queue Counter
-18;SpeedAvgArith;37.7045047779336;6;1;Avg;1;Data Collector
-19;SpeedAvgArith;37.746706199451204;6;1;Avg;2;Data Collector
-20;VehDelay;98.72507754697047;3;1;Avg;1;Travel Time Collector
-21;VehDelay;95.79348792257896;3;1;Avg;2;Travel Time Collector
-22;QLen;1.3958841497119243;1;1;Avg;1;Queue Counter
-23;QLen;1.7343297806698;1;1;Avg;2;Queue Counter
-24;SpeedAvgArith;37.93501315810797;6;1;Avg;1;Data Collector
-25;SpeedAvgArith;37.76959714544249;6;1;Avg;2;Data Collector
-26;VehDelay;81.67611545670171;3;1;Avg;1;Travel Time Collector
-27;VehDelay;79.99727671069807;3;1;Avg;2;Travel Time Collector
-28;QLen;1.6436023780997233;1;1;Avg;1;Queue Counter
-29;QLen;1.9586932954964034;1;1;Avg;2;Queue Counter
-30;SpeedAvgArith;38.06290642756794;6;1;Avg;1;Data Collector
-31;SpeedAvgArith;37.903462574645175;6;1;Avg;2;Data Collector
-32;VehDelay;82.5659931464055;3;1;Avg;1;Travel Time Collector
-33;VehDelay;80.55704078542608;3;1;Avg;2;Travel Time Collector
-34;QLen;1.679593866490607;1;1;Avg;1;Queue Counter
-35;QLen;1.934469890207156;1;1;Avg;2;Queue Counter
-36;SpeedAvgArith;38.335093885879935;6;1;Avg;1;Data Collector
-37;SpeedAvgArith;38.45594430376712;6;1;Avg;2;Data Collector
-38;VehDelay;83.92921001448002;3;1;Avg;1;Travel Time Collector
-39;VehDelay;81.0116893336759;3;1;Avg;2;Travel Time Collector
-40;QLen;1.6848400446034268;1;1;Avg;1;Queue Counter
-41;QLen;1.9631066658919722;1;1;Avg;2;Queue Counter
-42;SpeedAvgArith;38.61292865654634;6;1;Avg;1;Data Collector
-43;SpeedAvgArith;38.6196082945176;6;1;Avg;2;Data Collector
-44;VehDelay;86.33000322290788;3;1;Avg;1;Travel Time Collector
-45;VehDelay;84.70420064800588;3;1;Avg;2;Travel Time Collector
-46;QLen;1.664461385337331;1;1;Avg;1;Queue Counter
-47;QLen;1.9681678975228338;1;1;Avg;2;Queue Counter
+;Perf_measure;Read data;DP Number;Experiment;Time Interval;Run;Data Point Type;Parameters
+0;SpeedAvgArith;37.17873282;6;1;Avg;1;Data Collector;0
+1;SpeedAvgArith;37.21336644;6;1;Avg;2;Data Collector;0
+2;VehDelay;94.93531659;3;1;Avg;1;Travel Time Collector;0
+3;VehDelay;91.46734181;3;1;Avg;2;Travel Time Collector;0
+4;QLen;1.327406302;1;1;Avg;1;Queue Counter;0
+5;QLen;1.679749649;1;1;Avg;2;Queue Counter;0
+6;SpeedAvgArith;37.39214816;6;1;Avg;1;Data Collector;1
+7;SpeedAvgArith;37.16218477;6;1;Avg;2;Data Collector;1
+8;VehDelay;95.46179628;3;1;Avg;1;Travel Time Collector;1
+9;VehDelay;93.4387358;3;1;Avg;2;Travel Time Collector;1
+10;QLen;1.333994587;1;1;Avg;1;Queue Counter;1
+11;QLen;1.691729069;1;1;Avg;2;Queue Counter;1
+12;SpeedAvgArith;37.54174684;6;1;Avg;1;Data Collector;2
+13;SpeedAvgArith;37.24933824;6;1;Avg;2;Data Collector;2
+14;VehDelay;96.61271812;3;1;Avg;1;Travel Time Collector;2
+15;VehDelay;93.89679398;3;1;Avg;2;Travel Time Collector;2
+16;QLen;1.341570224;1;1;Avg;1;Queue Counter;2
+17;QLen;1.722858179;1;1;Avg;2;Queue Counter;2
+18;SpeedAvgArith;37.70450478;6;1;Avg;1;Data Collector;3
+19;SpeedAvgArith;37.7467062;6;1;Avg;2;Data Collector;3
+20;VehDelay;98.72507755;3;1;Avg;1;Travel Time Collector;3
+21;VehDelay;95.79348792;3;1;Avg;2;Travel Time Collector;3
+22;QLen;1.39588415;1;1;Avg;1;Queue Counter;3
+23;QLen;1.734329781;1;1;Avg;2;Queue Counter;3
+24;SpeedAvgArith;37.93501316;6;1;Avg;1;Data Collector;4
+25;SpeedAvgArith;37.76959715;6;1;Avg;2;Data Collector;4
+26;VehDelay;81.67611546;3;1;Avg;1;Travel Time Collector;4
+27;VehDelay;79.99727671;3;1;Avg;2;Travel Time Collector;4
+28;QLen;1.643602378;1;1;Avg;1;Queue Counter;4
+29;QLen;1.958693295;1;1;Avg;2;Queue Counter;4
+30;SpeedAvgArith;38.06290643;6;1;Avg;1;Data Collector;5
+31;SpeedAvgArith;37.90346257;6;1;Avg;2;Data Collector;5
+32;VehDelay;82.56599315;3;1;Avg;1;Travel Time Collector;5
+33;VehDelay;80.55704079;3;1;Avg;2;Travel Time Collector;5
+34;QLen;1.679593866;1;1;Avg;1;Queue Counter;5
+35;QLen;1.93446989;1;1;Avg;2;Queue Counter;5
+36;SpeedAvgArith;38.33509389;6;1;Avg;1;Data Collector;6
+37;SpeedAvgArith;38.4559443;6;1;Avg;2;Data Collector;6
+38;VehDelay;83.92921001;3;1;Avg;1;Travel Time Collector;6
+39;VehDelay;81.01168933;3;1;Avg;2;Travel Time Collector;6
+40;QLen;1.684840045;1;1;Avg;1;Queue Counter;6
+41;QLen;1.963106666;1;1;Avg;2;Queue Counter;6
+42;SpeedAvgArith;38.61292866;6;1;Avg;1;Data Collector;7
+43;SpeedAvgArith;38.61960829;6;1;Avg;2;Data Collector;7
+44;VehDelay;86.33000322;3;1;Avg;1;Travel Time Collector;7
+45;VehDelay;84.70420065;3;1;Avg;2;Travel Time Collector;7
+46;QLen;1.664461385;1;1;Avg;1;Queue Counter;7
+47;QLen;1.968167898;1;1;Avg;2;Queue Counter;7
