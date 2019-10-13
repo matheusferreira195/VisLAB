@@ -79,11 +79,11 @@ class VisLab(tk.Tk):
 
         tk.Tk.__init__(self, *args, **kwargs)
         container = tk.Frame(self)
-        container.pack(side="top", fill="both", expand=True)
-        container.grid_rowconfigure(0, weight=1)
-        container.grid_columnconfigure(0, weight=1)
+        container.grid(row=0, column=0)
+        #container.grid_rowconfigure(0, weight=1)
+        #container.grid_columnconfigure(0, weight=1)
         self.frames = {}
-        frame = StartPage(container, self)
+        frame = StartPage(self, container)
         self.frames[StartPage] = frame
         frame.grid(row=0, column=0, sticky="nsew")
         self.show_frame(StartPage)
@@ -96,14 +96,14 @@ class VisLab(tk.Tk):
 
 class StartPage(tk.Frame): #similar a StartPage     
         
-    def __init__(self, master,controller): #master = parent class (BTC_app no exemplo. É none por que nao há classes superiores 'essa é só uma janela' )
+    def __init__(self, parent, controller): #master = parent class (BTC_app no exemplo. É none por que nao há classes superiores 'essa é só uma janela' )
         
-        tk.Frame.__init__(self,master)
+        tk.Frame.__init__(self,parent)
 
         label = tk.Label(self, text="Start Page", font=LARGE_FONT)
         label.grid(row=0,column=0)
 
-        button_next = tk.Button(self, text="Next Page", command=controller.show_frame(PageOne))
+        button_next = tk.Button(self, text="Next Page", command=lambda:controller.show_frame(PageOne))
         button_next.grid(row=0,column=2)
 
 
