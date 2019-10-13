@@ -74,15 +74,67 @@ def generate_dcdf():
     #print(dc_df)
     return dc_df
 
-class Window(Frame): #similar a StartPage    
+class SeaofBTCapp(tk.Tk):
+
+    def __init__(self, *args, **kwargs):
         
-    def __init__(self, master): #master = parent class (BTC_app no exemplo. É none por que nao há classes superiores 'essa é só uma janela' )
-        #print(type(master))
-        Frame.__init__(self, master)
-        
+        tk.Tk.__init__(self, *args, **kwargs)
         container = tk.Frame(self)
-        container.grid_rowconfigure(0, weight=1) 
+
+        container.pack(side="top", fill="both", expand = True)
+
+        container.grid_rowconfigure(0, weight=1)
         container.grid_columnconfigure(0, weight=1)
+
+        self.frames = {}
+
+        for F in (StartPage, PageOne, PageTwo):
+
+            frame = F(container, self)
+
+            self.frames[F] = frame
+
+            frame.grid(row=0, column=0, sticky="nsew")
+
+        self.show_frame(StartPage)
+
+    def show_frame(self, cont):
+
+        frame = self.frames[cont]
+        frame.tkraise()
+
+class StartPage(tk.Frame):
+
+    def __init__(self, parent, controller):
+
+        tk.Frame.__init__(self,parent)
+        label = tk.Label(self, text="Start Page", font=LARGE_FONT)
+        label.pack(pady=10,padx=10)
+
+        button = tk.Button(self, text="Visit Page 1",
+                            command=lambda: controller.show_frame(PageOne))
+        button.pack()
+
+        button2 = tk.Button(self, text="Visit Page 2",
+                            command=lambda: controller.show_frame(PageTwo))
+        button2.pack()
+    
+class PageOne(tk.Frame):
+
+    def __init__(self, parent, controller):
+        tk.Frame.__init__(self, parent)
+        label = tk.Label(self, text="Page One!!!", font=LARGE_FONT)
+        label.grid(row=0,column=0)
+
+        button1 = tk.Button(self, text="Back to Home",
+                            command=lambda: controller.show_frame(StartPage))
+        button1.grid(row=0,column=1)
+
+        button2 = tk.Button(self, text="Page Two",
+                            command=lambda: controller.show_frame(PageTwo))
+        button2.grid(row=0,column=2)
+        
+       
         
         self.dc_data = generate_dcdf_test()#generate_dcdf()#
         
@@ -90,20 +142,19 @@ class Window(Frame): #similar a StartPage
         self.experiment_data = pd.DataFrame(columns = {'Experiment', 'Data Point Type', 'DP Number', 'Perf_measure', 'Time interval', 'Field data', 'Runs'}) 
         self.results_data = pd.DataFrame(columns = {'Experiment', 'Data Point Type', 'DP Number','Perf_measure','Time Interval','Run'})
         self.parameter_db = pd.read_csv(r'E:\Google Drive\Scripts\vistools\resources\parameters.visdb')
-        self.master = master
 
-        self.search_var = StringVar()
+        self.search_var = tk.StringVar()
         
         self.switch = False
         self.search_mem = ''
         self.experiment = 1
-        self.check_image = PhotoImage(file=r'E:\Google Drive\Scripts\vistools\resources\check.gif')
+        self.check_image = tk.PhotoImage(file=r'E:\Google Drive\Scripts\vistools\resources\check.gif')
         
-        self.collector_type = StringVar()
-        self.collector_name = StringVar()
-        self.collector_no = StringVar()
-        self.collector_pm = StringVar()
-        self.collector_timeinterval = StringVar()
+        self.collector_type = tk.StringVar()
+        self.collector_name = tk.StringVar()
+        self.collector_no = tk.StringVar()
+        self.collector_pm = tk.StringVar()
+        self.collector_timeinterval = tk.StringVar()
 
         self.fake_data_data = {'Experiment': [1,1,1,2,2], 'Parameter': ['W74ax', 'W74bxAdd', 'W74bxMult','W74bxAdd', 'W74bxMult'], 'Lim. Inf': [1,1,1,2,2], 'Lim. Sup': [2,2,2,3,3], 'Step': [1, 1, 1, 1, 1]}
         self.fake_data = pd.DataFrame(self.fake_data_data, columns = ['Experiment', 'Parameter', 'Lim. Inf', 'Lim. Sup', 'Step'])
@@ -119,7 +170,7 @@ class Window(Frame): #similar a StartPage
         
        
     def init_window(self):  #TODO mudar para "experiment window" 
-        self.master.title("Vistools")
+       # self.master.title("Vistools")
         self.experiment_data_init = {'Experiment': 1} #TODO criar objeto "experiment"
         self.experiment_data = self.experiment_data.append(self.experiment_data_init, ignore_index=True)
         self.parameter_data = self.parameter_data.append(self.experiment_data_init, ignore_index=True)
@@ -128,29 +179,14 @@ class Window(Frame): #similar a StartPage
         
         #quitButton.place(x=245, y=170)
         
-        menu = Menu(self.master)
-        self.master.config(menu=menu)
-        
-        file = Menu(menu)
-        
-        file.add_command(label = 'Exit', command = self.client_exit)
-        
-        menu.add_cascade(label="File", menu=file)
-        
-        edit = Menu(menu)     
-                
-        edit.add_command(label = 'Undo', command = lambda:popupmsg("wow! such programmin'"))
-        
-        #TODO adicionar botao para passar pra pagina de results
-
-        menu.add_cascade(label='Edit', menu=edit)
+       
 
          ##------Experiments section------##
         self.experiment_text = str('Experiment %i' % self.experiment)
-        self.experiment_label = Label(self,text = self.experiment_text)
+        self.experiment_label = tk.Label(self,text = self.experiment_text)
 
         ##------Datapoints section------##
-        self.datapoints_label = Label(self,text = 'Data Points')
+        self.datapoints_label = tk.Label(self,text = 'Data Points')
         self.datapoints_ctype_dropdown = ttk.Combobox(self, width=25)
         self.datapoints_ctype_dropdown['values'] = list(self.dc_data['Display'])
         self.datapoints_ctype_dropdown.configure(font=('Roboto', 8))
@@ -165,64 +201,64 @@ class Window(Frame): #similar a StartPage
         self.datapoints_cperfmeasure_dropdown.set('Select what you will measure')
         self.datapoints_cperfmeasure_dropdown.bind('<<ComboboxSelected>>', self.datapoints_callback)
 
-        self.datapoints_ctimeinterval_label = Label(self, text='Add time interval number or agregation \n eg: 1,2,3,avg,min,max')
-        self.datapoints_ctimeinterval_entry = Entry(self)
+        self.datapoints_ctimeinterval_label = tk.Label(self, text='Add time interval number or agregation \n eg: 1,2,3,avg,min,max')
+        self.datapoints_ctimeinterval_entry = tk.Entry(self)
 
-        self.datapoints_ctargetvalue_label=Label(self, text='Add the field data to compare')
-        self.datapoints_ctargetvalue_entry=Entry(self)
+        self.datapoints_ctargetvalue_label=tk.Label(self, text='Add the field data to compare')
+        self.datapoints_ctargetvalue_entry= tk.Entry(self)
 
-        self.datapoint_ok_button = Button(self, command = self.button_callback)# image=self.check_image)
+        self.datapoint_ok_button = tk.Button(self, command = self.button_callback)# image=self.check_image)
 
         ##------Parameters section------##   
-        self.parameters_label = Label(self,text = 'Parameters')      
-        self.parameter_search_entry = Entry(self, textvariable=self.search_var, width=25)
+        self.parameters_label = tk.Label(self,text = 'Parameters')      
+        self.parameter_search_entry = tk.Entry(self, textvariable=self.search_var, width=25)
         self.parameter_search_entry.insert(0, 'Search parameters here')
-        self.parameter_search_listbox = Listbox(self, width=45, height=1)
+        self.parameter_search_listbox = tk.Listbox(self, width=45, height=1)
         self.parameter_search_listbox.bind('<<ListboxSelect>>', self.parameters_callback)
 
-        self.parameter_label_liminf = Label(self, text = 'Inferior Limit')
-        self.parameter_entry_liminf = Entry(self, width=10)
+        self.parameter_label_liminf = tk.Label(self, text = 'Inferior Limit')
+        self.parameter_entry_liminf = tk.Entry(self, width=10)
         self.parameter_entry_liminf.bind('<FocusOut>', self.parameters_callback)
 
-        self.parameter_label_limsup = Label(self, text = 'Superior Limit')
-        self.parameter_entry_limsup = Entry(self, width=10)
+        self.parameter_label_limsup = tk.Label(self, text = 'Superior Limit')
+        self.parameter_entry_limsup = tk.Entry(self, width=10)
         self.parameter_entry_limsup.bind('<FocusOut>', self.parameters_callback)
 
-        self.parameter_label_step = Label(self, text = 'Step')
-        self.parameter_entry_step = Entry(self, width=10)
+        self.parameter_label_step = tk.Label(self, text = 'Step')
+        self.parameter_entry_step = tk.Entry(self, width=10)
         self.parameter_entry_step.bind('<FocusOut>', self.parameters_callback)
 
         ##------Simulation section------##
-        self.simulation_label = Label(self, text = 'Simulation Configs')
+        self.simulation_label = tk.Label(self, text = 'Simulation Configs')
 
-        self.simulation_label_replications = Label(self, text = 'How many runs?')
-        self.simulation_entry_replications = Entry(self, width=5)
+        self.simulation_label_replications = tk.Label(self, text = 'How many runs?')
+        self.simulation_entry_replications = tk.Entry(self, width=5)
 
-        self.test_button =  Button(self, command = self.test_buttom)#, image=self.check_image)
+        self.test_button = tk.Button(self, command = self.test_buttom)#, image=self.check_image)
 
         ##------Grid configuration------##
-        self.experiment_label.grid(row=1, column=0, sticky=W)
+        self.experiment_label.grid(row=1, column=0, sticky='w')
         
-        self.datapoints_label.grid(row=2, column=0, sticky=W, padx=10)
-        self.datapoints_ctype_dropdown.grid(row=4, column=0, sticky=W, padx=10)
-        self.datapoints_cperfmeasure_dropdown.grid(row=4, column=1, sticky=W, padx=10)
-        self.datapoints_ctimeinterval_label.grid(row=3, column=2, sticky=W, padx=10)
-        self.datapoints_ctimeinterval_entry.grid(row=4, column=2, sticky=W, padx=10)
-        self.datapoints_ctargetvalue_label.grid(row=3, column=3, sticky=W, padx=10)
-        self.datapoints_ctargetvalue_entry.grid(row=4, column=3, sticky=W, padx=10)
-        self.datapoint_ok_button.grid(row=4, column=4, sticky=W, padx=10)
+        self.datapoints_label.grid(row=2, column=0, sticky='w', padx=10)
+        self.datapoints_ctype_dropdown.grid(row=4, column=0, sticky='w', padx=10)
+        self.datapoints_cperfmeasure_dropdown.grid(row=4, column=1, sticky='w', padx=10)
+        self.datapoints_ctimeinterval_label.grid(row=3, column=2, sticky='w', padx=10)
+        self.datapoints_ctimeinterval_entry.grid(row=4, column=2, sticky='w', padx=10)
+        self.datapoints_ctargetvalue_label.grid(row=3, column=3, sticky='w', padx=10)
+        self.datapoints_ctargetvalue_entry.grid(row=4, column=3, sticky='w', padx=10)
+        self.datapoint_ok_button.grid(row=4, column=4, sticky='w', padx=10)
         
         self.separator.grid(row=2, column=5, sticky='ns', rowspan=100)
 
-        self.parameters_label.grid(row=2, column=6, sticky=W, padx = 5)
-        self.parameter_search_entry.grid(row=3, column=6, sticky =W, padx = 5)
-        self.parameter_search_listbox.grid(row=4, column=6, sticky=W, padx = 5)
-        self.parameter_label_liminf.grid(row=3, column=7, sticky=W, padx=5)
-        self.parameter_entry_liminf.grid(row=4, column=7, sticky=W, padx=5)
-        self.parameter_label_limsup.grid(row=3, column=8, sticky=W, padx=5)
-        self.parameter_entry_limsup.grid(row=4, column=8, sticky=W, padx=5)
-        self.parameter_label_step.grid(row=3, column=9, sticky=W, padx=5)
-        self.parameter_entry_step.grid(row=4, column=9, sticky=W, padx=5)
+        self.parameters_label.grid(row=2, column=6, sticky='w', padx = 5)
+        self.parameter_search_entry.grid(row=3, column=6, sticky ='w', padx = 5)
+        self.parameter_search_listbox.grid(row=4, column=6, sticky='w', padx = 5)
+        self.parameter_label_liminf.grid(row=3, column=7, sticky='w', padx=5)
+        self.parameter_entry_liminf.grid(row=4, column=7, sticky='w', padx=5)
+        self.parameter_label_limsup.grid(row=3, column=8, sticky='w', padx=5)
+        self.parameter_entry_limsup.grid(row=4, column=8, sticky='w', padx=5)
+        self.parameter_label_step.grid(row=3, column=9, sticky='w', padx=5)
+        self.parameter_entry_step.grid(row=4, column=9, sticky='w', padx=5)
 
         self.simulation_label.grid(row=5,column=0)
         self.simulation_label_replications.grid(row=6,column=0)
@@ -244,18 +280,18 @@ class Window(Frame): #similar a StartPage
         self.parameter_db = pd.read_csv(r'E:\Google Drive\Scripts\vistools\resources\parameters.visdb')
         #self.master = master
 
-        self.search_var = StringVar()
+        self.search_var = tk.StringVar()
         
         self.switch = False
         self.search_mem = ''
         self.experiment = 1
-        self.check_image = PhotoImage(file=r'E:\Google Drive\Scripts\vistools\resources\check.gif')
+        self.check_image = tk.PhotoImage(file=r'E:\Google Drive\Scripts\vistools\resources\check.gif')
         
-        self.collector_type = StringVar()
-        self.collector_name = StringVar()
-        self.collector_no = StringVar()
-        self.collector_pm = StringVar()
-        self.collector_timeinterval = StringVar()
+        self.collector_type = tk.StringVar()
+        self.collector_name = tk.StringVar()
+        self.collector_no = tk.StringVar()
+        self.collector_pm = tk.StringVar()
+        self.collector_timeinterval = tk.StringVar()
 
         self.fake_data_data = {'Experiment': [1,1,1,2,2], 'Parameter': ['W74ax', 'W74bxAdd', 'W74bxMult','W74bxAdd', 'W74bxMult'], 'Lim. Inf': [1,1,1,2,2], 'Lim. Sup': [2,2,2,3,3], 'Step': [1, 1, 1, 1, 1]}
         self.fake_data = pd.DataFrame(self.fake_data_data, columns = ['Experiment', 'Parameter', 'Lim. Inf', 'Lim. Sup', 'Step'])
@@ -269,10 +305,6 @@ class Window(Frame): #similar a StartPage
         
         frame = self.frames(count)
         frame.tkraise()
-    
-    #def init_window(self):  #TODO mudar para "experiment window"      
-        
-        
     
     def button_callback(self):
         
@@ -363,6 +395,7 @@ class Window(Frame): #similar a StartPage
             print(self.experiment_data)
 
         else:
+            
             experiment_index  = self.experiment_data.loc[self.experiment_data['Experiment']==self.experiment].index[0]
             dc_match = self.dc_data.loc[self.dc_data['Display'] == value]
             data_point_type = dc_match['Type'].item()
@@ -612,28 +645,23 @@ class Results_page(tk.Frame):
             plt.title(parameter)
             plt.show()
 
-
-
-
-
-        
-
-
-        
-
-        
 #TODO Adicionar a pagina dos resultados                    
+class PageTwo(tk.Frame):
+
+    def __init__(self, parent, controller):
+        tk.Frame.__init__(self, parent)
+        label = tk.Label(self, text="Page Two!!!", font=LARGE_FONT)
+        label.pack(pady=10,padx=10)
+
+        button1 = tk.Button(self, text="Back to Home",
+                            command=lambda: controller.show_frame(StartPage))
+        button1.pack()
+
+        button2 = tk.Button(self, text="Page One",
+                            command=lambda: controller.show_frame(PageOne))
+        button2.pack()
+        
 
 
-
-
-                    
-
-
-
-
-root = Tk()
-root.geometry("1920x1080")
-#root.state('zoomed')
-app = Window(master = root)
-root.mainloop()
+app = SeaofBTCapp()
+app.mainloop()
