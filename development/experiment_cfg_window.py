@@ -12,7 +12,11 @@ import os
 import itertools as it
 import numpy as np
 from saturation_headway import calculate_shdwy
-import matplotlib as plt
+import matplotlib
+matplotlib.use("TkAgg")
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+from matplotlib.figure import Figure
+
 
 
 NORM_FONT= ("Roboto", 10)
@@ -397,7 +401,7 @@ class PageOne(tk.Frame):
 
         #Get value of the entry box
         self.search = self.search_var.get()
-        print(self.search)
+        #print(self.search)
         if self.search != self.search_mem: #self.search_mem = '' at start of program.
             self.update_list(is_contact_search=True)
             #set switch and search memory
@@ -511,7 +515,7 @@ class PageOne(tk.Frame):
                     if dc_data['Data Point Type'] == 'Data Collector':
     
                         if dc_data['Perf_measure'] == 'Saturation Headway':
-                            
+                            print('problema')
                             #A função ja tem replication handling
                             result = calculate_shdwy(path_network, dc_data['DP Number'].item, replication) 
                             
@@ -556,17 +560,61 @@ class PageOne(tk.Frame):
 class PageTwo(PageOne):
 
     def __init__(self, parent, controller):
+        PageOne.__init__(self, parent, controller)
         tk.Frame.__init__(self, parent)
         label = tk.Label(self, text="Page Two!!!", font=LARGE_FONT)
-        label.pack(pady=10,padx=10)
+        label.grid(row=0,column=0)
 
         button1 = tk.Button(self, text="Back to Home",
                             command=lambda: controller.show_frame(StartPage))
-        button1.pack()
+        button1.grid(row=0,column=1)
 
         button2 = tk.Button(self, text="Page One",
                             command=lambda: controller.show_frame(PageOne))
-        button2.pack()
+        button2.grid(row=0,column=2)
+
+        #Section 1: graphs related to single parameter analysis
+
+        label_s1 = tk.Label(self, text = "Single Parameter analysis")
+        label_s1.grid(row=1,column=0)
+
+        plot_cfgs = []
+        #label_expselect = tk.Label(self, text="")
+
+        self.exp_select = ttk.Combobox(self, width=25)
+        self.exp_select['values'] = list(set(self.experiment_data['Experiment']))
+        self.exp_select.configure(font=('Roboto', 8))
+        self.exp_select.set('Select the Experiment')
+        self.exp_select.bind('<<ComboboxSelected>>', self.plot_cfg)
+        self.exp_select.grid(row=2, column=0)
+
+        self.p1 = ttk.Combobox(self, width=25)
+        self.p1['values'] = list(set(self.parameter_data['Parameter']))
+        self.p1.configure(font=('Roboto', 8))
+        self.p1.set('Select the Parameter')
+        self.p1.bind('<<ComboboxSelected>>', self.plot_cfg)
+        self.p1.grid(row=3, column=0)
+
+        self.p2 = ttk.Combobox(self, width=25)
+        self.p2['values'] = list(set(self.parameter_data['Parameter']))
+        self.p2.configure(font=('Roboto', 8))
+        self.p2.set('Select the Perf. Measure')
+        self.p2.bind('<<ComboboxSelected>>', self.plot_cfg)
+        self.p2.grid(row=4, column=0)
+
+        self.titles_lbl = tk.Label(self, text="Altere o título aqui")#TODO adicionar label e entry para pegar o titulo que o cara quiser colocar
+        self.titles_lbl.grid(row=5,column=0)
+        self.titles = tk.Entry(self)
+        self.titles.grid(row=5,column=1)
+        
+
+    def plot_cfg(self, eventObject):
+
+        caller = str(eventObject.widget)
+        value = eventObject.widget.get()
+        print(caller)
+        print(value)  
+
 
     def plots_single(self, parameter, perf_measure, p_type, title, experiment, *kwargs):
         
@@ -587,11 +635,11 @@ class PageTwo(PageOne):
             print(results_min)
             print(results_max)
             
-            plt.scatter(results_min, results_max, color='g')
-            plt.xlabel(perf_measure + ' Min.')
-            plt.ylabel(perf_measure + ' Máx.')
-            plt.title(parameter)
-            plt.show()
+            matplotlib.scatter(results_min, results_max, color='g')
+            matplotlib.xlabel(perf_measure + ' Min.')
+            matplotlib.ylabel(perf_measure + ' Máx.')
+            matplotlib.title(parameter)
+            matplotlib.show()
         
         #if the graph is a line chart, by runs
         if p_type == 1:
@@ -608,14 +656,22 @@ class PageTwo(PageOne):
             #results_min = [1,2]
             #results_max = [3,4]
             #rep = [9,8]
-            plt.plot(rep, results_min, color='green')
-            plt.plot(rep, results_max, color='blue')
-            plt.xlabel(perf_measure)
-            plt.ylabel('# Simulations')
-            plt.xticks(rep)
-            plt.title(parameter)
-            plt.show()
+            matplotlib.plot(rep, results_min, color='green')
+            matplotlib.plot(rep, results_max, color='blue')
+            matplotlib.xlabel(perf_measure)
+            matplotlib.ylabel('# Simulations')
+            matplotlib.xticks(rep)
+            matplotlib.title(parameter)
+            matplotlib.show()
 
+    def plot_multi(self, experiment, g_type):         #TODO Adicionar a funcao para gerar a matriz de correlacao
+        
+        #if g_type == 'boxplot':
+
+
+        
+
+        None
 
 app = SeaofBTCapp()
 app.mainloop()
