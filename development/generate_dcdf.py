@@ -7,7 +7,8 @@ def generate_dcdf_test():
         data = {'Type':'Data Collector', 'Name':'dc#%i' % i, 'No':'%i' % i, 'Data Collection Points':None, 'Display':('Data Collector' + '/ ' + 'N/A' + ' / #'+ str(i))}
         dc_df = dc_df.append(data,ignore_index=True)
     return dc_df
-teste = generate_dcdf_test()
+   
+'''teste = generate_dcdf_test()
 #print(teste)
 teste_results = pd.read_csv(r'E:/Google Drive/Scripts/vistools/output.csv', sep=';')
 experiment = 1
@@ -15,10 +16,10 @@ fake_data_data = {'Experiment': [1,1,1,2,2], 'Parameter': ['W74ax', 'W74bxAdd', 
 fake_data = pd.DataFrame(fake_data_data, columns = ['Experiment', 'Parameter', 'Lim. Inf', 'Lim. Sup', 'Step'])
 fake_dc_data_data = {'Experiment': [1,1,1], 'Data Point Type': ['Data Collector', 'Travel Time Collector', 'Queue Counter'], 'DP Number': [6,3,1], 'Perf_measure': ['SpeedAvgArith','VehDelay','QLen'], 'Time Interval': ['Avg','Avg','Avg'], 'Field data': ['30','3.2','10']}
 fake_dc_data = pd.DataFrame(fake_dc_data_data, columns = ['Experiment', 'Data Point Type', 'DP Number', 'Perf_measure', 'Time Interval', 'Field data'])
-fake_selected_parameters = fake_data.loc[fake_data.Experiment == experiment] #temporary test experiment cfg
+fake_selected_parameters = fake_data.loc[fake_data.Experiment == experiment] #temporary test experiment cfg'''
 
 
-def generate_dcdf():
+def generate_dcdf(Vissim):
 
     dc_df = pd.DataFrame(columns = ['Type', 'Name', 'No', 'Display'])
     attribute=['Name', 'No']

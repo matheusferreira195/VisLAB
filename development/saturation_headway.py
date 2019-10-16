@@ -99,5 +99,5 @@ def calculate_shdwy(path, dc, replication):
     return headway_mean 
         
 
-h = calculate_shdwy("E:\\Google Drive\\Scripts\\vistools\\development\\net\\teste\\",5,2) 
-print(h) 
+#h = calculate_shdwy("E:\\Google Drive\\Scripts\\vistools\\development\\net\\teste\\",5,2) 
+#print(h) 

@@ -1,8 +1,3 @@
-#This is the second window that the user should see. It allows the user to configure a 'experiment',
-#selecting first the net data collectors and its net perfomance measure (npm), and also 
-#the driving behavior's parameters and the search range.
-
-
 import win32com.client as com
 import tkinter as tk
 from tkinter import ttk
@@ -17,13 +12,32 @@ matplotlib.use("TkAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from matplotlib.figure import Figure
 import sqlite3
+from generate_dcdf import generate_dcdf
+from generate_dcdf import generate_dcdf_test
 
 #Database connection
+
 cnx = sqlite3.connect(r'C:\Users\mathe\Desktop\vislab.db')
+cursor = cnx.cursor()
 
 #Setting up FONTS
+
 NORM_FONT= ("Roboto", 10)
 LARGE_FONT = ("Roboto", 20)
+
+#Pulling datapoints meta data from vissim
+
+'''Vissim = com.Dispatch("Vissim.Vissim") #Abrindo o Vissim
+path_network =r'E:\Google Drive\Scripts\vistools\development\net\teste\teste.inpx'
+print(path_network)
+flag = False 
+Vissim.LoadNet(path_network, flag) #Carregando o arquivo'''
+
+#Loading metadata dataframes 
+
+dc_data = generate_dcdf_test()#generate_dcdf(Vissim)
+parameter_db = pd.read_csv(r'E:\Google Drive\Scripts\vistools\resources\parameters.visdb')
+print(dc_data)
 
 #Main app class
 class SeaofBTCapp(tk.Tk):
@@ -51,6 +65,7 @@ class SeaofBTCapp(tk.Tk):
         self.show_frame(StartPage)
 
     #function to swap pages to front
+
     def show_frame(self, cont):
 
         frame = self.frames[cont]
@@ -84,7 +99,8 @@ class PageOne(tk.Frame):
         label = tk.Label(self, text="Page One!!!", font=LARGE_FONT)
         label.grid(row=0,column=0)
         
-        ##Navigation controls
+        #Navigation controls
+
         button1 = tk.Button(self, text="Back to Home",
                             command=lambda: controller.show_frame(StartPage))
         button1.grid(row=0,column=1)
@@ -101,7 +117,7 @@ class PageOne(tk.Frame):
         #self.parameter_db = pd.read_csv(r'E:\Google Drive\Scripts\vistools\resources\parameters.visdb')
 
         #variable initialization
-        
+
         self.search_var = tk.StringVar()
         
         self.switch = False
@@ -115,34 +131,40 @@ class PageOne(tk.Frame):
         self.collector_pm = tk.StringVar()
         self.collector_timeinterval = tk.StringVar()
 
-        self.fake_data_data = {'Experiment': [1,1,1,2,2], 'Parameter': ['W74ax', 'W74bxAdd', 'W74bxMult','W74bxAdd', 'W74bxMult'], 'Lim. Inf': [1,1,1,2,2], 'Lim. Sup': [2,2,2,3,3], 'Step': [1, 1, 1, 1, 1]}
-        self.fake_data = pd.DataFrame(self.fake_data_data, columns = ['Experiment', 'Parameter', 'Lim. Inf', 'Lim. Sup', 'Step'])
+        #self.fake_data_data = {'Experiment': [1,1,1,2,2], 'Parameter': ['W74ax', 'W74bxAdd', 'W74bxMult','W74bxAdd', 'W74bxMult'], 'Lim. Inf': [1,1,1,2,2], 'Lim. Sup': [2,2,2,3,3], 'Step': [1, 1, 1, 1, 1]}
+        #self.fake_data = pd.DataFrame(self.fake_data_data, columns = ['Experiment', 'Parameter', 'Lim. Inf', 'Lim. Sup', 'Step'])
 
-        fake_dc_data_data = {'Experiment': [1,1,1], 'Data Point Type': ['Data Collector', 'Travel Time Collector', 'Queue Counter'], 'DP Number': [6,3,1], 'Perf_measure': ['SpeedAvgArith','VehDelay','QLen'], 'Time Interval': ['Avg','Avg','Avg'], 'Field data': ['30','3.2','10']}
-        self.fake_dc_data = pd.DataFrame(fake_dc_data_data, columns = ['Experiment', 'Data Point Type', 'DP Number', 'Perf_measure', 'Time Interval', 'Field data'])         
+        #fake_dc_data_data = {'Experiment': [1,1,1], 'Data Point Type': ['Data Collector', 'Travel Time Collector', 'Queue Counter'], 'DP Number': [6,3,1], 'Perf_measure': ['SpeedAvgArith','VehDelay','QLen'], 'Time Interval': ['Avg','Avg','Avg'], 'Field data': ['30','3.2','10']}
+        #self.fake_dc_data = pd.DataFrame(fake_dc_data_data, columns = ['Experiment', 'Data Point Type', 'DP Number', 'Perf_measure', 'Time Interval', 'Field data'])         
         self.grid(row=0, column=0)
 
         self.init_window()
         
        
-    def init_window(self):  #TODO mudar para "experiment window" 
-       # self.master.title("Vistools")
-        self.experiment_data_init = {'Experiment': 1} #TODO criar objeto "experiment"
-        self.experiment_data = self.experiment_data.append(self.experiment_data_init, ignore_index=True)
-        self.parameter_data = self.parameter_data.append(self.experiment_data_init, ignore_index=True)
-        #print(self.experiment_data)
-        #quitButton = Button(self, text = "Quit", command=self.client_exit)
+    def init_window(self): #TODO mudar para "experiment window" 
         
+        #self.master.title("Vistools")
+        #self.experiment_data_init = {'Experiment': 1} 
+        #self.experiment_data = self.experiment_data.append(self.experiment_data_init, ignore_index=True)
+        #self.parameter_data = self.parameter_data.append(self.experiment_data_init, ignore_index=True)
+        #print(self.experiment_data)
+        #quitButton = Button(self, text = "Quit", command=self.client_exit)        
         #quitButton.place(x=245, y=170)
+        
+        #FRONT-END
+        ##------Experiments section------##
 
-         ##------Experiments section------##
+        #TODO adicionar experiment handling
+
+        self.experiment = 1
         self.experiment_text = str('Experiment %i' % self.experiment)
         self.experiment_label = tk.Label(self,text = self.experiment_text)
+        
 
         ##------Datapoints section------##
         self.datapoints_label = tk.Label(self,text = 'Data Points')
         self.datapoints_ctype_dropdown = ttk.Combobox(self, width=25)
-        self.datapoints_ctype_dropdown['values'] = list(self.dc_data['Display'])
+        self.datapoints_ctype_dropdown['values'] = list(dc_data['Display'])
         self.datapoints_ctype_dropdown.configure(font=('Roboto', 8))
         self.datapoints_ctype_dropdown.set('Select data collector type')
         self.datapoints_ctype_dropdown.bind('<<ComboboxSelected>>', self.datapoints_callback)
@@ -379,7 +401,7 @@ class PageOne(tk.Frame):
 
         #Just a generic list to populate the listbox
                 
-        lbox_list = list(self.parameter_db['Long Name'])
+        lbox_list = list(parameter_db['Long Name'])
         #print(lbox_list)
 
         self.parameter_search_listbox.delete(0, tk.END)
@@ -536,8 +558,10 @@ class PageTwo(PageOne):
         plot_cfgs = []
         #label_expselect = tk.Label(self, text="")
 
+        
+
         self.exp_select = ttk.Combobox(self, width=25)
-        self.exp_select['values'] = list(set(self.experiment_data['Experiment']))
+        self.exp_select['values'] = list(cursor.execute("SELECT * FROM experiments"))
         self.exp_select.configure(font=('Roboto', 8))
         self.exp_select.set('Select the Experiment')
         self.exp_select.bind('<<ComboboxSelected>>', self.plot_cfg)
