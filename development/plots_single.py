@@ -75,67 +75,73 @@ import sqlite3
 
 # Create your connection.
 cnx = sqlite3.connect(r'C:\Users\mathe\Desktop\vislab.db')
+existing_experiments_qry = "SELECT * FROM experiments"
+existing_experiments = pd.read_sql(existing_experiments_qry,cnx)
+        
+for item in existing_experiments.iterrows():
 
-data = pd.read_sql_query("""SELECT sp.experiment,sp.parameter_value,sp.parameter_name,rlts.perf_measure_value
-                          FROM simulation_parameters as sp
-                          INNER JOIN results as rlts
-                          ON sp.simulationID = rlts.simulationID
-                          """, cnx) 
-#parameters_df = pd.read_sql_query("SELECT * FROM simulation_parameters",cnx)
-#plot
+            print(int(item[1]))
+            
+# data = pd.read_sql_query("""SELECT sp.experiment,sp.parameter_value,sp.parameter_name,rlts.perf_measure_value
+#                           FROM simulation_parameters as sp
+#                           INNER JOIN results as rlts
+#                           ON sp.simulationID = rlts.simulationID
+#                           """, cnx) 
+# #parameters_df = pd.read_sql_query("SELECT * FROM simulation_parameters",cnx)
+# #plot
 
 
-def plots_single(parameter, perf_measure, p_type, title, experiment):
+# def plots_single(parameter, perf_measure, p_type, title, experiment):
     
 
-    data_by_experiment = data.loc[(data['experiment']==experiment) & (data['parameter_name']==parameter)]
+#     data_by_experiment = data.loc[(data['experiment']==experiment) & (data['parameter_name']==parameter)]
     
-    parameter_min = min(list(set(data_by_experiment['parameter_value'])))
-    parameter_max = max(list(set(data_by_experiment['parameter_value'])))
+#     parameter_min = min(list(set(data_by_experiment['parameter_value'])))
+#     parameter_max = max(list(set(data_by_experiment['parameter_value'])))
     
-    print(parameter_min)
-    print(parameter_max)
+#     print(parameter_min)
+#     print(parameter_max)
     
-    #if the graph is a scatterplot
-    if p_type == 0:
+#     #if the graph is a scatterplot
+#     if p_type == 0:
                 
         
-        results_min = data_by_experiment['perf_measure_value'].loc[data_by_experiment['parameter_value']==parameter_min]
-        results_max = data_by_experiment['perf_measure_value'].loc[data_by_experiment['parameter_value']==parameter_max]
-        print(results_min)
-        print(results_max)
-        plt.scatter(results_min, results_max, color='g')
-        plt.xlabel(perf_measure + ' Min.')
-        plt.ylabel(perf_measure + ' Máx.')
-        plt.title(parameter)
-        plt.show()
+#         results_min = data_by_experiment['perf_measure_value'].loc[data_by_experiment['parameter_value']==parameter_min]
+#         results_max = data_by_experiment['perf_measure_value'].loc[data_by_experiment['parameter_value']==parameter_max]
+#         print(results_min)
+#         print(results_max)
+#         plt.scatter(results_min, results_max, color='g')
+#         plt.xlabel(perf_measure + ' Min.')
+#         plt.ylabel(perf_measure + ' Máx.')
+#         plt.title(parameter)
+#         plt.show()
     
-    #if the graph is a line chart, by runs
-    if p_type == 1:
+#     #if the graph is a line chart, by runs
+#     if p_type == 1:
         
-        results_min = np.asarray(data_by_experiment['perf_measure_value'].loc[data_by_experiment['parameter_value']==parameter_min])
-        results_max = np.asarray(data_by_experiment['perf_measure_value'].loc[data_by_experiment['parameter_value']==parameter_max])
+#         results_min = np.asarray(data_by_experiment['perf_measure_value'].loc[data_by_experiment['parameter_value']==parameter_min])
+#         results_max = np.asarray(data_by_experiment['perf_measure_value'].loc[data_by_experiment['parameter_value']==parameter_max])
         
         
         
-        print(results_min)
-        print(results_max)
+#         print(results_min)
+#         print(results_max)
         
-        rep = list(range(len(results_min)))
+#         rep = list(range(len(results_min)))
         
-        print(rep)
-        #results_min = [1,2]
-        #results_max = [3,4]
-        #rep = [9,8]
-        plt.plot(rep, results_min, color='green')
-        plt.plot(rep, results_max, color='blue')
-        plt.xlabel(perf_measure)
-        plt.ylabel('# Simulations')
-        plt.xticks(rep)
-        plt.title(parameter)
-        plt.show()
+#         print(rep)
+#         #results_min = [1,2]
+#         #results_max = [3,4]
+#         #rep = [9,8]
+#         plt.plot(rep, results_min, color='green')
+#         plt.plot(rep, results_max, color='blue')
+#         plt.xlabel(perf_measure)
+#         plt.ylabel('# Simulations')
+#         plt.xticks(rep)
+#         plt.title(parameter)
+#         plt.show()
 
-print(plots_single('W74ax','SpeedAvgArith',1,None,1))
+# print(plots_single('W74ax','SpeedAvgArith',1,None,1))
             
         
 
