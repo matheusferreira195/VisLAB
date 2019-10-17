@@ -23,8 +23,7 @@ cursor = cnx.cursor()
 
 #Loading metadata dataframes 
 
-dc_data = generate_dcdf_test()#generate_dcdf(Vissim)
-parameter_db = pd.read_csv(r'E:\Google Drive\Scripts\vistools\resources\parameters.visdb')
+#generate_dcdf(Vissim)
 
 #main class
 
@@ -85,7 +84,10 @@ class Board(tk.Frame):
         tk.Frame.__init__(self, parent)
         label = tk.Label(self, text="Manage your experiments", font=LARGE_FONT)
         label.grid(row=0,column=0)
-        
+
+        self.dc_data = generate_dcdf_test()
+        self.parameter_db = pd.read_csv(r'E:\Google Drive\Scripts\vistools\resources\parameters.visdb')
+
         #loading existing post its (experiments)
 
         existing_experiments_qry = "SELECT * FROM experiments"
@@ -166,11 +168,16 @@ class Board(tk.Frame):
         #TODO adicionar os outros 4 botoes
 
     def edit_window(self,experiment):
-        #TODO Como eu colocaria mais de um parametro pro
-        #print('experiment%i' % experiment)
         
+        #TODO Como eu colocaria mais de um parametro por vez p/ 1 experiment?
+        
+        #Data initialization
+
+        self.datapoints_df = pd.read_sql(str('SELECT * FROM datapoints WHERE experiment = #exp').replace('#exp',str(experiment)), cnx)
+        self.parameters_df = pd.read_sql(str('SELECT * FROM parameters WHERE experiment = #exp').replace('#exp',str(experiment)), cnx)
+
         win = tk.Toplevel()
-        win.wm_title("Window")
+        win.wm_title("Edit experiment")
 
         l = tk.Label(win, text="Input")
         l.grid(row=0, column=0)
@@ -178,15 +185,15 @@ class Board(tk.Frame):
         b = tk.Button(win, text="Okay", command=lambda:  win.destroy)
         b.grid(row=7, column=0)
 
-        m = tk.Button(win, text="Maria", command= lambda: messagebox.showinfo("Message", "Eu amo muito minha nemzudazoza :)"))
-        m.grid(row=8, column=20)
+        #m = tk.Button(win, text="Maria", command= lambda: messagebox.showinfo("Message", "Eu amo muito minha nemzudazoza :)"))
+        #m.grid(row=8, column=20)
 
         self.datapoints_label = tk.Label(win,text = 'Data Points')
         self.datapoints_ctype_dropdown = ttk.Combobox(win, width=25)
-        self.datapoints_ctype_dropdown['values'] = list(dc_data['Display'])
+        self.datapoints_ctype_dropdown['values'] = list(self.dc_data['Display'])
         self.datapoints_ctype_dropdown.configure(font=('Roboto', 8))
         self.datapoints_ctype_dropdown.set('Select data collector type')
-        self.datapoints_ctype_dropdown.bind('<<ComboboxSelected>>', lambda: self.datapoints_callback)
+        self.datapoints_ctype_dropdown.bind('<<ComboboxSelected>>', self.datapoints_callback)
 
         self.separator = ttk.Separator(win, orient="vertical")
 
@@ -194,7 +201,7 @@ class Board(tk.Frame):
         self.datapoints_cperfmeasure_dropdown['values'] = []
         self.datapoints_cperfmeasure_dropdown.configure(font=('Roboto', 8))
         self.datapoints_cperfmeasure_dropdown.set('Select what you will measure')
-        self.datapoints_cperfmeasure_dropdown.bind('<<ComboboxSelected>>', lambda: self.datapoints_callback)
+        self.datapoints_cperfmeasure_dropdown.bind('<<ComboboxSelected>>', self.datapoints_callback)
 
         self.datapoints_ctimeinterval_label = tk.Label(win, text='Add time interval number or agregation \n eg: 1,2,3,avg,min,max')
         self.datapoints_ctimeinterval_entry = tk.Entry(win)
@@ -202,26 +209,26 @@ class Board(tk.Frame):
         self.datapoints_ctargetvalue_label=tk.Label(win, text='Add the field data to compare')
         self.datapoints_ctargetvalue_entry= tk.Entry(win)
 
-        self.datapoint_ok_button = tk.Button(win, command = lambda: self.button_callback)# image=self.check_image)
+        self.datapoint_ok_button = tk.Button(win, text="Save Changes", command = self.save_exp_cfg)# image=self.check_image)
 
         ##------Parameters section------##   
         self.parameters_label = tk.Label(win,text = 'Parameters')      
         self.parameter_search_entry = tk.Entry(win, textvariable=self.search_var, width=25)
         self.parameter_search_entry.insert(0, 'Search parameters here')
         self.parameter_search_listbox = tk.Listbox(win, width=45, height=1)
-        self.parameter_search_listbox.bind('<<ListboxSelect>>', lambda: self.parameters_callback)
+        self.parameter_search_listbox.bind('<<ListboxSelect>>',  self.parameters_callback)
 
         self.parameter_label_liminf = tk.Label(win, text = 'Inferior Limit')
         self.parameter_entry_liminf = tk.Entry(win, width=10)
-        self.parameter_entry_liminf.bind('<FocusOut>', lambda: self.parameters_callback)
+        self.parameter_entry_liminf.bind('<FocusOut>', self.parameters_callback)
 
         self.parameter_label_limsup = tk.Label(win, text = 'Superior Limit')
         self.parameter_entry_limsup = tk.Entry(win, width=10)
-        self.parameter_entry_limsup.bind('<FocusOut>',  lambda: self.parameters_callback)
+        self.parameter_entry_limsup.bind('<FocusOut>', self.parameters_callback)
 
         self.parameter_label_step = tk.Label(win, text = 'Step')
         self.parameter_entry_step = tk.Entry(win, width=10)
-        self.parameter_entry_step.bind('<FocusOut>',  lambda: self.parameters_callback)
+        self.parameter_entry_step.bind('<FocusOut>', self.parameters_callback)
 
         ##------Simulation section------##
         self.simulation_label = tk.Label(win, text = 'Simulation Configs')
@@ -266,11 +273,8 @@ class Board(tk.Frame):
         self.update_list()
         self.poll()
         
-    
-    def dummy(self):
-        print('help')
 
-    def button_callback(self):
+    def save_exp_cfg(self): #save button
 
         print('pressde')
         ctarget_entry = self.datapoints_ctargetvalue_entry.get()
@@ -287,7 +291,7 @@ class Board(tk.Frame):
 
         # you can also get the value off the eventObject
         caller = str(eventObject.widget)
-        parameter_index  = self.parameter_data.loc[self.parameter_data['Experiment']==self.experiment].index[0]
+        #parameter_index  = self.parameter_data.loc[self.parameter_data['Experiment']==self.experiment].index[0]
         #print(parameter_index)
         #print(self.parameter_data)
 
@@ -342,30 +346,30 @@ class Board(tk.Frame):
         if caller == None:
             entry_value = self.datapoints_ctargetvalue_entry.get()
             #print(entry_value)
-            experiment_index  = self.experiment_data.loc[self.experiment_data['Experiment']==self.experiment].index[0]
-            self.experiment_data.loc[experiment_index, 'Field data'] = entry_value
-            print(self.experiment_data)
+            #experiment_index  = self.experiment_data.loc[self.experiment_data['Experiment']==self.experiment].index[0]
+            self.datapoints_df.loc['field_value'] = entry_value
+            print(self.datapoints_df)
     
         elif 'combobox2' in caller:  
             print('selected1')       
-            experiment_index  = self.experiment_data.loc[self.experiment_data['Experiment']==self.experiment].index[0]
-            self.experiment_data.loc[experiment_index, 'Perf_measure'] = value
-            print(self.experiment_data)
+            #experiment_index  = self.experiment_df.loc[self.experiment_df['Experiment']==self.experiment].index[0]
+            self.datapoints_df.loc['perf_measure'] = value
+            print(self.datapoints_df)
 
         elif 'combobox3' in caller:
-            experiment_index  = self.experiment_data.loc[self.experiment_data['Experiment']==self.experiment].index[0]
-            self.experiment_data.loc[experiment_index, 'Time interval'] = value
-            print(self.experiment_data)
+            #experiment_index  = self.experiment_data.loc[self.experiment_data['Experiment']==self.experiment].index[0]
+            self.datapoints_df.loc['time_p'] = value
+            print(self.datapoints_df)
 
         else:
-            print(self.experiment_data)
-            experiment_index  = self.experiment_data.loc[self.experiment_data['Experiment']==self.experiment].index[0]
+            print(self.datapoints_df)
+            #experiment_index  = self.experiment_df.loc[self.experiment_df['Experiment']==self.experiment].index[0]
             dc_match = self.dc_data.loc[self.dc_data['Display'] == value]
             data_point_type = dc_match['Type'].item()
             Dc_Number = dc_match['No'].item()         
             
-            self.experiment_data.loc[experiment_index, 'Data Point Type'] = data_point_type
-            self.experiment_data.loc[experiment_index, 'DP Number'] = Dc_Number
+            self.datapoints_df.loc['dc_type'] = data_point_type
+            self.datapoints_df.loc['dc_number'] = Dc_Number
 
             if data_point_type == 'Data Collector':
                 self.datapoints_cperfmeasure_dropdown['values'] = ['QueueDelay', 'SpeedAvgArith', 'OccupRate','Acceleration', 'Lenght', 'Vehs', 'Pers','Saturation Headway']
@@ -376,7 +380,7 @@ class Board(tk.Frame):
             else:
                 self.datapoints_cperfmeasure_dropdown['values'] = ['QLen', 'QLenMax', 'QStops']
 
-            print(self.experiment_data)
+            print(self.datapoints_df)
         
         #print(self.experiment_data)
 
@@ -419,7 +423,7 @@ class Board(tk.Frame):
 
         #Just a generic list to populate the listbox
                 
-        lbox_list = list(parameter_db['Long Name'])
+        lbox_list = list(self.parameter_db['Long Name'])
         #print(lbox_list)
 
         self.parameter_search_listbox.delete(0, tk.END)
