@@ -31,7 +31,7 @@ class SeaofBTCapp(tk.Tk):
 
         self.frames = {}
 
-        for F in (StartPage, PageOne):
+        for F in (StartPage, Board):
 
             frame = F(container, self)
 
@@ -55,18 +55,19 @@ class StartPage(tk.Frame):
     def __init__(self, parent, controller):
 
         tk.Frame.__init__(self,parent)
-        label = tk.Label(self, text="Start Page", font=LARGE_FONT)
-        label.grid(row=0,column=1)
 
-        button = tk.Button(self, text="Visit Page 1",
-                            command=lambda: controller.show_frame(PageOne))
+        label = tk.Label(self, text="VisLab", font=LARGE_FONT)
+        label.grid(row=0,column=1)
+ 
+        button = tk.Button(self, text="Experiment board",
+                            command=lambda: controller.show_frame(Board))
         button.grid(row=1,column=0)
 
         button2 = tk.Button(self, text="Visit Page 2",
                             command=lambda: controller.show_frame(PageTwo))
         button2.grid(row=1,column=1)
         
-class PageOne(tk.Frame):
+class Board(tk.Frame):
 
     #Experiment page, where the user models the sensitivity analysis experiments
     #Now, it's also the 'sticker panel', where the user can manage the experiments like a post it board
@@ -74,7 +75,7 @@ class PageOne(tk.Frame):
     def __init__(self, parent, controller):
         
         tk.Frame.__init__(self, parent)
-        label = tk.Label(self, text="Page One!!!", font=LARGE_FONT)
+        label = tk.Label(self, text="Manage your experiments", font=LARGE_FONT)
         label.grid(row=0,column=0)
         
         #loading existing post its (experiments)
@@ -85,12 +86,11 @@ class PageOne(tk.Frame):
         self.add_buttons = []
 
         for row in existing_experiments.iterrows():
-            
-            #print(int(row[1]))
-            y = int(row[1])
-            x = math.ceil(int(row[1])/4)
 
-            self.add_postit(x,y,exp=y,btn_id=row[0])
+                y = int(row[0])
+                x = math.ceil(int(row[1])/4)
+                print(x)
+                self.add_postit(x,y,exp=int(row[1]),btn_id=row[0])
 
         #Navigation
 
@@ -128,8 +128,8 @@ class PageOne(tk.Frame):
         canvas.grid(row=x,column=y)
         
         #Navigation controls
-        if y == 4:
-            y = 1
+        if y == 3:
+            y = 0
             x += 1
         else:
             y += 1
