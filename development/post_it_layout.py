@@ -12,7 +12,7 @@ from tkinter import ttk
 from tkinter import messagebox
 from generate_dcdf import generate_dcdf
 from generate_dcdf import generate_dcdf_test
-
+from functools import partial
 NORM_FONT= ("Roboto", 10)
 LARGE_FONT = ("Roboto", 20)
 
@@ -92,6 +92,14 @@ class Board(tk.Frame):
 
         existing_experiments_qry = "SELECT * FROM experiments"
         existing_experiments = pd.read_sql(existing_experiments_qry,cnx)
+
+        self.datapoints_df = pd.read_sql(str('SELECT * FROM datapoints'), cnx)
+        print(self.datapoints_df)
+        self.parameters_df = pd.read_sql(str('SELECT * FROM parameters'), cnx)
+        self.results_df = pd.read_sql(str('SELECT * FROM results'), cnx)
+        self.simulation_runs = pd.read_sql(str('SELECT * FROM simulation_runs'), cnx)
+        self.results_df = pd.read_sql(str('SELECT * FROM results'), cnx)
+
         #print(existing_experiments[0])
         self.add_buttons = []        
 
@@ -101,7 +109,7 @@ class Board(tk.Frame):
 
                 y = int(row[0])
                 x = math.ceil((int(row[0])/4)+0.1)
-                print(x)
+                #print(x)
                 self.add_postit(x,y,exp=int(row[1]),btn_id=row[0])
         
         #dynamic search bar init
@@ -169,126 +177,179 @@ class Board(tk.Frame):
 
     def edit_window(self,experiment):
         
+        print(list(self.datapoints_df))
+        
         #TODO Como eu colocaria mais de um parametro por vez p/ 1 experiment?
         
         #Data initialization
 
-        self.datapoints_df = pd.read_sql(str('SELECT * FROM datapoints WHERE experiment = #exp').replace('#exp',str(experiment)), cnx)
-        self.parameters_df = pd.read_sql(str('SELECT * FROM parameters WHERE experiment = #exp').replace('#exp',str(experiment)), cnx)
+        #self.datapoints_df_exp = self.datapoints_df.loc[self.datapoints_df['experiment']==experiment]
+        #self.parameters_df_exp = self.parameters_df.loc[self.parameters_df['experiment']==experiment]
+        #self.simulationcfg_df_exp = self.simulationcfg.loc[self.simulationcfg['experiment']==experiment]
 
         win = tk.Toplevel()
         win.wm_title("Edit experiment")
+        #upframe = tk.Frame(win,height = 600, width = 600, bg = "blue", borderwidth=2)
+       # win.geometry("600x400")
+        #print(self.datapoints_df.loc[self.datapoints_df['experiment'] == experiment])
+        configurations = len(self.datapoints_df.loc[self.datapoints_df['experiment']==1])
+        #print(configurations)
 
-        l = tk.Label(win, text="Input")
-        l.grid(row=0, column=0)
-        
-        b = tk.Button(win, text="Okay", command=lambda:  win.destroy)
-        b.grid(row=7, column=0)
+        for cfg in range(configurations):
+            
+            print('oi')
 
-        #m = tk.Button(win, text="Maria", command= lambda: messagebox.showinfo("Message", "Eu amo muito minha nemzudazoza :)"))
-        #m.grid(row=8, column=20)
+            #canvas = tk.Canvas(win, relief = tk.FLAT, background = "grey",
+                                            #width = 600, height = 800)
+            #canvas.grid(row=1+cfg,column=1)
+            self.subframe = tk.Frame(win,height = 400, width = 400,highlightbackground="red", highlightcolor="red",highlightthickness=1,bd =0)
+            self.subframe.grid(row=1+cfg,column=1)
+            #l = tk.Label(win, text="Input")
+            #canvas.create_window(0, 0, anchor=tk.NW, window=l)
+            #baselinex = 30
+            #baseliney = 40
+            b = tk.Button(self.subframe, text="Okay", command=lambda:  win.destroy)
+            #canvas.create_window(300, 500, anchor=tk.NW, window=b)
 
-        self.datapoints_label = tk.Label(win,text = 'Data Points')
-        self.datapoints_ctype_dropdown = ttk.Combobox(win, width=25)
-        self.datapoints_ctype_dropdown['values'] = list(self.dc_data['Display'])
-        self.datapoints_ctype_dropdown.configure(font=('Roboto', 8))
-        self.datapoints_ctype_dropdown.set('Select data collector type')
-        self.datapoints_ctype_dropdown.bind('<<ComboboxSelected>>', self.datapoints_callback)
+            self.datapoints_label = tk.Label(self.subframe,text = 'Data Points')
+            #canvas.create_window(baselinex, 1*baseliney, anchor=tk.NW, window= self.datapoints_label)
 
-        self.separator = ttk.Separator(win, orient="vertical")
+            self.datapoints_ctype_dropdown = ttk.Combobox(self.subframe, width=25)
+            self.datapoints_ctype_dropdown['values'] = list(self.dc_data['Display'])
+            self.datapoints_ctype_dropdown.configure(font=('Roboto', 8))
+            self.datapoints_ctype_dropdown.set('Select data collector type')
+            self.datapoints_ctype_dropdown.bind('<<ComboboxSelected>>', lambda e: self.datapoints_callback(eventObject=e))
+            #canvas.create_window(baselinex, 2*baseliney, anchor=tk.NW, window=self.datapoints_ctype_dropdown)
 
-        self.datapoints_cperfmeasure_dropdown = ttk.Combobox(win, width=25)
-        self.datapoints_cperfmeasure_dropdown['values'] = []
-        self.datapoints_cperfmeasure_dropdown.configure(font=('Roboto', 8))
-        self.datapoints_cperfmeasure_dropdown.set('Select what you will measure')
-        self.datapoints_cperfmeasure_dropdown.bind('<<ComboboxSelected>>', self.datapoints_callback)
+            self.separatorv = ttk.Separator(self.subframe, orient="vertical")
+            #self.separatorh = ttk.Separator(self.subframe, orient="horizontal")
+            #canvas.create_window(300, 0, anchor=tk.NW, window=self.separator)
 
-        self.datapoints_ctimeinterval_label = tk.Label(win, text='Add time interval number or agregation \n eg: 1,2,3,avg,min,max')
-        self.datapoints_ctimeinterval_entry = tk.Entry(win)
+            self.datapoints_cperfmeasure_dropdown = ttk.Combobox(self.subframe, width=25)
+            self.datapoints_cperfmeasure_dropdown['values'] = []
+            self.datapoints_cperfmeasure_dropdown.configure(font=('Roboto', 8))
+            self.datapoints_cperfmeasure_dropdown.set('Select what you will measure')
+            self.datapoints_cperfmeasure_dropdown.bind('<<ComboboxSelected>>', lambda e: self.datapoints_callback(eventObject=e))
+            #canvas.create_window(baselinex, 3*baseliney, anchor=tk.NW, window=self.datapoints_cperfmeasure_dropdown)
 
-        self.datapoints_ctargetvalue_label=tk.Label(win, text='Add the field data to compare')
-        self.datapoints_ctargetvalue_entry= tk.Entry(win)
+            self.datapoints_ctimeinterval_label = tk.Label(self.subframe, text='Add time interval number or agregation \n eg: 1,2,3,avg,min,max')
+            #canvas.create_window(baselinex, 4*baseliney, anchor=tk.NW, window=self.datapoints_ctimeinterval_label)
 
-        self.datapoint_ok_button = tk.Button(win, text="Save Changes", command = self.save_exp_cfg)# image=self.check_image)
+            self.datapoints_ctimeinterval_entry = tk.Entry(self.subframe)
+           # canvas.create_window(baselinex, 5*baseliney, anchor=tk.NW, window=self.datapoints_ctimeinterval_entry)
 
-        ##------Parameters section------##   
-        self.parameters_label = tk.Label(win,text = 'Parameters')      
-        self.parameter_search_entry = tk.Entry(win, textvariable=self.search_var, width=25)
-        self.parameter_search_entry.insert(0, 'Search parameters here')
-        self.parameter_search_listbox = tk.Listbox(win, width=45, height=1)
-        self.parameter_search_listbox.bind('<<ListboxSelect>>',  self.parameters_callback)
+            self.datapoints_ctargetvalue_label=tk.Label(self.subframe, text='Add the field data to compare')
+            #canvas.create_window(baselinex, 6*baseliney, anchor=tk.NW, window=self.datapoints_ctargetvalue_label)
 
-        self.parameter_label_liminf = tk.Label(win, text = 'Inferior Limit')
-        self.parameter_entry_liminf = tk.Entry(win, width=10)
-        self.parameter_entry_liminf.bind('<FocusOut>', self.parameters_callback)
+            self.datapoints_ctargetvalue_entry= tk.Entry(self.subframe)
+           # canvas.create_window(baselinex, 7*baseliney, anchor=tk.NW, window=self.datapoints_ctargetvalue_entry)
 
-        self.parameter_label_limsup = tk.Label(win, text = 'Superior Limit')
-        self.parameter_entry_limsup = tk.Entry(win, width=10)
-        self.parameter_entry_limsup.bind('<FocusOut>', self.parameters_callback)
 
-        self.parameter_label_step = tk.Label(win, text = 'Step')
-        self.parameter_entry_step = tk.Entry(win, width=10)
-        self.parameter_entry_step.bind('<FocusOut>', self.parameters_callback)
+            self.datapoint_ok_button = tk.Button(self.subframe, text="Save Changes", command = lambda: self.save_exp_cfg(experiment))# image=self.check_image)
+            #canvas.create_window(baselinex, 8*baseliney, anchor=tk.NW, window=self.datapoint_ok_button)
+            
+            ##------Parameters section------##
+            x_m = 9   
+            self.parameters_label = tk.Label(self.subframe,text = 'Parameters')
+           # canvas.create_window(baselinex*x_m, 2*baseliney, anchor=tk.NW, window=self.parameters_label)
+                  
+            self.parameter_search_entry = tk.Entry(self.subframe, textvariable=self.search_var, width=25)
+            self.parameter_search_entry.insert(0, 'Search parameters here')
+            #canvas.create_window(baselinex*x_m, 3*baseliney, anchor=tk.NW, window=self.parameter_search_entry)
+            
+            self.parameter_search_listbox = tk.Listbox(self.subframe, width=45, height=1)
+            self.parameter_search_listbox.bind('<<ListboxSelect>>',  lambda e: self.parameters_callback(eventObject=e))
+            #canvas.create_window(baselinex*x_m, 4*baseliney, anchor=tk.NW, window=self.parameter_search_listbox)
 
-        ##------Simulation section------##
-        self.simulation_label = tk.Label(win, text = 'Simulation Configs')
+            self.parameter_label_liminf = tk.Label(self.subframe, text = 'Inferior Limit')
+            #canvas.create_window(baselinex*x_m, 5*baseliney, anchor=tk.NW, window=self.parameter_label_liminf)
+            self.parameter_entry_liminf = tk.Entry(self.subframe, width=10)
+            self.parameter_entry_liminf.bind('<FocusOut>', lambda e: self.parameters_callback(eventObject=e))
+            #canvas.create_window(baselinex*x_m, 6*baseliney, anchor=tk.NW, window=self.parameter_entry_liminf)
 
-        self.simulation_label_replications = tk.Label(win, text = 'How many runs?')
-        self.simulation_entry_replications = tk.Entry(win, width=5)
 
-        self.test_button = tk.Button(win, command = lambda: self.test_buttom)#, image=self.check_image)
+            self.parameter_label_limsup = tk.Label(self.subframe, text = 'Superior Limit')
+            #canvas.create_window(baselinex*x_m, 7*baseliney, anchor=tk.NW, window=self.parameter_label_limsup)
 
-        ##------Grid configuration------##
-        #self.experiment_label.grid(row=1, column=0, sticky='w')
-        
-        self.datapoints_label.grid(row=2, column=0, sticky='w', padx=10)
-        self.datapoints_ctype_dropdown.grid(row=4, column=0, sticky='w', padx=10)
-        self.datapoints_cperfmeasure_dropdown.grid(row=4, column=1, sticky='w', padx=10)
-        self.datapoints_ctimeinterval_label.grid(row=3, column=2, sticky='w', padx=10)
-        self.datapoints_ctimeinterval_entry.grid(row=4, column=2, sticky='w', padx=10)
-        self.datapoints_ctargetvalue_label.grid(row=3, column=3, sticky='w', padx=10)
-        self.datapoints_ctargetvalue_entry.grid(row=4, column=3, sticky='w', padx=10)
-        self.datapoint_ok_button.grid(row=4, column=4, sticky='w', padx=10)
-        
-        self.separator.grid(row=2, column=5, sticky='ns', rowspan=100)
+            self.parameter_entry_limsup = tk.Entry(self.subframe, width=10)
+            self.parameter_entry_limsup.bind('<FocusOut>',lambda e: self.parameters_callback(eventObject=e))
+            #canvas.create_window(baselinex*x_m, 8*baseliney, anchor=tk.NW, window=self.parameter_entry_limsup)
 
-        self.parameters_label.grid(row=2, column=6, sticky='w', padx = 5)
-        self.parameter_search_entry.grid(row=3, column=6, sticky ='w', padx = 5)
-        self.parameter_search_listbox.grid(row=4, column=6, sticky='w', padx = 5)
-        self.parameter_label_liminf.grid(row=3, column=7, sticky='w', padx=5)
-        self.parameter_entry_liminf.grid(row=4, column=7, sticky='w', padx=5)
-        self.parameter_label_limsup.grid(row=3, column=8, sticky='w', padx=5)
-        self.parameter_entry_limsup.grid(row=4, column=8, sticky='w', padx=5)
-        self.parameter_label_step.grid(row=3, column=9, sticky='w', padx=5)
-        self.parameter_entry_step.grid(row=4, column=9, sticky='w', padx=5)
+            self.parameter_label_step = tk.Label(self.subframe, text = 'Step')
+           # canvas.create_window(baselinex*x_m, 9*baseliney, anchor=tk.NW, window=self.parameter_entry_limsup)
 
-        self.simulation_label.grid(row=5,column=0)
-        self.simulation_label_replications.grid(row=6,column=0)
-        self.simulation_entry_replications.grid(row=6,column=1)
+            self.parameter_entry_step = tk.Entry(self.subframe, width=10)
+            self.parameter_entry_step.bind('<FocusOut>',lambda e: self.parameters_callback(eventObject=e))
+            #canvas.create_window(baselinex*x_m, 10*baseliney, anchor=tk.NW, window=self.parameter_entry_step)
 
-        self.test_button.grid(row=7, column=5)
-        
-        #Function for updating the list/doing the search.
-        #It needs to be called here to populate the listbox
+            ##------Simulation section------##
+            self.simulation_label = tk.Label(self.subframe, text = 'Simulation Configs')
+            #canvas.create_window(baselinex*x_m, 11*baseliney, anchor=tk.NW, window=self.simulation_label)
+
+            self.simulation_label_replications = tk.Label(self.subframe, text = 'How many runs?')
+            #canvas.create_window(baselinex*x_m, 12*baseliney, anchor=tk.NW, window=self.simulation_label_replications)
+
+            self.simulation_entry_replications = tk.Entry(self.subframe, width=5)
+            #canvas.create_window(baselinex*x_m, 13*baseliney, anchor=tk.NW, window=self.simulation_entry_replications)
+
+            #self.test_button = tk.Button(win, command = lambda: self.test_buttom)#, image=self.check_image)
+
+            ##------Grid configuration------##
+            self.datapoints_label.grid(row=2, column=0, sticky='w', padx=10)
+            self.datapoints_ctype_dropdown.grid(row=4, column=0, sticky='w', padx=10)
+            self.datapoints_cperfmeasure_dropdown.grid(row=4, column=1, sticky='w', padx=10)
+            self.datapoints_ctimeinterval_label.grid(row=3, column=2, sticky='w', padx=10)
+            self.datapoints_ctimeinterval_entry.grid(row=4, column=2, sticky='w', padx=10)
+            self.datapoints_ctargetvalue_label.grid(row=3, column=3, sticky='w', padx=10)
+            self.datapoints_ctargetvalue_entry.grid(row=4, column=3, sticky='w', padx=10)
+            self.datapoint_ok_button.grid(row=4, column=4, sticky='w', padx=10)
+           #self.separatorh.grid(row=2, column=5, sticky='ns', rowspan=100)
+            self.separatorv.grid(row=8, column=5, sticky='ns', rowspan=100)
+            self.parameters_label.grid(row=2, column=6, sticky='w', padx = 5)
+            self.parameter_search_entry.grid(row=3, column=6, sticky ='w', padx = 5)
+            self.parameter_search_listbox.grid(row=4, column=6, sticky='w', padx = 5)
+            self.parameter_label_liminf.grid(row=3, column=7, sticky='w', padx=5)
+            self.parameter_entry_liminf.grid(row=4, column=7, sticky='w', padx=5)
+            self.parameter_label_limsup.grid(row=3, column=8, sticky='w', padx=5)
+            self.parameter_entry_limsup.grid(row=4, column=8, sticky='w', padx=5)
+            self.parameter_label_step.grid(row=3, column=9, sticky='w', padx=5)
+            self.parameter_entry_step.grid(row=4, column=9, sticky='w', padx=5)
+            self.simulation_label.grid(row=5,column=0)
+            self.simulation_label_replications.grid(row=6,column=0)
+            self.simulation_entry_replications.grid(row=6,column=1)
+            #self.test_button.grid(row=7, column=5)
+            
+            
+            #Function for updating the list/doing the search.
+            #It needs to be called here to populate the listbox
         self.update_list()
         self.poll()
         
 
-    def save_exp_cfg(self): #save button
+    def save_exp_cfg(self,experiment): #save button
 
         print('pressde')
+
         ctarget_entry = self.datapoints_ctargetvalue_entry.get()
         ctimeinterval_entry = self.datapoints_ctimeinterval_entry.get()
         simruns_entry = self.simulation_entry_replications.get()
-        experiment_index  = self.experiment_data.loc[self.experiment_data['Experiment']==self.experiment].index[0]
-        self.experiment_data.loc[experiment_index, 'Field data'] = ctarget_entry
-        self.experiment_data.loc[experiment_index, 'Time interval'] = ctimeinterval_entry
-        self.experiment_data.loc[experiment_index, 'Runs'] = simruns_entry
+        print(ctarget_entry)
+        self.datapoints_df.loc['field_value'] = ctarget_entry
+        self.datapoints_df.loc['time_p'] = ctimeinterval_entry
+        self.simulation_df.loc['replications'] = simruns_entry
 
-        print(self.experiment_data)
-    def parameters_callback(self, eventObject):
+        self.datapoints_df.to_sql('datapoints',cnx, if_exists='replace')
+        self.simulation_df.to_sql('simulation_cfg',cnx,if_exists='replace')
+        self.parameters_df.to_sql('parameters',cnx,if_exists='replace')
+
+        print(self.parameters_df)
+        print(self.datapoints_df)
+        print(self.simulation_df)
+
+
+    def parameters_callback(self,experiment, eventObject):
         #print(eventObject.widget)
-
+        
         # you can also get the value off the eventObject
         caller = str(eventObject.widget)
         #parameter_index  = self.parameter_data.loc[self.parameter_data['Experiment']==self.experiment].index[0]
@@ -338,10 +399,13 @@ class Board(tk.Frame):
         
         #print(self.experiment_data)
         
-    def datapoints_callback(self, eventObject):
+    def datapoints_callback(self, eventObject, experiment):
         # you can also get the value off the eventObject
+        #TODO Logica pra saber qual linha do df é: carregar datapoints_df[datapoints_df['experiment']==]
         caller = str(eventObject.widget)
         value = eventObject.widget.get()
+        print(caller)
+        print(value)
 
         if caller == None:
             entry_value = self.datapoints_ctargetvalue_entry.get()
