@@ -93,7 +93,7 @@ class Board(tk.Frame):
         existing_experiments = pd.read_sql(existing_experiments_qry,cnx)
 
         self.datapoints_df = pd.read_sql(str('SELECT * FROM datapoints'), cnx)
-        print(self.datapoints_df)
+        #print(self.datapoints_df)
         self.parameters_df = pd.read_sql(str('SELECT * FROM parameters'), cnx)
         self.results_df = pd.read_sql(str('SELECT * FROM results'), cnx)
         self.simulation_runs = pd.read_sql(str('SELECT * FROM simulation_runs'), cnx)
@@ -240,13 +240,16 @@ class edit_windows(tk.Frame):
     def __init__(self,parent,experiment,cfg):
 
         tk.Frame.__init__(self)
-
-        self.datapoints_df = pd.read_sql(str('SELECT * FROM datapoints'), cnx)
-        self.parameters_df = pd.read_sql(str('SELECT * FROM parameters'), cnx)   
+        #print(cfg)
+        query = str('SELECT * FROM datapoints WHERE experiment = #exp').replace('#exp',str(experiment))
+        #print(query)
+        self.datapoints_df = pd.read_sql(query, cnx).iloc[cfg-1]
+        self.parameters_df = pd.read_sql(str('SELECT * FROM parameters'), cnx)
+        self.simulation_runs = pd.read_sql(str('SELECT * FROM simulation_cfg'), cnx)   
 
         win = parent
 
-        configurations = len(self.datapoints_df.loc[self.datapoints_df['experiment']==experiment])
+        #configurations = len(self.datapoints_df.loc[self.datapoints_df['experiment']==experiment])
 
         self.subframe = tk.Frame(win,height = 400, width = 400,highlightbackground="red", highlightcolor="red",highlightthickness=1,bd =0)
         self.subframe.grid(row=1+cfg,column=1)
@@ -258,11 +261,13 @@ class edit_windows(tk.Frame):
         self.search_mem = ''
 
         self.datapoints_label = tk.Label(self.subframe,text = 'Data Points')
-
-        self.datapoints_ctype_dropdown = ttk.Combobox(self.subframe, width=25)
+        self.datapoints_ctype_svar = tk.StringVar()
+        self.datapoints_ctype_svar.set(self.datapoints_df['dc_type']+' / '+str(self.datapoints_df['dc_number']))
+        
+        self.datapoints_ctype_dropdown = ttk.Combobox(self.subframe, width=25,textvariable=self.datapoints_ctype_svar,state='readonly')
         self.datapoints_ctype_dropdown['values'] = list(dc_data['Display'])
         self.datapoints_ctype_dropdown.configure(font=('Roboto', 8))
-        self.datapoints_ctype_dropdown.set('Select data collector type')
+        #self.datapoints_ctype_dropdown.set(self.datapoints_ctype_svar)
         self.datapoints_ctype_dropdown.bind('<<ComboboxSelected>>', lambda e: self.datapoints_callback(eventObject=e,experiment = experiment))
 
         self.separatorv = ttk.Separator(self.subframe, orient="vertical")
@@ -274,7 +279,7 @@ class edit_windows(tk.Frame):
         self.datapoints_cperfmeasure_dropdown.bind('<<ComboboxSelected>>', lambda e: self.datapoints_callback(eventObject=e,experiment = experiment))
 
         self.datapoints_ctimeinterval_label = tk.Label(self.subframe, text='Add time interval number or agregation \n eg: 1,2,3,avg,min,max')
-
+        #TODO adicionar o resto dos labels default pros listboxes
         self.datapoints_ctimeinterval_entry = tk.Entry(self.subframe)
 
         self.datapoints_ctargetvalue_label=tk.Label(self.subframe, text='Add the field data to compare')
@@ -387,7 +392,7 @@ class edit_windows(tk.Frame):
     def save_exp_cfg(self,experiment): #save button
 
         print('pressde')
-
+        '''
         ctarget_entry = self.datapoints_ctargetvalue_entry.get()
         ctimeinterval_entry = self.datapoints_ctimeinterval_entry.get()
         simruns_entry = self.simulation_entry_replications.get()
@@ -399,7 +404,7 @@ class edit_windows(tk.Frame):
         self.datapoints_df.to_sql('datapoints',cnx, if_exists='replace')
         self.simulation_df.to_sql('simulation_cfg',cnx,if_exists='replace')
         self.parameters_df.to_sql('parameters',cnx,if_exists='replace')
-
+        '''
         print(self.parameters_df)
         print(self.datapoints_df)
         print(self.simulation_df)
@@ -463,8 +468,9 @@ class edit_windows(tk.Frame):
         #TODO Logica pra saber qual linha do df é: carregar datapoints_df[datapoints_df['experiment']==]
         caller = str(eventObject.widget)
         value = eventObject.widget.get()
-        print(caller)
-        print(value)
+        #print(caller)
+        #print(value)
+        print(self.datapoints_df)
 
         if caller == None:
             entry_value = self.datapoints_ctargetvalue_entry.get()
