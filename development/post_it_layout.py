@@ -73,7 +73,9 @@ class StartPage(tk.Frame):
         button2 = tk.Button(self, text="Visit Page 2",
                             command=lambda: controller.show_frame(PageTwo))
         button2.grid(row=1,column=1)
-        
+
+dc_data = generate_dcdf_test()
+parameter_db = pd.read_csv(r'E:\Google Drive\Scripts\vistools\resources\parameters.visdb')       
 class Board(tk.Frame):
 
     #Experiment page, where the user models the sensitivity analysis experiments
@@ -84,9 +86,6 @@ class Board(tk.Frame):
         tk.Frame.__init__(self, parent)
         label = tk.Label(self, text="Manage your experiments", font=LARGE_FONT)
         label.grid(row=0,column=0)
-
-        self.dc_data = generate_dcdf_test()
-        self.parameter_db = pd.read_csv(r'E:\Google Drive\Scripts\vistools\resources\parameters.visdb')
 
         #loading existing post its (experiments)
 
@@ -168,239 +167,23 @@ class Board(tk.Frame):
 
         button_edit = tk.Button(self, text = "Edit", command = lambda: self.create_edit_windows(exp), anchor = tk.W)
         buttone_window = canvas.create_window(50, 150, anchor=tk.NW, window=button_edit)
-
-        #TODO adicionar os outros 4 botoes
-
-    def create_edit_windows(self,experiment):
-
-        configurations = len(self.datapoints_df.loc[self.datapoints_df['experiment']==experiment])
-
-        for i in range(configurations):
-
-            self.edit_window(experiment,i+1)
-
-    def edit_window(self,experiment,cfg):
         
+    def create_edit_windows(self,exp):
+
+        configurations = len(self.datapoints_df.loc[self.datapoints_df['experiment']==exp])
+        if configurations == 0:
+            configurations = 1
+
         win = tk.Toplevel()
         win.wm_title("Edit experiment")
 
-        configurations = len(self.datapoints_df.loc[self.datapoints_df['experiment']==experiment])
+        for i in range(configurations):
 
-        self.subframe = tk.Frame(win,height = 400, width = 400,highlightbackground="red", highlightcolor="red",highlightthickness=1,bd =0)
-        self.subframe.grid(row=1+cfg,column=1)
-        self.instance = cfg
-
-        b = tk.Button(self.subframe, text="Okay", command=lambda:  win.destroy)
-
-        self.search_var = tk.StringVar()
-        self.switch = False
-        self.search_mem = ''
-
-        self.datapoints_label = tk.Label(self.subframe,text = 'Data Points')
-
-        self.datapoints_ctype_dropdown = ttk.Combobox(self.subframe, width=25)
-        self.datapoints_ctype_dropdown['values'] = list(self.dc_data['Display'])
-        self.datapoints_ctype_dropdown.configure(font=('Roboto', 8))
-        self.datapoints_ctype_dropdown.set('Select data collector type')
-        self.datapoints_ctype_dropdown.bind('<<ComboboxSelected>>', lambda e: self.datapoints_callback(eventObject=e,experiment = experiment))
-
-        self.separatorv = ttk.Separator(self.subframe, orient="vertical")
-
-        self.datapoints_cperfmeasure_dropdown = ttk.Combobox(self.subframe, width=25)
-        self.datapoints_cperfmeasure_dropdown['values'] = []
-        self.datapoints_cperfmeasure_dropdown.configure(font=('Roboto', 8))
-        self.datapoints_cperfmeasure_dropdown.set('Select what you will measure')
-        self.datapoints_cperfmeasure_dropdown.bind('<<ComboboxSelected>>', lambda e: self.datapoints_callback(eventObject=e,experiment = experiment))
-
-        self.datapoints_ctimeinterval_label = tk.Label(self.subframe, text='Add time interval number or agregation \n eg: 1,2,3,avg,min,max')
-
-        self.datapoints_ctimeinterval_entry = tk.Entry(self.subframe)
-
-        self.datapoints_ctargetvalue_label=tk.Label(self.subframe, text='Add the field data to compare')
-
-        self.datapoints_ctargetvalue_entry= tk.Entry(self.subframe)
-
-        self.datapoint_ok_button = tk.Button(self.subframe, text="Save Changes", command = lambda: self.save_exp_cfg(experiment))# image=self.check_image)
-        
-        ##------Parameters section------##
-        self.parameters_label = tk.Label(self.subframe,text = 'Parameters')
-
-        self.parameter_search_entry = tk.Entry(self.subframe, textvariable=self.search_var, width=25) 
-        #FIXME tá sendo editada a mesma barra pra todos os campos
-        self.parameter_search_entry.insert(0, 'Search parameters here')
-        
-        self.parameter_search_listbox = tk.Listbox(self.subframe, width=45, height=1)
-        self.parameter_search_listbox.bind('<<ListboxSelect>>',  lambda e: self.parameters_callback(eventObject=e,experiment = experiment))
-
-        self.parameter_label_liminf = tk.Label(self.subframe, text = 'Inferior Limit')
-        self.parameter_entry_liminf = tk.Entry(self.subframe, width=10)
-        self.parameter_entry_liminf.bind('<FocusOut>', lambda e: self.parameters_callback(eventObject=e,experiment = experiment))
-
-        self.parameter_label_limsup = tk.Label(self.subframe, text = 'Superior Limit')
-        self.parameter_entry_limsup = tk.Entry(self.subframe, width=10)
-        self.parameter_entry_limsup.bind('<FocusOut>',lambda e: self.parameters_callback(eventObject=e,experiment = experiment))
-
-        self.parameter_label_step = tk.Label(self.subframe, text = 'Step')
-
-        self.parameter_entry_step = tk.Entry(self.subframe, width=10)
-        self.parameter_entry_step.bind('<FocusOut>',lambda e: self.parameters_callback(eventObject=e,experiment = experiment))
-
-        ##------Simulation section------##
-        self.simulation_label = tk.Label(self.subframe, text = 'Simulation Configs')
-
-        self.simulation_label_replications = tk.Label(self.subframe, text = 'How many runs?')
-
-        self.simulation_entry_replications = tk.Entry(self.subframe, width=5)
-
-        ##------Grid configuration------##
-        self.datapoints_label.grid(row=2, column=0, sticky='w', padx=10)
-        self.datapoints_ctype_dropdown.grid(row=4, column=0, sticky='w', padx=10)
-        self.datapoints_cperfmeasure_dropdown.grid(row=4, column=1, sticky='w', padx=10)
-        self.datapoints_ctimeinterval_label.grid(row=3, column=2, sticky='w', padx=10)
-        self.datapoints_ctimeinterval_entry.grid(row=4, column=2, sticky='w', padx=10)
-        self.datapoints_ctargetvalue_label.grid(row=3, column=3, sticky='w', padx=10)
-        self.datapoints_ctargetvalue_entry.grid(row=4, column=3, sticky='w', padx=10)
-        self.datapoint_ok_button.grid(row=4, column=4, sticky='w', padx=10)
-        self.separatorv.grid(row=8, column=5, sticky='ns', rowspan=100)
-        self.parameters_label.grid(row=2, column=6, sticky='w', padx = 5)
-        self.parameter_search_entry.grid(row=3, column=6, sticky ='w', padx = 5)
-        self.parameter_search_listbox.grid(row=4, column=6, sticky='w', padx = 5)
-        self.parameter_label_liminf.grid(row=3, column=7, sticky='w', padx=5)
-        self.parameter_entry_liminf.grid(row=4, column=7, sticky='w', padx=5)
-        self.parameter_label_limsup.grid(row=3, column=8, sticky='w', padx=5)
-        self.parameter_entry_limsup.grid(row=4, column=8, sticky='w', padx=5)
-        self.parameter_label_step.grid(row=3, column=9, sticky='w', padx=5)
-        self.parameter_entry_step.grid(row=4, column=9, sticky='w', padx=5)
-        self.simulation_label.grid(row=5,column=0)
-        self.simulation_label_replications.grid(row=6,column=0)
-        self.simulation_entry_replications.grid(row=6,column=1)
-        
-        #Function for updating the list/doing the search.
-        #It needs to be called here to populate the listbox
-        self.update_list()
-        self.poll()
-        
-
-    def save_exp_cfg(self,experiment): #save button
-
-        print('pressde')
-
-        ctarget_entry = self.datapoints_ctargetvalue_entry.get()
-        ctimeinterval_entry = self.datapoints_ctimeinterval_entry.get()
-        simruns_entry = self.simulation_entry_replications.get()
-        print(ctarget_entry)
-        self.datapoints_df.loc['field_value'] = ctarget_entry
-        self.datapoints_df.loc['time_p'] = ctimeinterval_entry
-        self.simulation_df.loc['replications'] = simruns_entry
-
-        self.datapoints_df.to_sql('datapoints',cnx, if_exists='replace')
-        self.simulation_df.to_sql('simulation_cfg',cnx,if_exists='replace')
-        self.parameters_df.to_sql('parameters',cnx,if_exists='replace')
-
-        print(self.parameters_df)
-        print(self.datapoints_df)
-        print(self.simulation_df)
+            edit_windows(experiment=exp,parent = win, cfg=(i+1))
 
 
-    def parameters_callback(self,experiment, eventObject):
-        #print(eventObject.widget)
-        
-        # you can also get the value off the eventObject
-        caller = str(eventObject.widget)
-        #experiment  = self.parameter_data.loc[self.parameter_data['Experiment']==self.experiment].index[0]
-        #print(experiment)
-        #print(self.parameter_data)
+        #TODO adicionar os outros 4 botoes
 
-        if 'listbox' in caller:
-            #print(self.parameter_search_listbox)
-            selected = self.parameter_search_listbox.curselection()
-            parameter_text = self.parameter_search_listbox.get(first=selected, last=None)
-
-            parameter_identifier_row = self.parameter_db.loc[self.parameter_db['Long Name']==parameter_text]
-            
-            value = str(parameter_identifier_row['Identifier'].item())
-            
-            #print(value)          
-
-            self.parameter_data.loc[experiment, 'Parameter'] = value
-            #print(self.parameter_data.loc[experiment,])
-
-            #print(self.parameter_data)
-
-        else:
-
-            value = eventObject.widget.get()        
-
-        if 'entry4' in caller: #liminf          
-            self.parameter_data.loc[experiment, 'Lim. Inf'] = value
-            #print(self.parameter_data)
-    
-        elif 'entry5' in caller: #limsup  
-            self.parameter_data.loc[experiment, 'Lim. Sup'] = value
-            #print(self.parameter_data)
-
-        elif 'entry6' in caller: #step
-            self.parameter_data.loc[experiment, 'Step'] = value
-           # print(self.parameter_data)
-        
-        else:
-            experiment_index  = self.experiment_data.loc[self.experiment_data['Experiment']==self.experiment].index[0]
-            dc_match = self.dc_data.loc[self.dc_data['Display'] == value]
-            data_point_type = dc_match['Type'].item()
-            Dc_Number = dc_match['No'].item()
-
-            self.experiment_data.loc[experiment_index, 'Data Point Type'] = data_point_type
-            self.experiment_data.loc[experiment_index, 'DP Number'] = Dc_Number
-            #print(self.experiment_data)
-        
-        #print(self.experiment_data)
-        
-    def datapoints_callback(self, eventObject, experiment):
-        # you can also get the value off the eventObject
-        #TODO Logica pra saber qual linha do df é: carregar datapoints_df[datapoints_df['experiment']==]
-        caller = str(eventObject.widget)
-        value = eventObject.widget.get()
-        print(caller)
-        print(value)
-
-        if caller == None:
-            entry_value = self.datapoints_ctargetvalue_entry.get()
-            #print(entry_value)
-            #experiment_index  = self.experiment_data.loc[self.experiment_data['Experiment']==self.experiment].index[0]
-            self.datapoints_df.loc['field_value'] = entry_value
-            print(self.datapoints_df)
-    
-        elif 'combobox2' in caller:  
-            print('selected1')       
-            #experiment_index  = self.experiment_df.loc[self.experiment_df['Experiment']==self.experiment].index[0]
-            self.datapoints_df.loc['perf_measure'] = value
-            print(self.datapoints_df)
-
-        elif 'combobox3' in caller:
-            #experiment_index  = self.experiment_data.loc[self.experiment_data['Experiment']==self.experiment].index[0]
-            self.datapoints_df.loc['time_p'] = value
-            print(self.datapoints_df)
-
-        else:
-            print(self.datapoints_df)
-            #experiment_index  = self.experiment_df.loc[self.experiment_df['Experiment']==self.experiment].index[0]
-            dc_match = self.dc_data.loc[self.dc_data['Display'] == value]
-            data_point_type = dc_match['Type'].item()
-            Dc_Number = dc_match['No'].item()         
-            
-            self.datapoints_df.loc['dc_type'] = data_point_type
-            self.datapoints_df.loc['dc_number'] = Dc_Number
-
-            if data_point_type == 'Data Collector':
-                self.datapoints_cperfmeasure_dropdown['values'] = ['QueueDelay', 'SpeedAvgArith', 'OccupRate','Acceleration', 'Lenght', 'Vehs', 'Pers','Saturation Headway']
-
-            elif data_point_type == 'Travel Time Collector':
-                self.datapoints_cperfmeasure_dropdown['values'] = ['StopDelay', 'Stops', 'VehDelay', 'Vehs', 'Persons Delay', 'Persons']
-                
-            else:
-                self.datapoints_cperfmeasure_dropdown['values'] = ['QLen', 'QLenMax', 'QStops']
-
-            print(self.datapoints_df)
         
         #print(self.experiment_data)
 
@@ -413,50 +196,6 @@ class Board(tk.Frame):
         self._geom=geom
         print(geom, self._geom)
         self.master.geometry(self._geom)
-        
-    #Runs every 50 milliseconds. 
-    def poll(self):
-
-        #Get value of the entry box
-        self.search = self.search_var.get()
-        #print(self.search)
-        if self.search != self.search_mem: #self.search_mem = '' at start of program.
-            self.update_list(is_contact_search=True)
-            #set switch and search memory
-            self.switch = True #self.switch = False at start of program.
-            self.search_mem = self.search
-
-        #if self.search returns to '' after preforming search 
-        #it needs to reset the contents of the list box. I use 
-        #a 'switch' to determine when it needs to be updated.
-        if self.switch == True and self.search == '':
-            self.update_list()
-            self.switch = False
-        self.after(50, self.poll)
-
-    def update_list(self, **kwargs):
-
-        try:
-            is_contact_search = kwargs['is_contact_search']
-        except:
-            is_contact_search = False
-
-        #Just a generic list to populate the listbox
-                
-        lbox_list = list(self.parameter_db['Long Name'])
-        #print(lbox_list)
-
-        self.parameter_search_listbox.delete(0, tk.END)
-
-        for item in lbox_list:
-            if is_contact_search == True:
-                #Searches contents of lbox_list and only inserts
-                #the item to the list if it self.search is in 
-                #the current item.
-                if self.search.lower() in item.lower():
-                    self.parameter_search_listbox.insert(tk.END, item)
-            else:
-                self.parameter_search_listbox.insert(tk.END, item)
 
     def vissim_simulation(self, experiment):
         #This function sets up an runs the simulation for the selected experiment
@@ -498,27 +237,19 @@ class Board(tk.Frame):
 
 class edit_windows(tk.Frame):
 
-    def __init__(self,experiment):
+    def __init__(self,parent,experiment,cfg):
+
+        tk.Frame.__init__(self)
 
         self.datapoints_df = pd.read_sql(str('SELECT * FROM datapoints'), cnx)
-        self.parameters_df = pd.read_sql(str('SELECT * FROM parameters'), cnx)
+        self.parameters_df = pd.read_sql(str('SELECT * FROM parameters'), cnx)   
 
-        configurations = len(self.datapoints_df.loc[self.datapoints_df['experiment']==experiment])
-
-        for i in range(configurations):
-
-            self.edit_window(experiment,i+1)
-
-    def edit_window(self,experiment,cfg):
-        
-        win = tk.Toplevel()
-        win.wm_title("Edit experiment")
+        win = parent
 
         configurations = len(self.datapoints_df.loc[self.datapoints_df['experiment']==experiment])
 
         self.subframe = tk.Frame(win,height = 400, width = 400,highlightbackground="red", highlightcolor="red",highlightthickness=1,bd =0)
         self.subframe.grid(row=1+cfg,column=1)
-        self.instance = cfg
 
         b = tk.Button(self.subframe, text="Okay", command=lambda:  win.destroy)
 
@@ -529,7 +260,7 @@ class edit_windows(tk.Frame):
         self.datapoints_label = tk.Label(self.subframe,text = 'Data Points')
 
         self.datapoints_ctype_dropdown = ttk.Combobox(self.subframe, width=25)
-        self.datapoints_ctype_dropdown['values'] = list(self.dc_data['Display'])
+        self.datapoints_ctype_dropdown['values'] = list(dc_data['Display'])
         self.datapoints_ctype_dropdown.configure(font=('Roboto', 8))
         self.datapoints_ctype_dropdown.set('Select data collector type')
         self.datapoints_ctype_dropdown.bind('<<ComboboxSelected>>', lambda e: self.datapoints_callback(eventObject=e,experiment = experiment))
@@ -627,6 +358,7 @@ class edit_windows(tk.Frame):
         if self.switch == True and self.search == '':
             self.update_list()
             self.switch = False
+            
         self.after(50, self.poll)
 
     def update_list(self, **kwargs):
@@ -638,7 +370,7 @@ class edit_windows(tk.Frame):
 
         #Just a generic list to populate the listbox
                 
-        lbox_list = list(self.parameter_db['Long Name'])
+        lbox_list = list(parameter_db['Long Name'])
         #print(lbox_list)
 
         self.parameter_search_listbox.delete(0, tk.END)
@@ -652,7 +384,126 @@ class edit_windows(tk.Frame):
                     self.parameter_search_listbox.insert(tk.END, item)
             else:
                 self.parameter_search_listbox.insert(tk.END, item)
+    def save_exp_cfg(self,experiment): #save button
+
+        print('pressde')
+
+        ctarget_entry = self.datapoints_ctargetvalue_entry.get()
+        ctimeinterval_entry = self.datapoints_ctimeinterval_entry.get()
+        simruns_entry = self.simulation_entry_replications.get()
+        print(ctarget_entry)
+        self.datapoints_df.loc['field_value'] = ctarget_entry
+        self.datapoints_df.loc['time_p'] = ctimeinterval_entry
+        self.simulation_df.loc['replications'] = simruns_entry
+
+        self.datapoints_df.to_sql('datapoints',cnx, if_exists='replace')
+        self.simulation_df.to_sql('simulation_cfg',cnx,if_exists='replace')
+        self.parameters_df.to_sql('parameters',cnx,if_exists='replace')
+
+        print(self.parameters_df)
+        print(self.datapoints_df)
+        print(self.simulation_df)
+
+
+    def parameters_callback(self,experiment, eventObject):
+        #print(eventObject.widget)
         
+        # you can also get the value off the eventObject
+        caller = str(eventObject.widget)
+        #experiment  = self.parameter_data.loc[self.parameter_data['Experiment']==self.experiment].index[0]
+        #print(experiment)
+        #print(self.parameter_data)
+
+        if 'listbox' in caller:
+            #print(self.parameter_search_listbox)
+            selected = self.parameter_search_listbox.curselection()
+            parameter_text = self.parameter_search_listbox.get(first=selected, last=None)
+
+            parameter_identifier_row = parameter_db.loc[parameter_db['Long Name']==parameter_text]
+            
+            value = str(parameter_identifier_row['Identifier'].item())
+            
+            #print(value)          
+
+            self.parameter_data.loc[experiment, 'Parameter'] = value
+            #print(self.parameter_data.loc[experiment,])
+
+            #print(self.parameter_data)
+
+        else:
+
+            value = eventObject.widget.get()        
+
+        if 'entry4' in caller: #liminf          
+            self.parameter_data.loc[experiment, 'Lim. Inf'] = value
+            #print(self.parameter_data)
+    
+        elif 'entry5' in caller: #limsup  
+            self.parameter_data.loc[experiment, 'Lim. Sup'] = value
+            #print(self.parameter_data)
+
+        elif 'entry6' in caller: #step
+            self.parameter_data.loc[experiment, 'Step'] = value
+        # print(self.parameter_data)
+        
+        else:
+            experiment_index  = self.experiment_data.loc[self.experiment_data['Experiment']==self.experiment].index[0]
+            dc_match = dc_data.loc[dc_data['Display'] == value]
+            data_point_type = dc_match['Type'].item()
+            Dc_Number = dc_match['No'].item()
+
+            self.experiment_data.loc[experiment_index, 'Data Point Type'] = data_point_type
+            self.experiment_data.loc[experiment_index, 'DP Number'] = Dc_Number
+            #print(self.experiment_data)
+        
+        #print(self.experiment_data)
+        
+    def datapoints_callback(self, eventObject, experiment):
+        # you can also get the value off the eventObject
+        #TODO Logica pra saber qual linha do df é: carregar datapoints_df[datapoints_df['experiment']==]
+        caller = str(eventObject.widget)
+        value = eventObject.widget.get()
+        print(caller)
+        print(value)
+
+        if caller == None:
+            entry_value = self.datapoints_ctargetvalue_entry.get()
+            #print(entry_value)
+            #experiment_index  = self.experiment_data.loc[self.experiment_data['Experiment']==self.experiment].index[0]
+            self.datapoints_df.loc['field_value'] = entry_value
+            print(self.datapoints_df)
+    
+        elif 'combobox2' in caller:  
+            print('selected1')       
+            #experiment_index  = self.experiment_df.loc[self.experiment_df['Experiment']==self.experiment].index[0]
+            self.datapoints_df.loc['perf_measure'] = value
+            print(self.datapoints_df)
+
+        elif 'combobox3' in caller:
+            #experiment_index  = self.experiment_data.loc[self.experiment_data['Experiment']==self.experiment].index[0]
+            self.datapoints_df.loc['time_p'] = value
+            print(self.datapoints_df)
+
+        else:
+            print(self.datapoints_df)
+            #experiment_index  = self.experiment_df.loc[self.experiment_df['Experiment']==self.experiment].index[0]
+            dc_match = dc_data.loc[dc_data['Display'] == value]
+            data_point_type = dc_match['Type'].item()
+            Dc_Number = dc_match['No'].item()         
+            
+            self.datapoints_df.loc['dc_type'] = data_point_type
+            self.datapoints_df.loc['dc_number'] = Dc_Number
+
+            if data_point_type == 'Data Collector':
+                self.datapoints_cperfmeasure_dropdown['values'] = ['QueueDelay', 'SpeedAvgArith', 'OccupRate','Acceleration', 'Lenght', 'Vehs', 'Pers','Saturation Headway']
+
+            elif data_point_type == 'Travel Time Collector':
+                self.datapoints_cperfmeasure_dropdown['values'] = ['StopDelay', 'Stops', 'VehDelay', 'Vehs', 'Persons Delay', 'Persons']
+                
+            else:
+                self.datapoints_cperfmeasure_dropdown['values'] = ['QLen', 'QLenMax', 'QStops']
+
+            print(self.datapoints_df)    
 
 #TODO adicionar closure das conexoes com a db para salvar os inserts e updates
 app = SeaofBTCapp()
