@@ -111,7 +111,7 @@ class PageOne(tk.Frame):
         
         #storage initialization #FIXME is really necessary?
 
-        #self.parameter_data = pd.DataFrame(columns = {'Experiment', 'Parameter', 'Lim. Inf', 'Lim. Sup', 'Step'})
+        #self.parameters_df = pd.DataFrame(columns = {'Experiment', 'Parameter', 'Lim. Inf', 'Lim. Sup', 'Step'})
         #self.experiment_data = pd.DataFrame(columns = {'Experiment', 'Data Point Type', 'DP Number', 'Perf_measure', 'Time interval', 'Field data', 'Runs'}) 
         #self.results_data = pd.DataFrame(columns = {'Experiment', 'Data Point Type', 'DP Number','Perf_measure','Time Interval','Run'})
         #self.parameter_db = pd.read_csv(r'E:\Google Drive\Scripts\vistools\resources\parameters.visdb')
@@ -146,7 +146,7 @@ class PageOne(tk.Frame):
         #self.master.title("Vistools")
         #self.experiment_data_init = {'Experiment': 1} 
         #self.experiment_data = self.experiment_data.append(self.experiment_data_init, ignore_index=True)
-        #self.parameter_data = self.parameter_data.append(self.experiment_data_init, ignore_index=True)
+        #self.parameters_df = self.parameters_df.append(self.experiment_data_init, ignore_index=True)
         #print(self.experiment_data)
         #quitButton = Button(self, text = "Quit", command=self.client_exit)        
         #quitButton.place(x=245, y=170)
@@ -270,9 +270,9 @@ class PageOne(tk.Frame):
 
         # you can also get the value off the eventObject
         caller = str(eventObject.widget)
-        parameter_index  = self.parameter_data.loc[self.parameter_data['Experiment']==self.experiment].index[0]
+        parameter_index  = self.parameters_df.loc[self.parameters_df['Experiment']==self.experiment].index[0]
         #print(parameter_index)
-        #print(self.parameter_data)
+        #print(self.parameters_df)
 
         if 'listbox' in caller:
             #print(self.parameter_search_listbox)
@@ -285,25 +285,25 @@ class PageOne(tk.Frame):
             
             #print(value)          
 
-            self.parameter_data.loc[parameter_index, 'Parameter'] = value
+            self.parameters_df.loc[parameter_index, 'Parameter'] = value
 
-            #print(self.parameter_data)
+            #print(self.parameters_df)
 
         else:
 
             value = eventObject.widget.get()        
 
         if 'entry4' in caller: #liminf          
-            self.parameter_data.loc[parameter_index, 'Lim. Inf'] = value
-            #print(self.parameter_data)
+            self.parameters_df.loc[parameter_index, 'Lim. Inf'] = value
+            #print(self.parameters_df)
     
         elif 'entry5' in caller: #limsup  
-            self.parameter_data.loc[parameter_index, 'Lim. Sup'] = value
-            #print(self.parameter_data)
+            self.parameters_df.loc[parameter_index, 'Lim. Sup'] = value
+            #print(self.parameters_df)
 
         elif 'entry6' in caller: #step
-            self.parameter_data.loc[parameter_index, 'Step'] = value
-           # print(self.parameter_data)
+            self.parameters_df.loc[parameter_index, 'Step'] = value
+           # print(self.parameters_df)
         
         else:
             experiment_index  = self.experiment_data.loc[self.experiment_data['Experiment']==self.experiment].index[0]
@@ -464,8 +464,8 @@ class PageOne(tk.Frame):
         #print(parameters_df)
         #------------------------------------#
                 
-        for index_par, parameter_data in self.parameters_df.iterrows():
-            #print(parameter_data)
+        for index_par, parameters_df in self.parameters_df.iterrows():
+            #print(parameters_df)
 
             parameter_names = list(self.parameters_df)
 
@@ -473,9 +473,9 @@ class PageOne(tk.Frame):
             for i in range(len(parameter_names)):
 
                     parameter_name = str(parameter_names[i])
-                    parameter_data_ = int(parameter_data[i])
+                    parameter_df_ = int(parameters_df[i])
 
-                    Vissim.Net.DrivingBehaviors[0].SetAttValue(parameter_name,parameter_data_)
+                    Vissim.Net.DrivingBehaviors[0].SetAttValue(parameter_name,parameter_df_)
                     #Vissim.Net.DrivingBehaviors[0].SetAttValue('W74ax',1)
                 
             
@@ -568,14 +568,14 @@ class PageTwo(PageOne):
         self.exp_select.grid(row=2, column=0)
 
         self.p1 = ttk.Combobox(self, width=25)
-        self.p1['values'] = list(set(self.parameter_data['Parameter']))
+        self.p1['values'] = list(set(self.parameters_df['Parameter']))
         self.p1.configure(font=('Roboto', 8))
         self.p1.set('Select the Parameter')
         self.p1.bind('<<ComboboxSelected>>', self.plot_cfg)
         self.p1.grid(row=3, column=0)
 
         self.p2 = ttk.Combobox(self, width=25)
-        self.p2['values'] = list(set(self.parameter_data['Parameter']))
+        self.p2['values'] = list(set(self.parameters_df['Parameter']))
         self.p2.configure(font=('Roboto', 8))
         self.p2.set('Select the Perf. Measure')
         self.p2.bind('<<ComboboxSelected>>', self.plot_cfg)

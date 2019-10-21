@@ -45,8 +45,8 @@ def vissim_simulation(experiment,fake_data,fake_dc_data,fake_outputs):
 
         #------------------------------------#
                 
-        for index, parameter_data in parameters_df.iterrows():
-            #print(parameter_data)
+        for index, parameters_df in parameters_df.iterrows():
+            #print(parameters_df)
 
             parameter_names = list(parameters_df)
 
@@ -54,9 +54,9 @@ def vissim_simulation(experiment,fake_data,fake_dc_data,fake_outputs):
             for i in range(len(parameter_names)):
 
                 parameter_name = str(parameter_names[i])
-                parameter_data_ = int(parameter_data[i])
+                parameter_df_ = int(parameters_df[i])
 
-                Vissim.Net.DrivingBehaviors[0].SetAttValue(parameter_name,parameter_data_)
+                Vissim.Net.DrivingBehaviors[0].SetAttValue(parameter_name,parameter_df_)
                 #Vissim.Net.DrivingBehaviors[0].SetAttValue('W74ax',1)
                 
             

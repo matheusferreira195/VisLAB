@@ -61,8 +61,8 @@ import sqlite3
 # selected_parameters = list(selected_parameters.Parameter)  #stores the parameter's names
 # parameters_df = pd.DataFrame(combinations, columns=selected_parameters) #organizes all runs cfg data
 # #print(parameters_df)
-# for index, parameter_data in parameters_df.iterrows():
-#     #print(parameter_data)
+# for index, parameters_df in parameters_df.iterrows():
+#     #print(parameters_df)
     
 #     parameter_names = list(parameters_df)
     
@@ -70,9 +70,9 @@ import sqlite3
 #     for i in range(len(parameter_names)):
     
 #         parameter_name = str(parameter_names[i])
-#         parameter_data_ = int(parameter_data[i])
-#         #print(parameter_data_)
-#         #Vissim.Net.DrivingBehaviors[0].SetAttValue(parameter_name,parameter_data_)
+#         parameter_df_ = int(parameters_df[i])
+#         #print(parameter_df_)
+#         #Vissim.Net.DrivingBehaviors[0].SetAttValue(parameter_name,parameter_df_)
 #         #Vissim.Net.DrivingBehaviors[0].SetAttValue('W74ax',1) 
 
 # parameters_df.to_csv(r'E:\Google Drive\Scripts\vistools\development\parameters_df.csv',sep=';')

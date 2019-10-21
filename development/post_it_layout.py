@@ -13,12 +13,16 @@ from tkinter import messagebox
 from generate_dcdf import generate_dcdf
 from generate_dcdf import generate_dcdf_test
 from functools import partial
+import numpy as np
+
 NORM_FONT= ("Roboto", 10)
 LARGE_FONT = ("Roboto", 20)
 
 #Database connection and set up
 
 cnx = sqlite3.connect(r'E:\Google Drive\Scripts\vistools\resources\vislab.db')
+sqlite3.register_adapter(np.int64, lambda val: int(val))
+sqlite3.register_adapter(np.int32, lambda val: int(val))
 cursor = cnx.cursor()
 
 #Loading metadata dataframes 
@@ -240,13 +244,17 @@ class edit_windows(tk.Frame):
     def __init__(self,parent,experiment,cfg):
 
         tk.Frame.__init__(self)
-        #print(cfg)
-        query = str('SELECT * FROM datapoints WHERE experiment = #exp').replace('#exp',str(experiment))
-        #print(query)
-        self.datapoints_df = pd.read_sql(query, cnx).iloc[cfg-1]
-        self.parameters_df = pd.read_sql(str('SELECT * FROM parameters'), cnx)
-        self.simulation_runs = pd.read_sql(str('SELECT * FROM simulation_cfg'), cnx)   
 
+        query_dp = str('SELECT * FROM datapoints WHERE experiment = #exp').replace('#exp',str(experiment))
+        query_pa = str('SELECT * FROM parameters WHERE experiment = #exp').replace('#exp',str(experiment))
+        query_sim = str('SELECT * FROM simulation_cfg WHERE experiment = #exp').replace('#exp',str(experiment))
+
+        self.datapoints_df = pd.read_sql(query_dp, cnx).iloc[cfg-1]
+        self.parameters_df = pd.read_sql(query_pa, cnx).iloc[cfg-1]
+        self.simulation_cfg = pd.read_sql(query_sim, cnx).iloc[cfg-1]
+        print(self.datapoints_df)
+        print(self.parameters_df)
+        print(self.simulation_cfg)
         win = parent
 
         #configurations = len(self.datapoints_df.loc[self.datapoints_df['experiment']==experiment])
@@ -272,10 +280,13 @@ class edit_windows(tk.Frame):
 
         self.separatorv = ttk.Separator(self.subframe, orient="vertical")
 
-        self.datapoints_cperfmeasure_dropdown = ttk.Combobox(self.subframe, width=25)
+        self.datapoints_cperfmeasure_dropdown_svar = tk.StringVar()
+        self.datapoints_cperfmeasure_dropdown_svar.set(self.datapoints_df['perf_measure'])
+        self.datapoints_cperfmeasure_dropdown = ttk.Combobox(self.subframe,textvariable=self.datapoints_cperfmeasure_dropdown_svar, width=25)
+
         self.datapoints_cperfmeasure_dropdown['values'] = []
         self.datapoints_cperfmeasure_dropdown.configure(font=('Roboto', 8))
-        self.datapoints_cperfmeasure_dropdown.set('Select what you will measure')
+        self.datapoints_cperfmeasure_dropdown.set('Select what you will measure')        
         self.datapoints_cperfmeasure_dropdown.bind('<<ComboboxSelected>>', lambda e: self.datapoints_callback(eventObject=e,experiment = experiment))
 
         self.datapoints_ctimeinterval_label = tk.Label(self.subframe, text='Add time interval number or agregation \n eg: 1,2,3,avg,min,max')
@@ -395,32 +406,35 @@ class edit_windows(tk.Frame):
     def save_exp_cfg(self,experiment): #save button
 
         print('pressde')
-        '''
+        
         ctarget_entry = self.datapoints_ctargetvalue_entry.get()
         ctimeinterval_entry = self.datapoints_ctimeinterval_entry.get()
         simruns_entry = self.simulation_entry_replications.get()
-        print(ctarget_entry)
+
         self.datapoints_df.loc['field_value'] = ctarget_entry
         self.datapoints_df.loc['time_p'] = ctimeinterval_entry
-        self.simulation_df.loc['replications'] = simruns_entry
+        self.simulation_cfg.loc['replications'] = simruns_entry
 
-        self.datapoints_df.to_sql('datapoints',cnx, if_exists='replace')
-        self.simulation_df.to_sql('simulation_cfg',cnx,if_exists='replace')
-        self.parameters_df.to_sql('parameters',cnx,if_exists='replace')
-        '''
+        self.datapoints_df = self.datapoints_df.to_frame().T
+        self.simulation_cfg = self.simulation_cfg.to_frame().T
+        self.parameters_df =self.parameters_df.to_frame().T
+
         print(self.parameters_df)
         print(self.datapoints_df)
-        print(self.simulation_df)
+        print(self.simulation_cfg)
+
+        self.datapoints_df.to_sql('datapoints',cnx, if_exists='replace', index = False)
+        self.simulation_cfg.to_sql('simulation_cfg',cnx,if_exists='replace', index = False)
+        self.parameters_df.to_sql('parameters',cnx,if_exists='replace', index = False)
+        
+        print(self.parameters_df)
+        print(self.datapoints_df)
+        print(self.simulation_cfg)
 
 
     def parameters_callback(self,experiment, eventObject):
-        #print(eventObject.widget)
         
-        # you can also get the value off the eventObject
         caller = str(eventObject.widget)
-        #experiment  = self.parameter_data.loc[self.parameter_data['Experiment']==self.experiment].index[0]
-        #print(experiment)
-        #print(self.parameter_data)
 
         if 'listbox' in caller:
             #print(self.parameter_search_listbox)
@@ -431,30 +445,28 @@ class edit_windows(tk.Frame):
             
             value = str(parameter_identifier_row['Identifier'].item())
             
-            #print(value)          
+            self.parameters_df.loc['parameter_name'] = value
 
-            self.parameter_data.loc[experiment, 'Parameter'] = value
-            #print(self.parameter_data.loc[experiment,])
-
-            #print(self.parameter_data)
+            print(self.parameters_df)
 
         else:
 
-            value = eventObject.widget.get()        
+            value = eventObject.widget.get()
+            print(value)        
 
         if 'entry4' in caller: #liminf          
-            self.parameter_data.loc[experiment, 'Lim. Inf'] = value
-            #print(self.parameter_data)
+            self.parameters_df.loc['parameter_b_value'] = value
+            print(self.parameters_df)
     
         elif 'entry5' in caller: #limsup  
-            self.parameter_data.loc[experiment, 'Lim. Sup'] = value
-            #print(self.parameter_data)
+            self.parameters_df.loc['parameter_u_value'] = value
+            print(self.parameters_df)
 
         elif 'entry6' in caller: #step
-            self.parameter_data.loc[experiment, 'Step'] = value
-        # print(self.parameter_data)
+            self.parameters_df.loc['parameter_step'] = value
+            print(self.parameters_df)
         
-        else:
+        '''else:
             experiment_index  = self.experiment_data.loc[self.experiment_data['Experiment']==self.experiment].index[0]
             dc_match = dc_data.loc[dc_data['Display'] == value]
             data_point_type = dc_match['Type'].item()
@@ -462,7 +474,7 @@ class edit_windows(tk.Frame):
 
             self.experiment_data.loc[experiment_index, 'Data Point Type'] = data_point_type
             self.experiment_data.loc[experiment_index, 'DP Number'] = Dc_Number
-            #print(self.experiment_data)
+            print(self.experiment_data)'''
         
         #print(self.experiment_data)
         
