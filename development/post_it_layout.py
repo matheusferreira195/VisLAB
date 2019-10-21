@@ -254,7 +254,7 @@ class edit_windows(tk.Frame):
         self.subframe = tk.Frame(win,height = 400, width = 400,highlightbackground="red", highlightcolor="red",highlightthickness=1,bd =0)
         self.subframe.grid(row=1+cfg,column=1)
 
-        b = tk.Button(self.subframe, text="Okay", command=lambda:  win.destroy)
+        #b = tk.Button(self.subframe, text="Okay", command=lambda:  win.destroy)
 
         self.search_var = tk.StringVar()
         self.switch = False
@@ -288,16 +288,19 @@ class edit_windows(tk.Frame):
 
         self.datapoint_ok_button = tk.Button(self.subframe, text="Save Changes", command = lambda: self.save_exp_cfg(experiment))# image=self.check_image)
         
+        #TODO mudar save_exp_cfg pra fazer a query de update na table
+
         ##------Parameters section------##
         self.parameters_label = tk.Label(self.subframe,text = 'Parameters')
 
         self.parameter_search_entry = tk.Entry(self.subframe, textvariable=self.search_var, width=25) 
-        #FIXME tá sendo editada a mesma barra pra todos os campos
+
         self.parameter_search_entry.insert(0, 'Search parameters here')
         
         self.parameter_search_listbox = tk.Listbox(self.subframe, width=45, height=1)
         self.parameter_search_listbox.bind('<<ListboxSelect>>',  lambda e: self.parameters_callback(eventObject=e,experiment = experiment))
-
+        #TODO configurar valores default pros campos
+        #TODO configurar parmeters_callback pra receber os inputs e fazer update na table
         self.parameter_label_liminf = tk.Label(self.subframe, text = 'Inferior Limit')
         self.parameter_entry_liminf = tk.Entry(self.subframe, width=10)
         self.parameter_entry_liminf.bind('<FocusOut>', lambda e: self.parameters_callback(eventObject=e,experiment = experiment))
