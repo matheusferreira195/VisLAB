@@ -163,7 +163,7 @@ class Board(tk.Frame):
             
         button_add = tk.Button(self, text = "Add", command = lambda: self.add_postit(x,y,btn_id=(current_experiment)), anchor = tk.W)
         self.add_buttons.append(button_add)        
-        #print("button %i"%(btn_id))
+        print("experiment %i"%(exp))
         button_window = canvas.create_window(10, 150, anchor=tk.NW, window=button_add)
         
         label_exp = tk.Label(self,text="Experiment %i" % (current_experiment),anchor=tk.CENTER)
@@ -181,9 +181,11 @@ class Board(tk.Frame):
         win = tk.Toplevel()
         win.wm_title("Edit experiment")
 
+        print(configurations)
+
         for i in range(configurations):
 
-            edit_windows(experiment=exp,parent = win, cfg=(i+1))
+            edit_windows(experiment=exp,parent = win, cfg=(i+1),new=1)
 
 
         #TODO adicionar os outros 4 botoes
@@ -241,7 +243,9 @@ class Board(tk.Frame):
 
 class edit_windows(tk.Frame):
 
-    def __init__(self,parent,experiment,cfg):
+    def __init__(self,parent,experiment,cfg,new):
+
+        #print(cfg)
 
         tk.Frame.__init__(self)
 
@@ -249,12 +253,76 @@ class edit_windows(tk.Frame):
         query_pa = str('SELECT * FROM parameters WHERE experiment = #exp').replace('#exp',str(experiment))
         query_sim = str('SELECT * FROM simulation_cfg WHERE experiment = #exp').replace('#exp',str(experiment))
 
-        self.datapoints_df = pd.read_sql(query_dp, cnx).iloc[cfg-1]
-        self.parameters_df = pd.read_sql(query_pa, cnx).iloc[cfg-1]
-        self.simulation_cfg = pd.read_sql(query_sim, cnx).iloc[cfg-1]
+        self.datapoints_df = pd.read_sql(query_dp, cnx).drop(['ID'],axis=1) 
+        self.parameters_df = pd.read_sql(query_pa, cnx).drop(['ID'],axis=1) 
+        self.simulations_cfg = pd.read_sql(query_sim, cnx).drop(['ID'],axis=1)
+
+        if len(self.datapoints_df.index) == len(self.parameters_df.index) == len(self.simulations_cfg.index) == 0 or new == 0:
+ 
+            cursor.execute("INSERT INTO datapoints (experiment) VALUES ( %s)" % experiment)     
+            cursor.execute("INSERT INTO parameters (experiment) VALUES ( %s)" % experiment)                                                                                             
+            cursor.execute("INSERT INTO simulation_cfg (experiment) VALUES ( %s)" % experiment) 
+
+            self.datapoints_df = pd.read_sql(query_dp, cnx)
+            self.parameters_df = pd.read_sql(query_pa, cnx)
+            self.simulations_cfg = pd.read_sql(query_sim, cnx)
+
+            self.datapoints_ctype_svar = tk.StringVar()
+            self.datapoints_ctype_svar.set('Select a datapoint for displaying in the results')
+            self.datapoints_cperfmeasure_dropdown_svar = tk.StringVar()
+            self.datapoints_cperfmeasure_dropdown_svar.set('Select a perfomance measure')
+            self.datapoints_ctimeinterval_svar = tk.StringVar()
+            self.datapoints_ctimeinterval_svar.set('Select a time interval')
+            self.datapoints_ctargetvalue_svar = tk.StringVar()
+            self.datapoints_ctargetvalue_svar.set('Enter a field value')
+            self.parameter_search_listbox_svar = tk.StringVar()
+            self.parameter_search_listbox_svar.set('Search parameters here')  
+            self.parameter_entry_liminf_svar = tk.StringVar()
+            self.parameter_entry_liminf_svar.set('Set the inferior limit for parameter value')
+            self.parameter_entry_limsup_svar = tk.StringVar()
+            self.parameter_entry_limsup_svar.set('Set the superior limit for parameter value')
+            self.parameter_entry_step_svar = tk.StringVar()
+            self.parameter_entry_step_svar.set('Set the increment on the parameter')
+            self.simulation_entry_replications_svar = tk.StringVar()
+            self.simulation_entry_replications_svar.set('How many replications?')
+            self.simulation_entry_seed_svar = tk.StringVar()
+            self.simulation_entry_seed_svar.set('Set a initial seed')
+            self.simulation_entry_seed_i_svar = tk.StringVar()
+            self.simulation_entry_seed_i_svar.set('Set an increment')
+
+        else:
+
+            self.datapoints_ctype_svar = tk.StringVar()
+            self.datapoints_ctype_svar.set(self.datapoints_df['dc_type']+' / '+str(self.datapoints_df['dc_number']))
+            self.datapoints_cperfmeasure_dropdown_svar = tk.StringVar()
+            self.datapoints_cperfmeasure_dropdown_svar.set(self.datapoints_df['perf_measure'])
+            self.datapoints_ctimeinterval_svar = tk.StringVar()
+            self.datapoints_ctimeinterval_svar.set(self.datapoints_df['time_p'])
+            self.datapoints_ctargetvalue_svar = tk.StringVar()
+            self.datapoints_ctargetvalue_svar.set(self.datapoints_df['field_value'])
+            self.parameter_search_listbox_svar = tk.StringVar()
+            self.parameter_search_listbox_svar.set(self.parameters_df['parameter_name'])  
+            self.parameter_entry_liminf_svar = tk.StringVar()
+            self.parameter_entry_liminf_svar.set(self.parameters_df['parameter_b_value'])
+            self.parameter_entry_limsup_svar = tk.StringVar()
+            self.parameter_entry_limsup_svar.set(self.parameters_df['parameter_u_value'])
+            self.parameter_entry_step_svar = tk.StringVar()
+            self.parameter_entry_step_svar.set(self.parameters_df['parameter_step'])
+            self.simulation_entry_replications_svar = tk.StringVar()
+            self.simulation_entry_replications_svar.set(self.simulations_cfg['replications'])
+            self.simulation_entry_seed_svar = tk.StringVar()
+            self.simulation_entry_seed_svar.set(self.simulations_cfg['initial_seed'])
+            self.simulation_entry_seed_i_svar = tk.StringVar()
+            self.simulation_entry_seed_i_svar.set(self.simulations_cfg['seed_increment'])
+
         print(self.datapoints_df)
         print(self.parameters_df)
-        print(self.simulation_cfg)
+        print(self.simulations_cfg)
+
+        self.datapoints_df = self.datapoints_df.iloc[cfg-1]
+        self.parameters_df = self.parameters_df.iloc[cfg-1]
+        self.simulations_cfg = self.simulations_cfg.iloc[cfg-1]
+
         win = parent
 
         #configurations = len(self.datapoints_df.loc[self.datapoints_df['experiment']==experiment])
@@ -269,8 +337,6 @@ class edit_windows(tk.Frame):
         self.search_mem = ''
 
         self.datapoints_label = tk.Label(self.subframe,text = 'Data Points')
-        self.datapoints_ctype_svar = tk.StringVar()
-        self.datapoints_ctype_svar.set(self.datapoints_df['dc_type']+' / '+str(self.datapoints_df['dc_number']))
         
         self.datapoints_ctype_dropdown = ttk.Combobox(self.subframe, width=25,textvariable=self.datapoints_ctype_svar,state='readonly')
         self.datapoints_ctype_dropdown['values'] = list(dc_data['Display'])
@@ -280,59 +346,61 @@ class edit_windows(tk.Frame):
 
         self.separatorv = ttk.Separator(self.subframe, orient="vertical")
 
-        self.datapoints_cperfmeasure_dropdown_svar = tk.StringVar()
-        self.datapoints_cperfmeasure_dropdown_svar.set(self.datapoints_df['perf_measure'])
         self.datapoints_cperfmeasure_dropdown = ttk.Combobox(self.subframe,textvariable=self.datapoints_cperfmeasure_dropdown_svar, width=25)
-
         self.datapoints_cperfmeasure_dropdown['values'] = []
         self.datapoints_cperfmeasure_dropdown.configure(font=('Roboto', 8))
-        self.datapoints_cperfmeasure_dropdown.set('Select what you will measure')        
+        #self.datapoints_cperfmeasure_dropdown.set('Select what you will measure')        
         self.datapoints_cperfmeasure_dropdown.bind('<<ComboboxSelected>>', lambda e: self.datapoints_callback(eventObject=e,experiment = experiment))
 
-        self.datapoints_ctimeinterval_label = tk.Label(self.subframe, text='Add time interval number or agregation \n eg: 1,2,3,avg,min,max')
-        #TODO adicionar o resto dos labels default pros listboxes
-        self.datapoints_ctimeinterval_entry = tk.Entry(self.subframe)
+        self.datapoints_ctimeinterval_label = tk.Label(self.subframe, text='Add time interval number or agregation \n eg: 1,2,3,avg,min,max')        
+        self.datapoints_ctimeinterval_entry = tk.Entry(self.subframe,textvariable=self.datapoints_ctimeinterval_svar)
 
         self.datapoints_ctargetvalue_label=tk.Label(self.subframe, text='Add the field data to compare')
-
-        self.datapoints_ctargetvalue_entry= tk.Entry(self.subframe)
+        self.datapoints_ctargetvalue_entry= tk.Entry(self.subframe, textvariable = self.datapoints_ctargetvalue_svar)
 
         self.datapoint_ok_button = tk.Button(self.subframe, text="Save Changes", command = lambda: self.save_exp_cfg(experiment))# image=self.check_image)
         
-        #TODO mudar save_exp_cfg pra fazer a query de update na table
-
         ##------Parameters section------##
         self.parameters_label = tk.Label(self.subframe,text = 'Parameters')
 
-        self.parameter_search_entry = tk.Entry(self.subframe, textvariable=self.search_var, width=25) 
 
-        self.parameter_search_entry.insert(0, 'Search parameters here')
-        
+        self.parameter_search_entry = tk.Entry(self.subframe, textvariable=self.search_var, width=25)    
+        print(self.parameter_search_listbox_svar)     
+        self.parameter_search_entry.insert(0, self.parameter_search_listbox_svar.get())       
+
         self.parameter_search_listbox = tk.Listbox(self.subframe, width=45, height=1)
         self.parameter_search_listbox.bind('<<ListboxSelect>>',  lambda e: self.parameters_callback(eventObject=e,experiment = experiment))
-        #TODO configurar valores default pros campos
-        #TODO configurar parmeters_callback pra receber os inputs e fazer update na table
+
         self.parameter_label_liminf = tk.Label(self.subframe, text = 'Inferior Limit')
-        self.parameter_entry_liminf = tk.Entry(self.subframe, width=10)
+        self.parameter_entry_liminf = tk.Entry(self.subframe, width=10, textvariable = self.parameter_entry_liminf_svar)
         self.parameter_entry_liminf.bind('<FocusOut>', lambda e: self.parameters_callback(eventObject=e,experiment = experiment))
 
         self.parameter_label_limsup = tk.Label(self.subframe, text = 'Superior Limit')
-        self.parameter_entry_limsup = tk.Entry(self.subframe, width=10)
+        self.parameter_entry_limsup = tk.Entry(self.subframe, width=10,textvariable = self.parameter_entry_limsup_svar)
         self.parameter_entry_limsup.bind('<FocusOut>',lambda e: self.parameters_callback(eventObject=e,experiment = experiment))
 
         self.parameter_label_step = tk.Label(self.subframe, text = 'Step')
 
-        self.parameter_entry_step = tk.Entry(self.subframe, width=10)
+        self.parameter_entry_step = tk.Entry(self.subframe, width=10, textvariable = self.parameter_entry_step_svar)
         self.parameter_entry_step.bind('<FocusOut>',lambda e: self.parameters_callback(eventObject=e,experiment = experiment))
 
         ##------Simulation section------##
         self.simulation_label = tk.Label(self.subframe, text = 'Simulation Configs')
 
         self.simulation_label_replications = tk.Label(self.subframe, text = 'How many runs?')
+        self.simulation_entry_replications = tk.Entry(self.subframe, width=5, textvariable = self.simulation_entry_replications_svar)
 
-        self.simulation_entry_replications = tk.Entry(self.subframe, width=5)
+        self.simulation_label_seed = tk.Label(self.subframe, text = 'Set initial seed')
+        self.simulation_entry_seed = tk.Entry(self.subframe, width=5, textvariable = self.simulation_entry_seed_svar)
 
+        self.simulation_label_seed_i = tk.Label(self.subframe, text = 'Set increment')
+        self.simulation_entry_seed_i = tk.Entry(self.subframe, width=5, textvariable = self.simulation_entry_seed_i_svar)
+
+        ##------New button--------------##
+        self.new_button = tk.Button(self.subframe, text = '+', command = lambda: edit_windows(experiment=experiment,parent = win, cfg=(cfg+1),new=0))
+        self.new_button.grid(row=9, column=5, sticky='w',padx=10)
         ##------Grid configuration------##
+    
         self.datapoints_label.grid(row=2, column=0, sticky='w', padx=10)
         self.datapoints_ctype_dropdown.grid(row=4, column=0, sticky='w', padx=10)
         self.datapoints_cperfmeasure_dropdown.grid(row=4, column=1, sticky='w', padx=10)
@@ -353,7 +421,11 @@ class edit_windows(tk.Frame):
         self.parameter_entry_step.grid(row=4, column=9, sticky='w', padx=5)
         self.simulation_label.grid(row=5,column=0)
         self.simulation_label_replications.grid(row=6,column=0)
-        self.simulation_entry_replications.grid(row=6,column=1)
+        self.simulation_entry_replications.grid(row=6,column=1)        
+        self.simulation_label_seed.grid(row=7, column=0, sticky='w', padx=10)
+        self.simulation_entry_seed.grid(row=7, column=1, sticky='w', padx=10)
+        self.simulation_label_seed_i.grid(row=8, column=0, sticky='w', padx=10)
+        self.simulation_entry_seed_i.grid(row=8, column=1, sticky='w', padx=10)
         
         #Function for updating the list/doing the search.
         #It needs to be called here to populate the listbox
@@ -405,31 +477,28 @@ class edit_windows(tk.Frame):
                 self.parameter_search_listbox.insert(tk.END, item)
     def save_exp_cfg(self,experiment): #save button
 
-        print('pressde')
-        
-        ctarget_entry = self.datapoints_ctargetvalue_entry.get()
-        ctimeinterval_entry = self.datapoints_ctimeinterval_entry.get()
-        simruns_entry = self.simulation_entry_replications.get()
+        self.datapoints_df.loc['field_value'] = self.datapoints_ctargetvalue_entry.get()
+        self.datapoints_df.loc['time_p'] = self.datapoints_ctimeinterval_entry.get()
 
-        self.datapoints_df.loc['field_value'] = ctarget_entry
-        self.datapoints_df.loc['time_p'] = ctimeinterval_entry
-        self.simulation_cfg.loc['replications'] = simruns_entry
+        self.simulations_cfg.loc['replications'] = self.simulation_entry_replications.get()
+        self.simulations_cfg.loc['initial_seed'] = self.simulation_entry_seed.get()
+        self.simulations_cfg.loc['seed_increment'] = self.simulation_entry_seed_i.get()
 
         self.datapoints_df = self.datapoints_df.to_frame().T
-        self.simulation_cfg = self.simulation_cfg.to_frame().T
+        self.simulations_cfg = self.simulations_cfg.to_frame().T
         self.parameters_df =self.parameters_df.to_frame().T
 
         print(self.parameters_df)
         print(self.datapoints_df)
-        print(self.simulation_cfg)
+        print(self.simulations_cfg)
 
         self.datapoints_df.to_sql('datapoints',cnx, if_exists='replace', index = False)
-        self.simulation_cfg.to_sql('simulation_cfg',cnx,if_exists='replace', index = False)
+        self.simulations_cfg.to_sql('simulation_cfg',cnx,if_exists='replace', index = False)
         self.parameters_df.to_sql('parameters',cnx,if_exists='replace', index = False)
         
         print(self.parameters_df)
         print(self.datapoints_df)
-        print(self.simulation_cfg)
+        print(self.simulations_cfg)
 
 
     def parameters_callback(self,experiment, eventObject):
