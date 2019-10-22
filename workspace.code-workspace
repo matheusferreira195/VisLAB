@@ -7,5 +7,8 @@
 			"name": "vistools",
 			"path": "vistools"
 		}
-	]
+	],
+	"settings": {
+		"sqltools.useNodeRuntime": true
+	}
 }

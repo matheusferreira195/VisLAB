@@ -20,7 +20,7 @@ LARGE_FONT = ("Roboto", 20)
 
 #Database connection and set up
 
-cnx = sqlite3.connect(r'E:\Google Drive\Scripts\vistools\resources\vislab.db')
+cnx = sqlite3.connect(r'E:\Google Drive\Scripts\vistools\resources\vislab.db', isolation_level=None)
 sqlite3.register_adapter(np.int64, lambda val: int(val))
 sqlite3.register_adapter(np.int32, lambda val: int(val))
 cursor = cnx.cursor()
@@ -132,8 +132,6 @@ class Board(tk.Frame):
                             command=lambda: controller.show_frame(PageTwo))
         button3.grid(row=0,column=2)
         
-
-
     def add_postit(self,x,y,exp = 0, btn_id = None): 
         
         #TODO change the add button to a standalone in the last position
@@ -245,7 +243,7 @@ class edit_windows(tk.Frame):
 
     def __init__(self,parent,experiment,cfg,new):
 
-        #print(cfg)
+        print('cfg:%i' % cfg)
 
         tk.Frame.__init__(self)
 
@@ -259,13 +257,20 @@ class edit_windows(tk.Frame):
 
         if len(self.datapoints_df.index) == len(self.parameters_df.index) == len(self.simulations_cfg.index) == 0 or new == 0:
  
-            cursor.execute("INSERT INTO datapoints (experiment) VALUES ( %s)" % experiment)     
-            cursor.execute("INSERT INTO parameters (experiment) VALUES ( %s)" % experiment)                                                                                             
-            cursor.execute("INSERT INTO simulation_cfg (experiment) VALUES ( %s)" % experiment) 
+            cursor.execute("INSERT INTO datapoints (experiment) VALUES (%s)" % (experiment))     
+            cursor.execute("INSERT INTO parameters (experiment) VALUES (%s)" % (experiment))                                                                                             
+            cursor.execute("INSERT INTO simulation_cfg (experiment) VALUES (%s)" % (experiment))
+            cnx.commit()
 
             self.datapoints_df = pd.read_sql(query_dp, cnx)
             self.parameters_df = pd.read_sql(query_pa, cnx)
             self.simulations_cfg = pd.read_sql(query_sim, cnx)
+
+            print('#')
+            print(self.datapoints_df)
+            print(self.parameters_df)
+            print(self.simulations_cfg)
+            print('#')
 
             self.datapoints_ctype_svar = tk.StringVar()
             self.datapoints_ctype_svar.set('Select a datapoint for displaying in the results')
@@ -292,6 +297,10 @@ class edit_windows(tk.Frame):
 
         else:
 
+            self.datapoints_df = self.datapoints_df.iloc[cfg-1]
+            self.parameters_df = self.parameters_df.iloc[cfg-1]
+            self.simulations_cfg = self.simulations_cfg.iloc[cfg-1]
+
             self.datapoints_ctype_svar = tk.StringVar()
             self.datapoints_ctype_svar.set(self.datapoints_df['dc_type']+' / '+str(self.datapoints_df['dc_number']))
             self.datapoints_cperfmeasure_dropdown_svar = tk.StringVar()
@@ -314,10 +323,6 @@ class edit_windows(tk.Frame):
             self.simulation_entry_seed_svar.set(self.simulations_cfg['initial_seed'])
             self.simulation_entry_seed_i_svar = tk.StringVar()
             self.simulation_entry_seed_i_svar.set(self.simulations_cfg['seed_increment'])
-
-        print(self.datapoints_df)
-        print(self.parameters_df)
-        print(self.simulations_cfg)
 
         self.datapoints_df = self.datapoints_df.iloc[cfg-1]
         self.parameters_df = self.parameters_df.iloc[cfg-1]
@@ -597,5 +602,5 @@ class edit_windows(tk.Frame):
 
 #TODO adicionar closure das conexoes com a db para salvar os inserts e updates
 app = SeaofBTCapp()
-app.geometry("1280x720")    
+app.geometry("800x400")    
 app.mainloop()
