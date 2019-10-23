@@ -14,6 +14,11 @@ from generate_dcdf import generate_dcdf
 from generate_dcdf import generate_dcdf_test
 from functools import partial
 import numpy as np
+import matplotlib
+matplotlib.use("TkAgg")
+from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
+from matplotlib.backend_bases import key_press_handler
+from matplotlib.figure import Figure
 
 NORM_FONT= ("Roboto", 10)
 LARGE_FONT = ("Roboto", 20)
@@ -89,7 +94,7 @@ class Board(tk.Frame):
         
         tk.Frame.__init__(self, parent)
         label = tk.Label(self, text="Manage your experiments", font=LARGE_FONT)
-        label.pack()#grid(row=0,column=0)
+        label.grid(row=0,column=0)
         
         #loading existing post its (experiments)
 
@@ -110,7 +115,7 @@ class Board(tk.Frame):
         if len(existing_experiments.index) == 0:
 
             self.plus_button = tk.Button(self, text = '+', command=lambda:self.add_postit(1,0))
-            self.plus_button.pack(side = tk.RIGHT)#grid(row=1,column=1)
+            self.plus_button.grid(row=1,column=1)
 
         for row in existing_experiments.iterrows():
 
@@ -124,18 +129,18 @@ class Board(tk.Frame):
 
         #Navigation
 
-        button1 = tk.Button(self, text="Back to Home",
+        button_back = tk.Button(self, text="Back to Home",
                             command=lambda: controller.show_frame(StartPage))
-        button1.pack()#grid(row=0,column=1)
-        '''
-        button2 = tk.Button(self, text="Page Two",
-                            command=lambda: controller.show_frame(PageTwo))
-        button2.pack()#grid(row=0,column=2)
+        button_back.grid(row=0,column=1)
         
-        button3 = tk.Button(self, text="Page Two",
+        button_calibration = tk.Button(self, text="Calibration",
                             command=lambda: controller.show_frame(PageTwo))
-        button3.pack()#grid(row=0,column=2)
-        '''
+        button_calibration.grid(row=0,column=2)
+        
+        button_signal = tk.Button(self, text="Signal Calibration",
+                            command=lambda: controller.show_frame(PageTwo))
+        button_signal.grid(row=0,column=3)
+        
     def add_postit(self,x,y,exp = 0, btn_id = None): 
         
         #TODO change the add button to a standalone in the last position
@@ -156,7 +161,7 @@ class Board(tk.Frame):
 
         canvas = tk.Canvas(self, relief = tk.FLAT, background = "#FFFF00",
                                             width = 300, height = 200)
-        canvas.pack(side = side)#grid(row=x,column=y)
+        canvas.grid(row=x,column=y)
         self.canvas_l.append(canvas)
         #defines the n+1 post it's position
         if y == 3:
@@ -166,9 +171,7 @@ class Board(tk.Frame):
             y += 1
             
         button_add = tk.Button(self, text = "Add", command = lambda: self.add_postit(x,y,btn_id=(current_experiment)), anchor = tk.W)
-        self.add_buttons.append(button_add) 
-               
-        print("experiment %i"%(exp))
+        self.add_buttons.append(button_add)                
         button_window = canvas.create_window(10, 150, anchor=tk.NW, window=button_add)
         
         label_exp = tk.Label(self,text="Experiment %i" % (current_experiment),anchor=tk.CENTER)
@@ -177,8 +180,14 @@ class Board(tk.Frame):
         button_edit = tk.Button(self, text = "Edit", command = lambda: self.create_edit_windows(exp), anchor = tk.W)
         buttone_window =  canvas.create_window(50, 150, anchor=tk.NW, window=button_edit)
 
+        button_simulation = tk.Button(self, text = "Simulate", command = lambda: self.vissim_simulation(exp), anchor = tk.W)
+        buttons_window =  canvas.create_window(110, 150, anchor=tk.NW, window=button_simulation)
+
+        button_results = tk.Button(self, text = "Results", command = lambda: self.create_result_window(exp), anchor = tk.W)
+        buttonr_window =  canvas.create_window(170, 150, anchor=tk.NW, window=button_results)
+
         button_delete = tk.Button(self, text = "Delete", command = lambda: self.delete_postit(exp=current_experiment), anchor = tk.W)
-        buttond_window =  canvas.create_window(100, 150, anchor=tk.NW, window=button_delete)
+        buttond_window =  canvas.create_window(230, 150, anchor=tk.NW, window=button_delete)
         
     def create_edit_windows(self,exp):
 
@@ -212,6 +221,33 @@ class Board(tk.Frame):
         cursor.execute('REINDEX experiments') #FIXME nao funciona, a tabela experimetns vazia tem ids que quebram o codigo
         cnx.commit() 
         self.canvas_l[exp-1].destroy()#TODO por que que ele nao deleta o canvas?
+
+    def create_result_window(self,exp):
+
+        r_window = tk.Toplevel()
+        r_window.wm_title("Results")
+
+        #single variable layout
+
+        single_v_label = tk.Label(r_window,text="Single variable analysis" ,anchor=tk.CENTER)
+        single_v_label.grid(row=1, column=0)
+        
+        f = Figure(figsize=(5,5), dpi=100)
+        a = f.add_subplot(111)
+        y_data = list(self.results_df.loc[self.results_df['experiment']==exp]['perf_measure_value'])
+        x_data = range(len(y_data))
+        a.plot(x_data,y_data)
+
+        t1_plot_canvas = FigureCanvasTkAgg(f, r_window) 
+        t1_plot_canvas.draw()        
+        t1_toolbar = NavigationToolbar2Tk(t1_plot_canvas,r_window)
+        t1_toolbar.update()
+        t1_plot_canvas._tkcanvas.grid(row=3,column=0)
+        t1_plot_canvas.get_tk_widget().grid(row=2,column=0)
+        #multi variable layout
+        mult_v_label = tk.Label(r_window,text="Multi variable analysis" ,anchor=tk.CENTER)
+        mult_v_label.grid(row=1, column=3)
+        
 
 
     def client_exit(self):
@@ -664,5 +700,5 @@ class edit_windows(tk.Frame):
 
 #TODO adicionar closure das conexoes com a db para salvar os inserts e updates
 app = SeaofBTCapp()
-#app.geometry("1500x400")    
+app.geometry("1500x400")    
 app.mainloop()
