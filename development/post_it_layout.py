@@ -89,8 +89,8 @@ class Board(tk.Frame):
         
         tk.Frame.__init__(self, parent)
         label = tk.Label(self, text="Manage your experiments", font=LARGE_FONT)
-        label.grid(row=0,column=0)
-
+        label.pack()#grid(row=0,column=0)
+        
         #loading existing post its (experiments)
 
         existing_experiments_qry = "SELECT * FROM experiments"
@@ -105,12 +105,12 @@ class Board(tk.Frame):
         
         #print(existing_experiments[0])
         self.add_buttons = []        
-
+        self.canvas_l = []
         #getting the stickers from previous section (experiments saved on the db)
         if len(existing_experiments.index) == 0:
 
-            self.plus_button = tk.Button(self, text = '+', command=lambda:self.add_postit(1,0,exp=int(1),btn_id=0))
-            self.plus_button.grid(row=1,column=1)
+            self.plus_button = tk.Button(self, text = '+', command=lambda:self.add_postit(1,0))
+            self.plus_button.pack(side = tk.RIGHT)#grid(row=1,column=1)
 
         for row in existing_experiments.iterrows():
 
@@ -126,36 +126,38 @@ class Board(tk.Frame):
 
         button1 = tk.Button(self, text="Back to Home",
                             command=lambda: controller.show_frame(StartPage))
-        button1.grid(row=0,column=1)
-
+        button1.pack()#grid(row=0,column=1)
+        '''
         button2 = tk.Button(self, text="Page Two",
                             command=lambda: controller.show_frame(PageTwo))
-        button2.grid(row=0,column=2)
+        button2.pack()#grid(row=0,column=2)
         
         button3 = tk.Button(self, text="Page Two",
                             command=lambda: controller.show_frame(PageTwo))
-        button3.grid(row=0,column=2)
-        
+        button3.pack()#grid(row=0,column=2)
+        '''
     def add_postit(self,x,y,exp = 0, btn_id = None): 
         
         #TODO change the add button to a standalone in the last position
 
-        if btn_id != 0: #destroys the 'add' button for the first postit
+        if btn_id != 0 and btn_id != None: #destroys the 'add' button for the first postit
             self.add_buttons[btn_id-1].destroy() 
 
         if exp == 0:
 
             cursor.execute("INSERT INTO experiments DEFAULT VALUES")
             current_experiment = cursor.execute("SELECT * FROM experiments ORDER BY id DESC LIMIT 1").fetchone()[0]
-            
+            cnx.commit()
+            side = tk.LEFT
         else:            
 
             current_experiment = exp
+            side = tk.RIGHT
 
-        self.canvas = tk.Canvas(self, relief = tk.FLAT, background = "#FFFF00",
+        canvas = tk.Canvas(self, relief = tk.FLAT, background = "#FFFF00",
                                             width = 300, height = 200)
-        self.canvas.grid(row=x,column=y)
-        
+        canvas.pack(side = side)#grid(row=x,column=y)
+        self.canvas_l.append(canvas)
         #defines the n+1 post it's position
         if y == 3:
             y = 0
@@ -167,16 +169,16 @@ class Board(tk.Frame):
         self.add_buttons.append(button_add) 
                
         print("experiment %i"%(exp))
-        button_window = self.canvas.create_window(10, 150, anchor=tk.NW, window=button_add)
+        button_window = canvas.create_window(10, 150, anchor=tk.NW, window=button_add)
         
         label_exp = tk.Label(self,text="Experiment %i" % (current_experiment),anchor=tk.CENTER)
-        label_window = self.canvas.create_window(140,50,anchor=tk.CENTER,window=label_exp)
+        label_window =  canvas.create_window(140,50,anchor=tk.CENTER,window=label_exp)
 
         button_edit = tk.Button(self, text = "Edit", command = lambda: self.create_edit_windows(exp), anchor = tk.W)
-        buttone_window = self.canvas.create_window(50, 150, anchor=tk.NW, window=button_edit)
+        buttone_window =  canvas.create_window(50, 150, anchor=tk.NW, window=button_edit)
 
         button_delete = tk.Button(self, text = "Delete", command = lambda: self.delete_postit(exp=current_experiment), anchor = tk.W)
-        buttond_window = self.canvas.create_window(100, 150, anchor=tk.NW, window=button_delete)
+        buttond_window =  canvas.create_window(100, 150, anchor=tk.NW, window=button_delete)
         
     def create_edit_windows(self,exp):
 
@@ -202,12 +204,14 @@ class Board(tk.Frame):
 
     def delete_postit(self,exp):
 
+        print(self.canvas_l)
         cursor.execute('DELETE FROM datapoints WHERE experiment = ?', (int(exp),))
         cursor.execute('DELETE FROM simulation_cfg WHERE experiment = ?',(int(exp),))
         cursor.execute('DELETE FROM parameters WHERE experiment = ?',(int(exp),))
         cursor.execute('DELETE FROM experiments WHERE id = ?',(int(exp),))
+        cursor.execute('REINDEX experiments') #FIXME nao funciona, a tabela experimetns vazia tem ids que quebram o codigo
         cnx.commit() 
-        self.canvas.destroy() #TODO por que que ele nao deleta o canvas?
+        self.canvas_l[exp-1].destroy()#TODO por que que ele nao deleta o canvas?
 
 
     def client_exit(self):
@@ -660,5 +664,5 @@ class edit_windows(tk.Frame):
 
 #TODO adicionar closure das conexoes com a db para salvar os inserts e updates
 app = SeaofBTCapp()
-app.geometry("1500x400")    
+#app.geometry("1500x400")    
 app.mainloop()
