@@ -102,11 +102,15 @@ class Board(tk.Frame):
         self.results_df = pd.read_sql(str('SELECT * FROM results'), cnx)
         self.simulation_runs = pd.read_sql(str('SELECT * FROM simulation_runs'), cnx)
         self.results_df = pd.read_sql(str('SELECT * FROM results'), cnx)
-
+        
         #print(existing_experiments[0])
         self.add_buttons = []        
 
         #getting the stickers from previous section (experiments saved on the db)
+        if len(existing_experiments.index) == 0:
+
+            self.plus_button = tk.Button(self, text = '+', command=lambda:self.add_postit(1,0,exp=int(1),btn_id=0))
+            self.plus_button.grid(row=1,column=1)
 
         for row in existing_experiments.iterrows():
 
@@ -148,9 +152,9 @@ class Board(tk.Frame):
 
             current_experiment = exp
 
-        canvas = tk.Canvas(self, relief = tk.FLAT, background = "#FFFF00",
+        self.canvas = tk.Canvas(self, relief = tk.FLAT, background = "#FFFF00",
                                             width = 300, height = 200)
-        canvas.grid(row=x,column=y)
+        self.canvas.grid(row=x,column=y)
         
         #defines the n+1 post it's position
         if y == 3:
@@ -160,15 +164,19 @@ class Board(tk.Frame):
             y += 1
             
         button_add = tk.Button(self, text = "Add", command = lambda: self.add_postit(x,y,btn_id=(current_experiment)), anchor = tk.W)
-        self.add_buttons.append(button_add)        
+        self.add_buttons.append(button_add) 
+               
         print("experiment %i"%(exp))
-        button_window = canvas.create_window(10, 150, anchor=tk.NW, window=button_add)
+        button_window = self.canvas.create_window(10, 150, anchor=tk.NW, window=button_add)
         
         label_exp = tk.Label(self,text="Experiment %i" % (current_experiment),anchor=tk.CENTER)
-        label_window = canvas.create_window(140,50,anchor=tk.CENTER,window=label_exp)
+        label_window = self.canvas.create_window(140,50,anchor=tk.CENTER,window=label_exp)
 
         button_edit = tk.Button(self, text = "Edit", command = lambda: self.create_edit_windows(exp), anchor = tk.W)
-        buttone_window = canvas.create_window(50, 150, anchor=tk.NW, window=button_edit)
+        buttone_window = self.canvas.create_window(50, 150, anchor=tk.NW, window=button_edit)
+
+        button_delete = tk.Button(self, text = "Delete", command = lambda: self.delete_postit(exp=current_experiment), anchor = tk.W)
+        buttond_window = self.canvas.create_window(100, 150, anchor=tk.NW, window=button_delete)
         
     def create_edit_windows(self,exp):
 
@@ -191,6 +199,16 @@ class Board(tk.Frame):
 
         
         #print(self.experiment_data)
+
+    def delete_postit(self,exp):
+
+        cursor.execute('DELETE FROM datapoints WHERE experiment = ?', (int(exp),))
+        cursor.execute('DELETE FROM simulation_cfg WHERE experiment = ?',(int(exp),))
+        cursor.execute('DELETE FROM parameters WHERE experiment = ?',(int(exp),))
+        cursor.execute('DELETE FROM experiments WHERE id = ?',(int(exp),))
+        cnx.commit() 
+        self.canvas.destroy() #TODO por que que ele nao deleta o canvas?
+
 
     def client_exit(self):
         root.destroy()
@@ -595,7 +613,6 @@ class edit_windows(tk.Frame):
         
     def datapoints_callback(self, eventObject, experiment):
         # you can also get the value off the eventObject
-        #TODO Logica pra saber qual linha do df é: carregar self.datapoints_df[self.datapoints_df['experiment']==]
         caller = str(eventObject.widget)
         value = eventObject.widget.get()
         #print(caller)
