@@ -19,6 +19,7 @@ matplotlib.use("TkAgg")
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
 from matplotlib.backend_bases import key_press_handler
 from matplotlib.figure import Figure
+from itertools import groupby
 
 NORM_FONT= ("Roboto", 10)
 LARGE_FONT = ("Roboto", 20)
@@ -154,7 +155,7 @@ class Board(tk.Frame):
             current_experiment = cursor.execute("SELECT * FROM experiments ORDER BY id DESC LIMIT 1").fetchone()[0]
             cnx.commit()
             side = tk.LEFT
-        else:            
+        else:               
 
             current_experiment = exp
             side = tk.RIGHT
@@ -205,14 +206,10 @@ class Board(tk.Frame):
 
             edit_windows(experiment=exp,parent = win, cfg=(i+1),new=1)
 
-
-        #TODO adicionar os outros 4 botoes
-
         
         #print(self.experiment_data)
 
     def delete_postit(self,exp):
-
         print(self.canvas_l)
         cursor.execute('DELETE FROM datapoints WHERE experiment = ?', (int(exp),))
         cursor.execute('DELETE FROM simulation_cfg WHERE experiment = ?',(int(exp),))
@@ -220,34 +217,141 @@ class Board(tk.Frame):
         cursor.execute('DELETE FROM experiments WHERE id = ?',(int(exp),))
         cursor.execute('REINDEX experiments') #FIXME nao funciona, a tabela experimetns vazia tem ids que quebram o codigo
         cnx.commit() 
-        self.canvas_l[exp-1].destroy()#TODO por que que ele nao deleta o canvas?
+        self.canvas_l[exp-1].destroy() 
 
     def create_result_window(self,exp):
 
         r_window = tk.Toplevel()
         r_window.wm_title("Results")
-
+        #populating options for single v second parameter
+        self.parameter_selection = []
+        others = self.simulation_runs.loc[self.simulation_runs['experiment'] == exp]['parameter_value']
+        print(others)
+        others = others.drop_duplicates(keep= 'first')
+        print(others)
+        
         #single variable layout
 
         single_v_label = tk.Label(r_window,text="Single variable analysis" ,anchor=tk.CENTER)
         single_v_label.grid(row=1, column=0)
         
-        f = Figure(figsize=(5,5), dpi=100)
-        a = f.add_subplot(111)
-        y_data = list(self.results_df.loc[self.results_df['experiment']==exp]['perf_measure_value'])
-        x_data = range(len(y_data))
-        a.plot(x_data,y_data)
+        second_p_frame = tk.Frame(r_window)
+        second_p_frame.grid(row=3,column=0)
 
-        t1_plot_canvas = FigureCanvasTkAgg(f, r_window) 
-        t1_plot_canvas.draw()        
-        t1_toolbar = NavigationToolbar2Tk(t1_plot_canvas,r_window)
-        t1_toolbar.update()
-        t1_plot_canvas._tkcanvas.grid(row=3,column=0)
-        t1_plot_canvas.get_tk_widget().grid(row=2,column=0)
+        separatorv = ttk.Separator(r_window, orient="vertical")
+        separatorv.grid(row=0, column=3, sticky='ns', rowspan=100)
+
+        second_p = tk.Label(second_p_frame,text="Add second parameter to plot" ,anchor=tk.CENTER)
+        second_p.grid(row=4, column=0)
+        self.p_svar_lvl1 = tk.StringVar()
+        self.p_cb_lvl1 = ttk.Combobox(second_p_frame, width=5,textvariable=self.p_svar_lvl1,state='readonly')
+        self.p_cb_lvl1.configure(font=('Roboto', 8))
+        self.p_cb_lvl1['values'] = list(others)
+        self.p_cb_lvl1.bind('<<ComboboxSelected>>', lambda e: self.changeGraph_1(eventObject=e, exp=exp))
+        self.p_cb_lvl1.grid(row=5, column=0)
+
+        self.p_svar_lvl2 = tk.StringVar()
+        self.p_cb_lvl2 = ttk.Combobox(second_p_frame, width=5,textvariable=self.p_svar_lvl2,state='readonly')
+        self.p_cb_lvl2.configure(font=('Roboto', 8))
+        self.p_cb_lvl2['values'] = list(others)
+        self.p_cb_lvl2.bind('<<ComboboxSelected>>', lambda e: self.changeGraph_1(eventObject=e, exp=exp))
+        self.p_cb_lvl2.grid(row=5, column=1)
+
+        self.line_plot = Figure(figsize=(4,4), dpi=100)
+        self.line_subplot = self.line_plot.add_subplot(111)
+        #y_data = list(self.results_df.loc[self.results_df['experiment']==exp]['perf_measure_value'])
+        #x_data = range(len(y_data))
+        #self.line_subplot.plot(x_data,y_data)
+
+        self.t1_plot_canvas = FigureCanvasTkAgg(self.line_plot, r_window) 
+        self.t1_plot_canvas.draw()
+        self.t1_plot_canvas._tkcanvas.grid(row=3,column=1)
+        toolbarframe_t1 = tk.Frame(r_window) 
+        toolbarframe_t1.grid(row=4,column=1)
+        t1_toolbar = NavigationToolbar2Tk(self.t1_plot_canvas,toolbarframe_t1)
+        t1_toolbar.update()        
+        self.t1_plot_canvas.get_tk_widget().grid(row=3,column=1)
+
+        self.scatter_plot = Figure(figsize=(4,4), dpi=100)
+        self.scatter_subplot = self.scatter_plot.add_subplot(111)
+        self.t2_plot_canvas = FigureCanvasTkAgg(self.scatter_plot, r_window) 
+        self.t2_plot_canvas.draw()
+        self.t2_plot_canvas._tkcanvas.grid(row=3,column=2)
+        toolbarframe_t2 = tk.Frame(r_window) 
+        toolbarframe_t2.grid(row=4,column=2)
+        t2_toolbar = NavigationToolbar2Tk(self.t2_plot_canvas,toolbarframe_t2)
+        t2_toolbar.update()        
+        self.t2_plot_canvas.get_tk_widget().grid(row=3,column=2)
+
+        self.ciplot = Figure(figsize=(4,4), dpi=100)
+        self.ciplot_subplot = self.ciplot.add_subplot(111)
+        self.ciplot_canvas = FigureCanvasTkAgg(self.ciplot, r_window)
+        self.ciplot_canvas.draw()
+        self.ciplot_canvas._tkcanvas.grid(row=4, column=1)
+        toolbarframe_ciplot = tk.Frame(r_window)
+        toolbarframe_ciplot.grid(row=5, column=1)
+        ciplot_toolbar = NavigationToolbar2Tk(self.ciplot, toolbarframe_ciplot)
+        ciplot_toolbar.update()
+        self.ciplot_canvas.get_tk_widget().grid(row=4,column=1) 
+
         #multi variable layout
         mult_v_label = tk.Label(r_window,text="Multi variable analysis" ,anchor=tk.CENTER)
-        mult_v_label.grid(row=1, column=3)
+        mult_v_label.grid(row=1, column=4)     
+
+    def changeGraph_1(self, eventObject, exp):
         
+        #line chart
+        p_lvl = eventObject.widget.get()        
+        print(p_lvl)
+        y_data_l = list(self.simulation_runs.loc[(self.simulation_runs['experiment']==int(exp)) & (self.simulation_runs['parameter_value']==float(p_lvl))]['results'])
+        x_data_l = range(len(y_data_l))
+
+        print(y_data_l)
+        print(x_data_l)
+
+        self.line_subplot.plot(x_data_l,y_data_l)
+        self.line_subplot.set_title(str(list(self.simulation_runs.loc[(self.simulation_runs['experiment']==int(exp)) & (self.simulation_runs['parameter_value']==float(p_lvl))]['parameter_name'])[0]))
+        self.line_subplot.set_ylabel(str(self.datapoints_df.loc[self.datapoints_df['experiment']==int(exp)]['perf_measure'].item()))
+        self.line_subplot.set_xlabel('Simulation Run')
+        self.t1_plot_canvas.draw()
+
+        #scatter plot
+        p_lvl1_s = self.p_cb_lvl1.get()
+        p_lvl2_s = self.p_cb_lvl2.get()
+
+        #ci plot #https://stackoverflow.com/questions/44603615/plot-95-confidence-interval-errorbar-python-pandas-dataframes
+        
+        p_name = 'W74ax' #TODO colocar seletor de parametro
+
+        mean = self.simulation_runs.loc[(self.simulation_runs['experiment']==int(exp)) & (self.simulation_runs['parameter_name']==p_name)].groupby('parameter_value').mean()['results']
+        std = self.simulation_runs.loc[(self.simulation_runs['experiment']==int(exp)) & (self.simulation_runs['parameter_name']==p_name)].groupby('parameter_value').std()['results']
+        category = mean.index
+        print('mean')
+        print(mean)
+        print('std')
+        print(std)
+        print('category')
+        print(category)
+        self.ciplot_subplot.errorbar(category, mean, xerr=0.5, yerr=2*std, linestyle='')
+        self.ciplot_canvas.draw()
+        #TODO formatar ci plot
+        
+
+        if p_lvl1_s != None or p_lvl2_s != None:
+
+            y_data_s = list(self.simulation_runs.loc[(self.simulation_runs['experiment']==int(exp)) & (self.simulation_runs['parameter_value']==float(p_lvl1_s))]['results'])
+            x_data_s = list(self.simulation_runs.loc[(self.simulation_runs['experiment']==int(exp)) & (self.simulation_runs['parameter_value']==float(p_lvl2_s))]['results'])
+            self.scatter_subplot.scatter(x_data_s,y_data_s)
+            parameter_name = str(list(self.simulation_runs.loc[(self.simulation_runs['experiment']==int(exp)) & (self.simulation_runs['parameter_value']==float(p_lvl))]['parameter_name'])[0])
+            parameter_value_l = str(p_lvl1_s)
+            parameter_value_h = str(p_lvl2_s)
+            self.scatter_subplot.set_title(parameter_name)
+            self.scatter_subplot.set_ylabel(str(self.datapoints_df.loc[self.datapoints_df['experiment']==int(exp)]['perf_measure'].item() + '  %s = %s' %(parameter_name,parameter_value_l)))
+            self.scatter_subplot.set_xlabel(str(self.datapoints_df.loc[self.datapoints_df['experiment']==int(exp)]['perf_measure'].item() + '  %s = %s' %(parameter_name,parameter_value_h)))
+
+            self.t2_plot_canvas.draw()
+
+        #TODO implementar outros gráficos
 
 
     def client_exit(self):
@@ -295,9 +399,7 @@ class Board(tk.Frame):
                 
             #print(total_values)
             
-            raw_possibilities[parameter] = total_values #stores all the parameters values to be used laters
-    
-
+            raw_possibilities[parameter] = total_values #stores all the parameters values to be used laters    
 
 class edit_windows(tk.Frame):
 
@@ -594,7 +696,7 @@ class edit_windows(tk.Frame):
                             SET parameter_name = ?, parameter_b_value = ?, parameter_u_value = ?, parameter_step = ? 
                             WHERE ID = ?""", (self.parameters_df['parameter_name'].item(),self.parameters_df['parameter_b_value'].item(),
                                                 self.parameters_df['parameter_u_value'].item(),self.parameters_df['parameter_step'].item(),db_ids[2]))
-        cnx.commit()
+        cnx.commit() #TODO Fazer com que todo o programa trabalhe com tabelas temporárias enquanto o user nao der "save"
 
     def destroy_exp_cfg(self, db_ids):
         print(db_ids)
@@ -651,7 +753,7 @@ class edit_windows(tk.Frame):
         
         #print(self.experiment_data)
         
-    def datapoints_callback(self, eventObject, experiment):
+    def datapoints_callback(self, eventObject, experiment): 
         # you can also get the value off the eventObject
         caller = str(eventObject.widget)
         value = eventObject.widget.get()
@@ -698,7 +800,6 @@ class edit_windows(tk.Frame):
 
             print(self.datapoints_df)    
 
-#TODO adicionar closure das conexoes com a db para salvar os inserts e updates
 app = SeaofBTCapp()
 app.geometry("1500x400")    
 app.mainloop()
