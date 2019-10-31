@@ -475,6 +475,8 @@ class PageOne(tk.Frame):
                     parameter_name = str(parameter_names[i])
                     parameter_df_ = int(parameters_df[i])
 
+                    cursor.execute("INSERT INTO simulation_runs DEFAULT VALUES")
+
                     Vissim.Net.DrivingBehaviors[0].SetAttValue(parameter_name,parameter_df_)
                     #Vissim.Net.DrivingBehaviors[0].SetAttValue('W74ax',1)
                 
