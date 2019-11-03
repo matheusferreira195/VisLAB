@@ -22,23 +22,297 @@ from matplotlib.backend_bases import key_press_handler
 from matplotlib.figure import Figure
 from itertools import groupby
 from mpl_toolkits.mplot3d import axes3d, Axes3D #<-- Note the capitalization! 
+from os import listdir
+from os.path import isfile, join
+import glob
+import os
+import win32com.client as com
 
 NORM_FONT= ("Roboto", 10)
 LARGE_FONT = ("Roboto", 20)
 
 #Database connection and set up
 
-cnx = sqlite3.connect(r'E:\Google Drive\Scripts\vistools\resources\vislab.db')#, isolation_level=None)
+cnx = sqlite3.connect(r'E:\Google Drive\Scripts\VisLab\resources\vislab.db')#, isolation_level=None)
 sqlite3.register_adapter(np.int64, lambda val: int(val))
 sqlite3.register_adapter(np.int32, lambda val: int(val))
 cursor = cnx.cursor()
 
-#Loading metadata dataframes 
+def formatting(tipe, path):
+    skipline = 0
+    
+    if tipe == '.mer':
+        keyword = ' Measurem.'
+        
+    elif tipe == '.lsa':
+        keyword = 'SC'
+    
+    with open(path) as f:
+        
+        lines = f.readlines()
+        
+        for chunk in enumerate(lines):
+            if keyword in chunk[1]:
+                
+                if tipe == '.lsa':
+                
+                    skipline = int(chunk[0] + 2)
+                    
+                else:
+                    skipline = int(chunk[0])
+        #print(skipline)    
+        return skipline
+    
 
-#generate_dcdf(Vissim)
+def calculate_shdwy(path, dc, replication):
+    lsa_columns = ['SimSec', 'CycleSec', 'SC', 'SG', 'Aspect', 'Prev', 'Crit', 'duetoSG']
+    os.chdir(path)
+    mers = [file for file in glob.glob("*.mer")]
+    lsas = [file for file in glob.glob("*.lsa")]
+    headways_df = pd.DataFrame(columns=['Replication','Cicle','Position','Headway'])
+    #print(mers)
+    #print(len(mers))
+    for i in range(len(mers)):
 
-#main class
 
+        mer_data_raw = pd.read_csv(mers[i], sep=';', skiprows=formatting('.mer',mers[i]), skipinitialspace=True, index_col=False) 
+        mer_data = mer_data_raw.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
+        #print(mer_data_raw)
+        lsa_data_raw = pd.read_csv(lsas[i], sep=';', skiprows=formatting('.lsa',lsas[i]), names=lsa_columns, skipinitialspace=True, index_col=False)
+        lsa_data = lsa_data_raw.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
+        #print(lsa_data_raw)
+        green_windows = lsa_data[(lsa_data['Aspect'] == 'green') & (lsa_data['Aspect']=='red')]['SimSec']
+        raw_green_windows = lsa_data.query('Aspect in list(["green", "red"])').reset_index(drop=True)
+
+        cleaned_mer = mer_data[(mer_data['t(Entry)'] !=0 )]     
+        
+        green_windows=[]
+        interval=[]
+        
+        for w in range(len(raw_green_windows['SimSec']) -1):
+
+            if raw_green_windows['Aspect'][w] == 'green':
+                    
+                interval = [raw_green_windows['SimSec'][w],raw_green_windows['SimSec'][w+1]]    
+                green_windows.append(interval)
+        
+        for j in range(len(green_windows)):
+            
+            headways_to_bar = []
+
+            
+            df = cleaned_mer[(cleaned_mer['t(Entry)'] > green_windows[j][0]) 
+                            & (cleaned_mer['t(Entry)'] < green_windows[j][1]) 
+                            & (cleaned_mer['tQueue'] != 0)
+                            & (cleaned_mer['Measurem.'] == dc)]
+            
+            if not df.empty:
+                
+                
+                filtrados = list(df['t(Entry)'])
+
+                if len(filtrados) >= 4:
+
+                    for k in range(1,len(filtrados)):
+                        
+                        headway = filtrados[k] - filtrados[k-1]
+                        headways_dict = {'Replication':i+1,'Cicle':green_windows[j],'Position':k, 'Headway': headway}
+                        headways_to_bar.append(headway)
+                        
+                        headways_df = headways_df.append(headways_dict, ignore_index = True)
+                        headways_df = headways_df[headways_df['Replication'] == replication]
+                        headway_mean = headways_df[headways_df['Position'] == 4]['Headway'].mean()
+                
+    return headway_mean 
+    
+
+
+        
+def vissim_simulation(experiment,default = 0):
+
+    Vissim = None #com.Dispatch('Vissim.Vissim')
+    Vissim = com.Dispatch("Vissim.Vissim") #Abrindo o Vissim
+    path_network =r'E:\Google Drive\Scripts\VisLab\development\net\teste\teste.inpx'
+    flag = False 
+    Vissim.LoadNet(path_network, flag) #Carregando o arquivo
+
+    #Loading initial data sources
+    simCfg = pd.read_sql(str('SELECT * FROM simulation_cfg WHERE experiment = %s' % experiment),cnx)
+    selected_datapts = pd.read_sql(str('SELECT * FROM datapoints WHERE experiment = %s' % experiment),cnx) #self.datapoints_df.loc[self.datapoints_df['experiment']==experiment]
+    selected_parameters = pd.read_sql(str('SELECT * FROM parameters WHERE experiment = %s' % experiment),cnx)#self.parameters_df.loc[self.parameters_df['experiment']==experiment]
+    print('simCfg')
+    print(simCfg)
+
+    #Loading some sim cfg parameters
+    runs = int(simCfg['replications'][0])
+    seed = int(simCfg['initial_seed'][0])
+    seed_inc = int(simCfg['seed_increment'][0])
+    
+    if default == 1:
+
+        #Runs the net with default parameter values 
+
+        Vissim.Simulation.SetAttValue('RandSeed', seed)
+        Vissim.Graphics.CurrentNetworkWindow.SetAttValue("QuickMode",1) #Ativando Quick Mode
+        Vissim.Simulation.RunContinuous() #Iniciando Simulação 
+
+        for index, dc_data in selected_datapts.iterrows(): #TODO testar se roda pros defaults
+                
+                for replication in range(1,runs+1):
+                    
+                    if dc_data['dc_type'] == 'Data Collector':
+
+                        if dc_data['perf_measure'] == 'Saturation Headway':
+                            print('problema')
+                            result = calculate_shdwy(path_network, dc_data['dc_number'].item, replication) 
+                            
+                        else:
+                            print(dc_data['time_p'])
+                            selected_dc = Vissim.Net.DataCollectionMeasurements.ItemByKey(int(dc_data['dc_number'])) 
+                            result = selected_dc.AttValue('{}({},{},All)'.format(str(dc_data['perf_measure']), 
+                                                        str(replication), 
+                                                        str(dc_data['time_p'])))
+
+                    elif dc_data['dc_type'] == 'Travel Time Collector':
+
+                        selected_ttc = Vissim.Net.DelayMeasurements.ItemByKey(int(dc_data['dc_number']))
+                        result = selected_ttc.AttValue('{}({},{},All)'.format(str(dc_data['perf_measure']), 
+                                                    str(replication), 
+                                                    str(dc_data['time_p'])))
+                                                    
+                    else:    
+                        
+                        selected_qc = Vissim.Net.QueueCounters.ItemByKey(int(dc_data['dc_number']))
+                        result = selected_qc.AttValue('{}({},{})'.format(str(dc_data['perf_measure']), 
+                                                    str(replication), 
+                                                    str(dc_data['time_p'])))
+                    
+
+                    for p_name,p_value in row.iteritems():
+
+                        seedDb = seed + replication*seed_inc
+
+                        cursor.execute("UPDATE simulation_runs SET results = %s WHERE experiment = %s AND parameter_name = '%s' AND parameter_value = %s AND seed = %s" % (result,experiment,'default','default',seedDb))
+                        cnx.commit()
+    else:
+
+        #Vissim.Simulation.SetAttValue('RandSeed', seed)
+        #Vissim.Simulation.SetAttValue('NumRuns', runs)
+
+        raw_possibilities = {}
+
+        for index, item in selected_parameters.iterrows(): #gets the parameter data for the selected experiment
+            
+            #print(item)
+            
+            parameter = item['parameter_name']
+            inf = item['parameter_b_value']
+            sup = item['parameter_u_value']
+            step = item['parameter_step']
+            
+            if type(inf) == type(sup) == int or type(inf) == type(sup) == float: #verifies if the parameter is a int/float type or str/bool
+                #print(type(inf))                                                #and processes accordingly
+                total_values = np.arange(inf, sup+step, step)
+                
+            else:
+                #print(inf)
+                total_values = [inf, sup]
+                
+            #print(total_values)
+            
+            raw_possibilities[parameter] = total_values #stores all the parameters values to be used later
+
+            
+        allNames = sorted(raw_possibilities)
+        combinations = list(it.product(*(raw_possibilities[Name] for Name in allNames))) #generates a list with all possible permutations
+        #print(combinations)                                                             #of parameters
+        #print(list(df.Parameter))
+        
+        selectedParameters = list(selected_parameters['parameter_name'])  #stores the parameter's names
+        #print(selectedParameters)
+        parameters_df = pd.DataFrame(combinations, columns=selectedParameters) #organizes all runs cfg data
+        #print(parameters_df)
+
+        #------------------------------------#
+                
+        for index, row in parameters_df.iterrows():
+            #print(parameters_df)
+            #print(row)
+            parameter_names = list(parameters_df)
+            #print(parameter_names)
+            #print('parameter_names')
+            #print(parameter_names)
+            #Configures the simulation
+
+            for i in range(len(parameter_names)):
+
+                parameter_name = str(parameter_names[i])
+                #print(parameter_name)
+                parameter_df_ = int(row[i])
+                #print(parameter_df_)
+                #print(parameter_df_)        
+                #print('%s = %s' % (parameter_name,str(parameter_df_)))
+
+                for seed_m in range(1,runs+1):
+
+                    seed_t = seed+seed_m*seed_inc
+                    query = "INSERT INTO simulation_runs (experiment,parameter_name,parameter_value,seed) VALUES (%s,'%s',%s,%s)" % (str(experiment),
+                                                                                                                            str(parameter_name),
+                                                                                                                            str(parameter_df_),
+                                                                                                                            str(seed_t))
+                    cursor.execute(query)
+                    cnx.commit() 
+
+                Vissim.Net.DrivingBehaviors[0].SetAttValue(parameter_name,parameter_df_)
+                Vissim.Net.DrivingBehaviors[0].SetAttValue('W74ax',1)
+
+            Vissim.Simulation.SetAttValue('RandSeed', seed)
+            Vissim.Graphics.CurrentNetworkWindow.SetAttValue("QuickMode",1) #Ativando Quick Mode
+            Vissim.Simulation.RunContinuous() #Iniciando Simulação 
+
+            for index, dc_data in selected_datapts.iterrows(): #Collects perf_measure data #FIXME Trocar pra pegar os dc_data filtrados por experiemnto
+                
+                for replication in range(1,runs+1):
+                    
+                    if dc_data['dc_type'] == 'Data Collector':
+
+                        if dc_data['perf_measure'] == 'Saturation Headway':
+                            print('problema')
+                            #A função ja tem replication handling
+                            result = calculate_shdwy(path_network, dc_data['dc_number'].item, replication) 
+                            
+                        else:
+                            print(dc_data['time_p'])
+                            selected_dc = Vissim.Net.DataCollectionMeasurements.ItemByKey(int(dc_data['dc_number'])) 
+                            result = selected_dc.AttValue('{}({},{},All)'.format(str(dc_data['perf_measure']), 
+                                                        str(replication), 
+                                                        str(dc_data['time_p'])))
+
+                    elif dc_data['dc_type'] == 'Travel Time Collector':
+
+                        selected_ttc = Vissim.Net.DelayMeasurements.ItemByKey(int(dc_data['dc_number']))
+                        result = selected_ttc.AttValue('{}({},{},All)'.format(str(dc_data['perf_measure']), 
+                                                    str(replication), 
+                                                    str(dc_data['time_p'])))
+                                                    
+                    else:    
+                        
+                        selected_qc = Vissim.Net.QueueCounters.ItemByKey(int(dc_data['dc_number']))
+                        result = selected_qc.AttValue('{}({},{})'.format(str(dc_data['perf_measure']), 
+                                                    str(replication), 
+                                                    str(dc_data['time_p'])))
+                    
+                    print(row)
+                    print('\n')
+
+                    for p_name,p_value in row.iteritems():
+
+                        seedDb = seed + replication*seed_inc
+
+                        cursor.execute("UPDATE simulation_runs SET results = %s WHERE experiment = %s AND parameter_name = '%s' AND parameter_value = %s AND seed = %s" % (result,experiment,p_name,p_value,seedDb))
+                        cnx.commit()
+        Vissim = None   
+ 
 class SeaofBTCapp(tk.Tk):
 
     def __init__(self, *args, **kwargs):
@@ -50,7 +324,7 @@ class SeaofBTCapp(tk.Tk):
 
         self.frames = {}
 
-        for F in (StartPage, Board):
+        for F in (StartPage, Board, ResultsPage):
 
             frame = F(container, self)
 
@@ -82,12 +356,12 @@ class StartPage(tk.Frame):
                             command=lambda: controller.show_frame(Board))
         button.grid(row=1,column=0)
 
-        button2 = tk.Button(self, text="Visit Page 2",
-                            command=lambda: controller.show_frame(PageTwo))
+        button2 = tk.Button(self, text="Results Dashboard",
+                            command=lambda: controller.show_frame(ResultsPage))
         button2.grid(row=1,column=1)
 
 dc_data = generate_dcdf_test()
-parameter_db = pd.read_csv(r'E:\Google Drive\Scripts\vistools\resources\parameters.visdb')       
+parameter_db = pd.read_csv(r'E:\Google Drive\Scripts\VisLab\resources\parameters.visdb')       
 class Board(tk.Frame):
 
     #Experiment page, where the user models the sensitivity analysis experiments
@@ -143,6 +417,10 @@ class Board(tk.Frame):
         button_signal = tk.Button(self, text="Signal Calibration",
                             command=lambda: controller.show_frame(PageTwo))
         button_signal.grid(row=0,column=3)
+
+        button_results = tk.Button(self, text="Results Dashboard",
+                       command=lambda: controller.show_frame(ResultsPage))
+        button_results.grid(row=0,column=3)
         
     def add_postit(self,x,y,exp = 0, btn_id = None): 
         
@@ -157,6 +435,7 @@ class Board(tk.Frame):
             current_experiment = cursor.execute("SELECT * FROM experiments ORDER BY id DESC LIMIT 1").fetchone()[0]
             cnx.commit()
             side = tk.LEFT
+            exp = 1
         else:               
 
             current_experiment = exp
@@ -183,11 +462,11 @@ class Board(tk.Frame):
         button_edit = tk.Button(self, text = "Edit", command = lambda: self.create_edit_windows(exp), anchor = tk.W)
         buttone_window =  canvas.create_window(50, 150, anchor=tk.NW, window=button_edit)
 
-        button_simulation = tk.Button(self, text = "Simulate", command = lambda: self.vissim_simulation(exp), anchor = tk.W)
+        button_simulation = tk.Button(self, text = "Simulate", command = lambda: vissim_simulation(exp), anchor = tk.W)
         buttons_window =  canvas.create_window(110, 150, anchor=tk.NW, window=button_simulation)
 
-        button_results = tk.Button(self, text = "Results", command = lambda: self.create_result_window(exp), anchor = tk.W)
-        buttonr_window =  canvas.create_window(170, 150, anchor=tk.NW, window=button_results)
+        #button_results = tk.Button(self, text = "Results", command = lambda: self.create_result_window(exp), anchor = tk.W)
+        #buttonr_window =  canvas.create_window(170, 150, anchor=tk.NW, window=button_results)
 
         button_delete = tk.Button(self, text = "Delete", command = lambda: self.delete_postit(exp=current_experiment), anchor = tk.W)
         buttond_window =  canvas.create_window(230, 150, anchor=tk.NW, window=button_delete)
@@ -201,7 +480,7 @@ class Board(tk.Frame):
         win = tk.Toplevel()
         win.wm_title("Edit experiment")
         
-
+        print('configurations')
         print(configurations)
 
         for i in range(configurations):
@@ -340,18 +619,21 @@ class Board(tk.Frame):
 
     def chooseParameter(self,eventObject, exp):
 
-        p_name = str(eventObject.widget.get())  #TODO colocar seletor de parametro
+        p_name = str(eventObject.widget.get())   
 
         mean = self.simulation_runs.loc[(self.simulation_runs['experiment']==int(exp)) & (self.simulation_runs['parameter_name']==p_name)].groupby('parameter_value').mean()['results']
         std = self.simulation_runs.loc[(self.simulation_runs['experiment']==int(exp)) & (self.simulation_runs['parameter_name']==p_name)].groupby('parameter_value').std()['results']
         category = mean.index
+        n = self.simulation_runs.loc[(self.simulation_runs['experiment']==int(exp)) & (self.simulation_runs['parameter_name']==p_name)].count()
+        ci = (1.96/np.sqrt(n)) * std
+        print(n)
         print('mean')
         print(mean)
         print('std')
         print(std)
         print('category')
         print(category)
-        self.ciplot_subplot.errorbar(category, mean, xerr=0.1, yerr=2*std, linestyle='',capsize=5)
+        self.ciplot_subplot.errorbar(category, mean, xerr=0.1, yerr = ci, linestyle='',capsize=5)
         self.ciplot_subplot.set_ylabel(str(self.datapoints_df.loc[self.datapoints_df['experiment']==int(exp)]['perf_measure'].item()))
         self.ciplot_subplot.set_xlabel('%s value' % (p_name))
         self.ciplot_subplot.set_title(p_name)
@@ -425,112 +707,7 @@ class Board(tk.Frame):
         print(geom, self._geom)
         self.master.geometry(self._geom)
 
-    def vissim_simulation(self, experiment):
-
-        simCfg = pd.read_sql(str('SELECT * FROM simulation_cfg WHERE experiment = %s' % experiment),cnx)
-        selected_datapts = self.datapoints_df.loc[self.datapoints_df['experiment']==experiment]
-        selected_parameters = self.parameters_df.loc[self.parameters_df['experiment']==experiment]
-
-        print(simCfg)
-
-        #This function sets up an runs the simulation for the selected experiment
-        runs = int(simCfg['Runs'])
-        seed = int(simCfg['initial_seed'])
-        seed_inc = int(simCfg['seed_increment'])
-
-        #Vissim.Simulation.SetAttValue('RandSeed', seed)
-        #Vissim.Simulation.SetAttValue('NumRuns', runs)
-
-        raw_possibilities = {}
-
-        for index, item in selected_parameters.iterrows(): #gets the parameter data for the selected experiment
-            
-            #print(item)
-            
-            parameter = item['parameter_name']
-            inf = item['parameter_b_value']
-            sup = item['parameter_u_value']
-            step = item['parameter_step']
-            
-            if type(inf) == type(sup) == int or type(inf) == type(sup) == float: #verifies if the parameter is a int/float type or str/bool
-                #print(type(inf))                                                #and processes accordingly
-                total_values = np.arange(inf, sup+step, step)
-                
-            else:
-                #print(inf)
-                total_values = [inf, sup]
-                
-            #print(total_values)
-            
-            raw_possibilities[parameter] = total_values #stores all the parameters values to be used later
-
-            
-        allNames = sorted(raw_possibilities)
-        combinations = list(it.product(*(raw_possibilities[Name] for Name in allNames))) #generates a list with all possible permutations
-        #print(combinations)                                                             #of parameters
-        #print(list(df.Parameter))
-
-        selectedParameters = list(selected_parameters['parameter_name'])  #stores the parameter's names
-        parameters_df = pd.DataFrame(combinations, columns=selectedParameters) #organizes all runs cfg data
-
-        #------------------------------------#
-                
-        for index, parameters_df in parameters_df.iterrows():
-            #print(parameters_df)
-
-            parameter_names = list(parameters_df)
-
-            #Configures the simulation
-            for i in range(len(parameter_names)):
-
-                parameter_name = str(parameter_names[i])
-                parameter_df_ = int(parameters_df[i])
-                print(parameter_df_)
-                print('parameter_name %s' % parameter_name)
-                #Vissim.Net.DrivingBehaviors[0].SetAttValue(parameter_name,parameter_df_)
-                #Vissim.Net.DrivingBehaviors[0].SetAttValue('W74ax',1)
-                
-            
-            #Vissim.Simulation.SetAttValue('RandSeed', seed)
-
-            #Vissim.Graphics.CurrentNetworkWindow.SetAttValue("QuickMode",1) #Ativando Quick Mode
-            
-            #Vissim.Simulation.RunContinuous() #Iniciando Simulação 
-
-            '''for index, dc_data in fake_dc_data.iterrows(): #Collects perf_measure data
-                
-                for replication in range(1,runs+1):
-    
-                    if dc_data['Data Point Type'] == 'Data Collector':
-    
-                        if dc_data['Perf_measure'] == 'Saturation Headway':
-                            
-                            #A função ja tem replication handling
-                            headways = calculate_shdwy(path_network, dc_data['DP Number'].item) 
-                            
-                        else:
-    
-                            selected_dc = Vissim.Net.DataCollectionMeasurements.ItemByKey(int(dc_data['DP Number'])) 
-                            result = selected_dc.AttValue('{}({},{},All)'.format(str(dc_data['Perf_measure']),str(replication), str(dc_data['Time Interval'])))
-                     
-                    elif dc_data['Data Point Type'] == 'Travel Time Collector':
-                        
-                        selected_ttc = Vissim.Net.DelayMeasurements.ItemByKey(int(dc_data['DP Number']))
-                        result = selected_ttc.AttValue('{}({},{},All)'.format(str(dc_data['Perf_measure']),str(replication), str(dc_data['Time Interval'])))
-                                                    
-                    else:
-    
-                        
-                        selected_qc = Vissim.Net.QueueCounters.ItemByKey(int(dc_data['DP Number']))
-                        result = selected_qc.AttValue('{}({},{})'.format(str(dc_data['Perf_measure']), str(replication), str(dc_data['Time Interval'])))
-                        
-                    results = {'Experiment':1, 'Data Point Type':str(dc_data['Data Point Type']), 'DP Number':str(dc_data['DP Number']),'Perf_measure':str(dc_data['Perf_measure']),
-                            'Time Interval':str(dc_data['Time Interval']),'Run':str(run),'Read data':str(result)}
-    
-                    results_data = results_data.append(results, ignore_index=True) #TODO Formatar para exportar pra dashboard
-
-                results_data.to_csv(r"E:\Google Drive\Scripts\vistools\output.csv", sep = ';')'''
-
+ 
 class edit_windows(tk.Frame):
 
     def __init__(self,parent,experiment,cfg,new):
@@ -697,7 +874,7 @@ class edit_windows(tk.Frame):
         self.parameter_label_step = tk.Label(self.subframe, text = 'Step')
 
         self.parameter_entry_step = tk.Entry(self.subframe, width=10, textvariable = self.parameter_entry_step_svar)
-        self.parameter_entry_step.bind('<FocusOut>',lambda e: self.parameters_callback(eventObject=e,experiment = experiment))
+        self.parameter_entry_step.bind('<Leave>',lambda e: self.parameters_callback(eventObject=e,experiment = experiment))
 
         ##------Simulation section------##
         self.simulation_label = tk.Label(self.subframe, text = 'Simulation Configs')
@@ -793,6 +970,7 @@ class edit_windows(tk.Frame):
                     self.parameter_search_listbox.insert(tk.END, item)
             else:
                 self.parameter_search_listbox.insert(tk.END, item)
+
     def save_exp_cfg(self,experiment,db_ids): #save button
 
 
@@ -803,16 +981,16 @@ class edit_windows(tk.Frame):
         self.simulations_cfg.loc['initial_seed'] = self.simulation_entry_seed.get()
         self.simulations_cfg.loc['seed_increment'] = self.simulation_entry_seed_i.get()
 
+        self.datapoints_df = self.datapoints_df.to_frame().T
+        self.simulations_cfg = self.simulations_cfg.to_frame().T
+        self.parameters_df = self.parameters_df.to_frame().T
+
         print('----------')
         print(self.datapoints_df)
         print(self.simulations_cfg)
         print(self.parameters_df)
         print('----------')
 
-        self.datapoints_df = self.datapoints_df.to_frame().T
-        self.simulations_cfg = self.simulations_cfg.to_frame().T
-        self.parameters_df = self.parameters_df.to_frame().T
-        
         cursor.execute("""UPDATE datapoints 
                             SET dc_type = ?, dc_number = ?, perf_measure = ?,field_value = ?, time_p = ? 
                             WHERE ID = ?""" ,(str(self.datapoints_df['dc_type'].item()),int(self.datapoints_df['dc_number'].item()),
@@ -929,6 +1107,36 @@ class edit_windows(tk.Frame):
                 self.datapoints_cperfmeasure_dropdown['values'] = ['QLen', 'QLenMax', 'QStops']
 
             print(self.datapoints_df)    
+
+class ResultsPage(tk.Frame):
+
+    def __init__(self, parent, controller):
+
+        tk.Frame.__init__(self,parent)
+
+        #basic navigation
+        label = tk.Label(self, text="Results Dashboard", font=LARGE_FONT)
+        label.grid(row=0,column=1)
+ 
+        button = tk.Button(self, text="Experiment board",
+                            command=lambda: controller.show_frame(Board))
+        button.grid(row=1,column=0)
+
+        button2 = tk.Button(self, text="Back to Home",
+                            command=lambda: controller.show_frame(StartPage))
+        button2.grid(row=1,column=1)
+
+        #loading data
+        existing_experiments_qry = "SELECT * FROM experiments"
+        existing_experiments = pd.read_sql(existing_experiments_qry,cnx)
+
+        self.datapoints_df = pd.read_sql(str('SELECT * FROM datapoints'), cnx)
+        self.parameters_df = pd.read_sql(str('SELECT * FROM parameters'), cnx)
+        self.simulation_runs = pd.read_sql(str('SELECT * FROM simulation_runs'), cnx)
+
+        #Line chart
+
+
 
 app = SeaofBTCapp()
 app.geometry("1920x1080")    
