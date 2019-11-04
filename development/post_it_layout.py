@@ -901,20 +901,23 @@ class edit_windows(tk.Frame):
 class ResultsPage(tk.Frame):
 
     def __init__(self, parent, controller):
-        
-        tk.Frame.__init__(self,parent)
 
+        tk.Frame.__init__(self,parent)
+        self.frame = tk.Frame(self)
+        self.frame.pack()
         #basic navigation
-        label = tk.Label(self, text="Results Dashboard", font=LARGE_FONT)
+        label = tk.Label(self.frame, text="Results Dashboard", font=LARGE_FONT)
         label.grid(row=0,column=0)
  
-        button = tk.Button(self, text="Experiment board",
+        button = tk.Button(self.frame, text="Experiment board",
                             command=lambda: controller.show_frame(Board))
         button.grid(row=0,column=1)
 
-        button2 = tk.Button(self, text="Back to Home",
+        button2 = tk.Button(self.frame, text="Back to Home",
                             command=lambda: controller.show_frame(StartPage))
         button2.grid(row=0,column=2)
+
+        
 
         #loading data
         existing_experiments_qry = "SELECT * FROM experiments"
@@ -925,7 +928,7 @@ class ResultsPage(tk.Frame):
         self.simulation_runs = pd.read_sql(str('SELECT * FROM simulation_runs'), cnx)
 
         #Line chart
-        lineChart_frame = tk.Frame(self,highlightbackground="green", highlightcolor="green", highlightthickness=1, width=100, height=100, bd= 0)
+        lineChart_frame = tk.Frame(self.frame,highlightbackground="green", highlightcolor="green", highlightthickness=1, width=100, height=100, bd= 0)
         lineChart_frame.grid(row=2,column=0)
         lineChart_label = tk.Label(lineChart_frame,text="" ,anchor=tk.E)
         lineChart_label.grid(row=0, column=1)
@@ -937,7 +940,7 @@ class ResultsPage(tk.Frame):
         lineChart_cbbox.bind('<<ComboboxSelected>>', lambda e: self.plotLinechart(eventObject = e)) 
         lineChart_cbbox.grid(row=3,column=1)
 
-        self.lineChart_plot = Figure(figsize=(7,5), dpi=100)
+        self.lineChart_plot = Figure(figsize=(7,7), dpi=100)
         self.lineChart_subplot = self.lineChart_plot.add_subplot(111)
 
         self.lineChart_canvas = FigureCanvasTkAgg(self.lineChart_plot, lineChart_frame) 
@@ -946,6 +949,29 @@ class ResultsPage(tk.Frame):
         lineChart_tframe = tk.Frame(lineChart_frame)
         lineChart_tframe.grid(row=4,column=0)
         lineChart_toolbar = NavigationToolbar2Tk(self.lineChart_canvas,lineChart_tframe)
+
+        #Scatter chart
+        
+        scatterChart_frame = tk.Frame(self.frame,highlightbackground="green", highlightcolor="green", highlightthickness=1, width=100, height=100, bd= 0)
+        scatterChart_frame.grid(row=3,column=0)
+        scatterChart_label = tk.Label(scatterChart_frame,text="" ,anchor=tk.E)
+        scatterChart_label.grid(row=0, column=1)        
+        scatterChart_svar = tk.StringVar()
+        scatterChart_svar.set('Select a experiment')
+        scatterChart_cbbox = ttk.Combobox(scatterChart_frame, width=5,textvariable=str(scatterChart_svar),state='readonly')
+        scatterChart_cbbox['values'] = list(existing_experiments['id'])
+        scatterChart_cbbox.bind('<<ComboboxSelected>>', lambda e: self.plotScatterchart(eventObject = e)) 
+        scatterChart_cbbox.grid(row=3,column=1)
+
+        self.scatterChart_plot = Figure(figsize=(3,3), dpi=100)
+        self.scatterChart_subplot = self.scatterChart_plot.add_subplot(111)
+
+        self.scatterChart_canvas = FigureCanvasTkAgg(self.scatterChart_plot, scatterChart_frame) 
+        self.scatterChart_canvas.draw()
+        self.scatterChart_canvas._tkcanvas.grid(row=3,column=0)
+        scatterChart_tframe = tk.Frame(scatterChart_frame)
+        scatterChart_tframe.grid(row=4,column=0)
+        scatterChart_toolbar = NavigationToolbar2Tk(self.scatterChart_canvas,scatterChart_tframe)
 
     def plotLinechart(self,eventObject): #function that plots the line chart getting input from lineChart_cbbox
         
