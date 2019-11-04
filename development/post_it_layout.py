@@ -125,23 +125,21 @@ def calculate_shdwy(path, dc, replication):
                 
     return headway_mean 
     
-
-
         
 def vissim_simulation(experiment,default = 0):
 
-    Vissim = None #com.Dispatch('Vissim.Vissim')
+    '''Vissim = None #com.Dispatch('Vissim.Vissim')
     Vissim = com.Dispatch("Vissim.Vissim") #Abrindo o Vissim
     path_network =r'E:\Google Drive\Scripts\VisLab\development\net\teste\teste.inpx'
     flag = False 
-    Vissim.LoadNet(path_network, flag) #Carregando o arquivo
+    Vissim.LoadNet(path_network, flag) #Carregando o arquivo'''
 
     #Loading initial data sources
     simCfg = pd.read_sql(str('SELECT * FROM simulation_cfg WHERE experiment = %s' % experiment),cnx)
     selected_datapts = pd.read_sql(str('SELECT * FROM datapoints WHERE experiment = %s' % experiment),cnx) #self.datapoints_df.loc[self.datapoints_df['experiment']==experiment]
     selected_parameters = pd.read_sql(str('SELECT * FROM parameters WHERE experiment = %s' % experiment),cnx)#self.parameters_df.loc[self.parameters_df['experiment']==experiment]
-    print('simCfg')
-    print(simCfg)
+    #print('simCfg')
+    #print(simCfg)
 
     #Loading some sim cfg parameters
     runs = int(simCfg['replications'][0])
@@ -236,15 +234,15 @@ def vissim_simulation(experiment,default = 0):
         #------------------------------------#
                 
         for index, row in parameters_df.iterrows():
-            #print(parameters_df)
-            #print(row)
+            print(index)
+            print(row)
             parameter_names = list(parameters_df)
             #print(parameter_names)
             #print('parameter_names')
             #print(parameter_names)
             #Configures the simulation
 
-            for i in range(len(parameter_names)):
+            for i in range(len(parameter_names)): #loop that cfgs the simulation's parameters
 
                 parameter_name = str(parameter_names[i])
                 #print(parameter_name)
@@ -253,24 +251,24 @@ def vissim_simulation(experiment,default = 0):
                 #print(parameter_df_)        
                 #print('%s = %s' % (parameter_name,str(parameter_df_)))
 
-                for seed_m in range(1,runs+1):
+                for seed_m in range(1,runs+1): #just registers the simulations seed for later filling
 
                     seed_t = seed+seed_m*seed_inc
-                    query = "INSERT INTO simulation_runs (experiment,parameter_name,parameter_value,seed) VALUES (%s,'%s',%s,%s)" % (str(experiment),
+                    query = "INSERT INTO simulation_runs (experiment,parameter_name,parameter_value,seed,sim_perf) VALUES (%s,'%s',%s,%s,%s)" % (str(experiment),
                                                                                                                             str(parameter_name),
                                                                                                                             str(parameter_df_),
-                                                                                                                            str(seed_t))
+                                                                                                                            str(seed_t),str(index))
+                    print(query)
                     cursor.execute(query)
                     cnx.commit() 
 
-                Vissim.Net.DrivingBehaviors[0].SetAttValue(parameter_name,parameter_df_)
-                Vissim.Net.DrivingBehaviors[0].SetAttValue('W74ax',1)
+                #Vissim.Net.DrivingBehaviors[0].SetAttValue(parameter_name,parameter_df_)
 
-            Vissim.Simulation.SetAttValue('RandSeed', seed)
-            Vissim.Graphics.CurrentNetworkWindow.SetAttValue("QuickMode",1) #Ativando Quick Mode
-            Vissim.Simulation.RunContinuous() #Iniciando Simulação 
+            #Vissim.Simulation.SetAttValue('RandSeed', seed)
+            #Vissim.Graphics.CurrentNetworkWindow.SetAttValue("QuickMode",1) #Ativando Quick Mode
+            #Vissim.Simulation.RunContinuous() #Iniciando Simulação 
 
-            for index, dc_data in selected_datapts.iterrows(): #Collects perf_measure data #FIXME Trocar pra pegar os dc_data filtrados por experiemnto
+            '''for index, dc_data in selected_datapts.iterrows(): #Collects perf_measure data #FIXME Trocar pra pegar os dc_data filtrados por experiemnto
                 
                 for replication in range(1,runs+1):
                     
@@ -311,7 +309,7 @@ def vissim_simulation(experiment,default = 0):
 
                         cursor.execute("UPDATE simulation_runs SET results = %s WHERE experiment = %s AND parameter_name = '%s' AND parameter_value = %s AND seed = %s" % (result,experiment,p_name,p_value,seedDb))
                         cnx.commit()
-        Vissim = None   
+        Vissim = None '''  
  
 class SeaofBTCapp(tk.Tk):
 
@@ -381,9 +379,7 @@ class Board(tk.Frame):
         self.datapoints_df = pd.read_sql(str('SELECT * FROM datapoints'), cnx)
         #print(self.datapoints_df)
         self.parameters_df = pd.read_sql(str('SELECT * FROM parameters'), cnx)
-        self.results_df = pd.read_sql(str('SELECT * FROM results'), cnx)
         self.simulation_runs = pd.read_sql(str('SELECT * FROM simulation_runs'), cnx)
-        self.results_df = pd.read_sql(str('SELECT * FROM results'), cnx)
         
         #print(existing_experiments[0])
         self.add_buttons = []        
@@ -466,7 +462,7 @@ class Board(tk.Frame):
         buttons_window =  canvas.create_window(110, 150, anchor=tk.NW, window=button_simulation)
 
         #button_results = tk.Button(self, text = "Results", command = lambda: self.create_result_window(exp), anchor = tk.W)
-        #buttonr_window =  canvas.create_window(170, 150, anchor=tk.NW, window=button_results)
+        #buttonself =  canvas.create_window(170, 150, anchor=tk.NW, window=button_results)
 
         button_delete = tk.Button(self, text = "Delete", command = lambda: self.delete_postit(exp=current_experiment), anchor = tk.W)
         buttond_window =  canvas.create_window(230, 150, anchor=tk.NW, window=button_delete)
@@ -499,213 +495,7 @@ class Board(tk.Frame):
         cursor.execute('REINDEX experiments') #FIXME nao funciona, a tabela experimetns vazia tem ids que quebram o codigo
         cnx.commit() 
         self.canvas_l[exp-1].destroy() 
-
-    def create_result_window(self,exp):
-
-        r_window = tk.Toplevel()
-        r_window.geometry("1920x1080")    
-        r_window.wm_title("Results")
-        #populating options for single v second parameter
-        self.parameter_selection = []
-        others = self.simulation_runs.loc[self.simulation_runs['experiment'] == exp]['parameter_value']
-        #print(others)
-        others = others.drop_duplicates(keep= 'first')
-        #print(others)
         
-        #single variable layout
-
-        single_v_label = tk.Label(r_window,text="Single variable analysis" ,anchor=tk.E)
-        single_v_label.grid(row=1, column=1,sticky = tk.E)
-        
-        second_p_frame = tk.Frame(r_window)
-        second_p_frame.grid(row=3,column=0)
-
-        separatorv = ttk.Separator(r_window, orient="vertical")
-        separatorv.grid(row=0, column=3, sticky='ns', rowspan=100)
-
-        second_p = tk.Label(second_p_frame,text="Add second parameter to plot" ,anchor=tk.E)
-        second_p.grid(row=4, column=1)
-        self.p_svar_lvl1 = tk.StringVar()
-        self.p_cb_lvl1 = ttk.Combobox(second_p_frame, width=5,textvariable=self.p_svar_lvl1,state='readonly')
-        self.p_cb_lvl1.configure(font=('Roboto', 8))
-        self.p_cb_lvl1['values'] = list(others)
-        self.p_cb_lvl1.bind('<<ComboboxSelected>>', lambda e: self.changeGraph_1(eventObject=e, exp=exp))
-        self.p_cb_lvl1.grid(sticky = tk.W,row=5, column=1)
-
-        self.p_svar_lvl2 = tk.StringVar()
-        self.p_cb_lvl2 = ttk.Combobox(second_p_frame, width=5,textvariable=self.p_svar_lvl2,state='readonly')
-        self.p_cb_lvl2.configure(font=('Roboto', 8))
-        self.p_cb_lvl2['values'] = list(others)
-        self.p_cb_lvl2.bind('<<ComboboxSelected>>', lambda e: self.changeGraph_1(eventObject=e, exp=exp))
-        self.p_cb_lvl2.grid(sticky = tk.W,row=5, column=2)
- 
-        self.p_select_svar = tk.StringVar()
-        self.p_select_svar.set('Select a parameter to CI plot')
-        self.p_select_cb = ttk.Combobox(second_p_frame, width=15,textvariable=self.p_select_svar,state='readonly')
-        self.p_select_cb.configure(font=('Roboto', 8))
-        self.p_select_cb['values'] = list(self.simulation_runs.loc[self.simulation_runs['experiment'] == exp].drop_duplicates(subset='parameter_name')['parameter_name'])
-        self.p_select_cb.bind('<<ComboboxSelected>>', lambda e: self.chooseParameter(eventObject=e, exp=exp))
-        self.p_select_cb.grid(sticky = tk.W,row=6, column=1)
-
-        self.line_plot = Figure(figsize=(3,3), dpi=100)
-        self.line_subplot = self.line_plot.add_subplot(111)
-        #y_data = list(self.results_df.loc[self.results_df['experiment']==exp]['perf_measure_value'])
-        #x_data = range(len(y_data))
-        #self.line_subplot.plot(x_data,y_data)
-
-        self.t1_plot_canvas = FigureCanvasTkAgg(self.line_plot, r_window) 
-        self.t1_plot_canvas.draw()
-        self.t1_plot_canvas._tkcanvas.grid(row=3,column=1)
-        toolbarframe_t1 = tk.Frame(r_window) 
-        toolbarframe_t1.grid(row=4,column=1)
-        t1_toolbar = NavigationToolbar2Tk(self.t1_plot_canvas,toolbarframe_t1)
-        t1_toolbar.update()        
-        self.t1_plot_canvas.get_tk_widget().grid(row=3,column=1,sticky = tk.W)
-
-        self.scatter_plot = Figure(figsize=(3,3), dpi=100)
-        self.scatter_subplot = self.scatter_plot.add_subplot(111)
-        self.t2_plot_canvas = FigureCanvasTkAgg(self.scatter_plot, r_window) 
-        self.t2_plot_canvas.draw()
-        self.t2_plot_canvas._tkcanvas.grid(row=3,column=2)
-        toolbarframe_t2 = tk.Frame(r_window) 
-        toolbarframe_t2.grid(row=4,column=2)
-        t2_toolbar = NavigationToolbar2Tk(self.t2_plot_canvas,toolbarframe_t2)
-        t2_toolbar.update()        
-        self.t2_plot_canvas.get_tk_widget().grid(row=3,column=2,sticky = tk.W)
-
-        self.ciplot = Figure(figsize=(3,3), dpi=100)
-        self.ciplot_subplot = self.ciplot.add_subplot(111)
-        self.ciplot_canvas = FigureCanvasTkAgg(self.ciplot, r_window)
-        self.ciplot_canvas.draw()
-        self.ciplot_canvas._tkcanvas.grid(row=5, column=1)
-        toolbarframe_ciplot = tk.Frame(r_window)
-        toolbarframe_ciplot.grid(row=7, column=1)
-        ciplot_toolbar = NavigationToolbar2Tk(self.ciplot_canvas, toolbarframe_ciplot)
-        ciplot_toolbar.update()
-        self.ciplot_canvas.get_tk_widget().grid(row=6,column=1) 
-
-        #multi variable layout
-        mult_v_label = tk.Label(r_window,text="Multi variable analysis" ,anchor=tk.CENTER)
-        mult_v_label.grid(row=1, column=4)
-
-        self.mv_select1_svar = tk.StringVar()
-        self.mv_select1_svar.set('Select first parameter to plot')
-        self.mv_select1_cb = ttk.Combobox(r_window, width=15,textvariable=self.mv_select1_svar,state='readonly')
-        self.mv_select1_cb.configure(font=('Roboto', 8))
-        self.mv_select1_cb['values'] = list(self.simulation_runs.loc[self.simulation_runs['experiment'] == exp].drop_duplicates(subset='parameter_name')['parameter_name'])
-        self.mv_select1_cb.bind('<<ComboboxSelected>>', lambda e: self.graph3D(eventObject=e, exp=exp))
-        self.mv_select1_cb.grid(sticky = tk.W,row=3, column=5)
-
-        self.mv_select2_svar = tk.StringVar()
-        self.mv_select2_svar.set('Select another parameter to plot')
-        self.mv_select2_cb = ttk.Combobox(r_window, width=15,textvariable=self.mv_select2_svar,state='readonly')
-        self.mv_select2_cb.configure(font=('Roboto', 8))
-        self.mv_select2_cb['values'] = list(self.simulation_runs.loc[self.simulation_runs['experiment'] == exp].drop_duplicates(subset='parameter_name')['parameter_name'])
-        self.mv_select2_cb.bind('<<ComboboxSelected>>', lambda e: self.graph3D(eventObject=e, exp=exp))
-        self.mv_select2_cb.grid(sticky = tk.W,row=3, column=6)
-
-        self.line3dplt = Figure(figsize=(3,3), dpi=100)
-        self.line3dplt_canvas = FigureCanvasTkAgg(self.line3dplt, r_window)
-        self.line3dplt_canvas.draw()
-        self.line3dplt_canvas._tkcanvas.grid(row=2, column=4)
-        toolbarframe_3dlineplt = tk.Frame(r_window)
-        toolbarframe_3dlineplt.grid(row=4, column=4)
-        line3dplt_toolbar = NavigationToolbar2Tk(self.line3dplt_canvas, toolbarframe_3dlineplt)
-        line3dplt_toolbar.update()
-        self.line3dplt_canvas.get_tk_widget().grid(row=3,column=4,sticky = tk.W)
-        self.line3dplt_subplot = self.line3dplt.add_subplot(111,projection='3d')
- 
-
-
-    def chooseParameter(self,eventObject, exp):
-
-        p_name = str(eventObject.widget.get())   
-
-        mean = self.simulation_runs.loc[(self.simulation_runs['experiment']==int(exp)) & (self.simulation_runs['parameter_name']==p_name)].groupby('parameter_value').mean()['results']
-        std = self.simulation_runs.loc[(self.simulation_runs['experiment']==int(exp)) & (self.simulation_runs['parameter_name']==p_name)].groupby('parameter_value').std()['results']
-        category = mean.index
-        n = self.simulation_runs.loc[(self.simulation_runs['experiment']==int(exp)) & (self.simulation_runs['parameter_name']==p_name)].count()
-        ci = (1.96/np.sqrt(n)) * std
-        print(n)
-        print('mean')
-        print(mean)
-        print('std')
-        print(std)
-        print('category')
-        print(category)
-        self.ciplot_subplot.errorbar(category, mean, xerr=0.1, yerr = ci, linestyle='',capsize=5)
-        self.ciplot_subplot.set_ylabel(str(self.datapoints_df.loc[self.datapoints_df['experiment']==int(exp)]['perf_measure'].item()))
-        self.ciplot_subplot.set_xlabel('%s value' % (p_name))
-        self.ciplot_subplot.set_title(p_name)
-        self.ciplot_canvas.draw()
-        #TODO formatar ci plot
-
-    def changeGraph_1(self, eventObject, exp):
-        
-        #line chart
-        p_lvl = eventObject.widget.get()        
-        print(p_lvl)
-        y_data_l = list(self.simulation_runs.loc[(self.simulation_runs['experiment']==int(exp)) & (self.simulation_runs['parameter_value']==float(p_lvl))]['results'])
-        x_data_l = range(len(y_data_l))
-
-        print(y_data_l)
-        print(x_data_l)
-
-        self.line_subplot.plot(x_data_l,y_data_l)
-        self.line_subplot.set_title(str(list(self.simulation_runs.loc[(self.simulation_runs['experiment']==int(exp)) & (self.simulation_runs['parameter_value']==float(p_lvl))]['parameter_name'])[0]))
-        self.line_subplot.set_ylabel(str(self.datapoints_df.loc[self.datapoints_df['experiment']==int(exp)]['perf_measure'].item()))
-        self.line_subplot.set_xlabel('Simulation Run')
-        self.t1_plot_canvas.draw()
-
-        #scatter plot
-        p_lvl1_s = self.p_cb_lvl1.get()
-        p_lvl2_s = self.p_cb_lvl2.get()
-
-        if p_lvl1_s != None or p_lvl2_s != None:
-
-            y_data_s = list(self.simulation_runs.loc[(self.simulation_runs['experiment']==int(exp)) & (self.simulation_runs['parameter_value']==float(p_lvl1_s))]['results'])
-            x_data_s = list(self.simulation_runs.loc[(self.simulation_runs['experiment']==int(exp)) & (self.simulation_runs['parameter_value']==float(p_lvl2_s))]['results'])
-            self.scatter_subplot.scatter(x_data_s,y_data_s)
-            parameter_name = str(list(self.simulation_runs.loc[(self.simulation_runs['experiment']==int(exp)) & (self.simulation_runs['parameter_value']==float(p_lvl))]['parameter_name'])[0])
-            parameter_value_l = str(p_lvl1_s)
-            parameter_value_h = str(p_lvl2_s)
-            self.scatter_subplot.set_title(parameter_name)
-            self.scatter_subplot.set_ylabel(str(self.datapoints_df.loc[self.datapoints_df['experiment']==int(exp)]['perf_measure'].item() + '  %s = %s' %(parameter_name,parameter_value_l)))
-            self.scatter_subplot.set_xlabel(str(self.datapoints_df.loc[self.datapoints_df['experiment']==int(exp)]['perf_measure'].item() + '  %s = %s' %(parameter_name,parameter_value_h)))
-
-            self.t2_plot_canvas.draw()
-
-        #TODO implementar outros gráficos
-
-    def graph3D(self, eventObject, exp):
-
-        p1 = self.mv_select1_cb.get()
-        p2 = self.mv_select2_cb.get()
-
-        x = self.simulation_runs.loc[(self.simulation_runs['experiment']==exp) & (self.simulation_runs['parameter_name']==p1)]['parameter_value']
-        print(x)
-        #x = [1,2,3,4]
-        y = self.simulation_runs.loc[(self.simulation_runs['experiment']==exp) & (self.simulation_runs['parameter_name']==p2)]['parameter_value']
-        print(y)
-        #y=[8,7,6,4]
-        z = self.simulation_runs.loc[(self.simulation_runs['experiment']==exp) & (self.simulation_runs['parameter_name']==p2)]['results']
-        print(z)
-        #z = [123,13,3,4]
-        self.line3dplt_subplot.plot(x,y,z)
-        self.line3dplt_canvas.draw()
-
-        
- 
-
-    def client_exit(self):
-        root.destroy()
-        print("oi")
-
-    def toggle_geom(self,event):
-        geom=self.master.winfo_geometry()
-        self._geom=geom
-        print(geom, self._geom)
-        self.master.geometry(self._geom)
 
  
 class edit_windows(tk.Frame):
@@ -1111,20 +901,20 @@ class edit_windows(tk.Frame):
 class ResultsPage(tk.Frame):
 
     def __init__(self, parent, controller):
-
+        
         tk.Frame.__init__(self,parent)
 
         #basic navigation
         label = tk.Label(self, text="Results Dashboard", font=LARGE_FONT)
-        label.grid(row=0,column=1)
+        label.grid(row=0,column=0)
  
         button = tk.Button(self, text="Experiment board",
                             command=lambda: controller.show_frame(Board))
-        button.grid(row=1,column=0)
+        button.grid(row=0,column=1)
 
         button2 = tk.Button(self, text="Back to Home",
                             command=lambda: controller.show_frame(StartPage))
-        button2.grid(row=1,column=1)
+        button2.grid(row=0,column=2)
 
         #loading data
         existing_experiments_qry = "SELECT * FROM experiments"
@@ -1135,6 +925,230 @@ class ResultsPage(tk.Frame):
         self.simulation_runs = pd.read_sql(str('SELECT * FROM simulation_runs'), cnx)
 
         #Line chart
+        lineChart_frame = tk.Frame(self,highlightbackground="green", highlightcolor="green", highlightthickness=1, width=100, height=100, bd= 0)
+        lineChart_frame.grid(row=2,column=0)
+        lineChart_label = tk.Label(lineChart_frame,text="" ,anchor=tk.E)
+        lineChart_label.grid(row=0, column=1)
+        
+        lineChart_svar = tk.StringVar()
+        lineChart_svar.set('Select a experiment')
+        lineChart_cbbox = ttk.Combobox(lineChart_frame, width=5,textvariable=str(lineChart_svar),state='readonly')
+        lineChart_cbbox['values'] = list(existing_experiments['id'])
+        lineChart_cbbox.bind('<<ComboboxSelected>>', lambda e: self.plotLinechart(eventObject = e)) 
+        lineChart_cbbox.grid(row=3,column=1)
+
+        self.lineChart_plot = Figure(figsize=(7,5), dpi=100)
+        self.lineChart_subplot = self.lineChart_plot.add_subplot(111)
+
+        self.lineChart_canvas = FigureCanvasTkAgg(self.lineChart_plot, lineChart_frame) 
+        self.lineChart_canvas.draw()
+        self.lineChart_canvas._tkcanvas.grid(row=3,column=0)
+        lineChart_tframe = tk.Frame(lineChart_frame)
+        lineChart_tframe.grid(row=4,column=0)
+        lineChart_toolbar = NavigationToolbar2Tk(self.lineChart_canvas,lineChart_tframe)
+
+    def plotLinechart(self,eventObject): #function that plots the line chart getting input from lineChart_cbbox
+        
+        exp = int(eventObject.widget.get())
+        
+        simData = self.simulation_runs.loc[self.simulation_runs['experiment'] == exp]
+        simCfgs = list(simData['sim_perf'].drop_duplicates())
+        self.lineChart_subplot.set_title("Perf. Measure by Parameter and replication ")
+        self.lineChart_subplot.set_ylabel(list(self.datapoints_df.loc[self.datapoints_df['experiment']==exp]['perf_measure'].drop_duplicates()))
+        self.lineChart_subplot.set_xlabel('Simulation Run')
+
+        for cfg in simCfgs:
+
+            y_data = list(simData.loc[simData['sim_perf']==cfg]['results'].drop_duplicates())
+            x_data = list(simData.loc[simData['sim_perf']==cfg]['seed'].drop_duplicates())
+            txtData = simData.loc[simData['sim_perf']==cfg].drop_duplicates(subset='parameter_name')
+            print(txtData)
+            labelTxt = ''
+
+            for index, row in txtData.iterrows():
+
+                labelTxt = labelTxt + '|%s = %s|\n ' % (str(row['parameter_name']),str(row['parameter_value']))
+
+            print(labelTxt)
+            self.lineChart_subplot.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.,prop={'size': 8})
+            self.lineChart_canvas.draw()
+            self.lineChart_subplot.plot(x_data,y_data,label=labelTxt)
+            self.lineChart_plot.subplots_adjust(right=0.74) #adjust legend problem here!
+
+
+
+        '''
+        second_p = tk.Label(second_p_frame,text="Add second parameter to plot" ,anchor=tk.E)
+        second_p.grid(row=4, column=1)
+        self.p_svar_lvl1 = tk.StringVar()
+        self.p_cb_lvl1 = ttk.Combobox(second_p_frame, width=5,textvariable=self.p_svar_lvl1,state='readonly')
+        self.p_cb_lvl1.configure(font=('Roboto', 8))
+        self.p_cb_lvl1['values'] = list(others)
+        self.p_cb_lvl1.bind('<<ComboboxSelected>>', lambda e: self.changeGraph_1(eventObject=e, exp=exp))
+        self.p_cb_lvl1.grid(sticky = tk.W,row=5, column=1)
+
+
+        self.p_svar_lvl2 = tk.StringVar()
+        self.p_cb_lvl2 = ttk.Combobox(second_p_frame, width=5,textvariable=self.p_svar_lvl2,state='readonly')
+        self.p_cb_lvl2.configure(font=('Roboto', 8))
+        self.p_cb_lvl2['values'] = list(others)
+        self.p_cb_lvl2.bind('<<ComboboxSelected>>', lambda e: self.changeGraph_1(eventObject=e, exp=exp))
+        self.p_cb_lvl2.grid(sticky = tk.W,row=5, column=2)
+ 
+        self.p_select_svar = tk.StringVar()
+        self.p_select_svar.set('Select a parameter to CI plot')
+        self.p_select_cb = ttk.Combobox(second_p_frame, width=15,textvariable=self.p_select_svar,state='readonly')
+        self.p_select_cb.configure(font=('Roboto', 8))
+        self.p_select_cb['values'] = list(self.simulation_runs.loc[self.simulation_runs['experiment'] == exp].drop_duplicates(subset='parameter_name')['parameter_name'])
+        self.p_select_cb.bind('<<ComboboxSelected>>', lambda e: self.chooseParameter(eventObject=e, exp=exp))
+        self.p_select_cb.grid(sticky = tk.W,row=6, column=1)
+
+        self.line_plot = Figure(figsize=(3,3), dpi=100)
+        self.line_subplot = self.line_plot.add_subplot(111)
+        #y_data = list(self.results_df.loc[self.results_df['experiment']==exp]['perf_measure_value'])
+        #x_data = range(len(y_data))
+        #self.line_subplot.plot(x_data,y_data)
+
+        self.t1_plot_canvas = FigureCanvasTkAgg(self.line_plot, self) 
+        self.t1_plot_canvas.draw()
+        self.t1_plot_canvas._tkcanvas.grid(row=3,column=1)
+        toolbarframe_t1 = tk.Frame(self) 
+        toolbarframe_t1.grid(row=4,column=1)
+        t1_toolbar = NavigationToolbar2Tk(self.t1_plot_canvas,toolbarframe_t1)
+        t1_toolbar.update()        
+        self.t1_plot_canvas.get_tk_widget().grid(row=3,column=1,sticky = tk.W)
+
+        self.scatter_plot = Figure(figsize=(3,3), dpi=100)
+        self.scatter_subplot = self.scatter_plot.add_subplot(111)
+        self.t2_plot_canvas = FigureCanvasTkAgg(self.scatter_plot, self) 
+        self.t2_plot_canvas.draw()
+        self.t2_plot_canvas._tkcanvas.grid(row=3,column=2)
+        toolbarframe_t2 = tk.Frame(self) 
+        toolbarframe_t2.grid(row=4,column=2)
+        t2_toolbar = NavigationToolbar2Tk(self.t2_plot_canvas,toolbarframe_t2)
+        t2_toolbar.update()        
+        self.t2_plot_canvas.get_tk_widget().grid(row=3,column=2,sticky = tk.W)
+
+        self.ciplot = Figure(figsize=(3,3), dpi=100)
+        self.ciplot_subplot = self.ciplot.add_subplot(111)
+        self.ciplot_canvas = FigureCanvasTkAgg(self.ciplot, self)
+        self.ciplot_canvas.draw()
+        self.ciplot_canvas._tkcanvas.grid(row=5, column=1)
+        toolbarframe_ciplot = tk.Frame(self)
+        toolbarframe_ciplot.grid(row=7, column=1)
+        ciplot_toolbar = NavigationToolbar2Tk(self.ciplot_canvas, toolbarframe_ciplot)
+        ciplot_toolbar.update()
+        self.ciplot_canvas.get_tk_widget().grid(row=6,column=1) 
+
+        #multi variable layout
+        mult_v_label = tk.Label(self,text="Multi variable analysis" ,anchor=tk.CENTER)
+        mult_v_label.grid(row=1, column=4)
+
+        self.mv_select1_svar = tk.StringVar()
+        self.mv_select1_svar.set('Select first parameter to plot')
+        self.mv_select1_cb = ttk.Combobox(self, width=15,textvariable=self.mv_select1_svar,state='readonly')
+        self.mv_select1_cb.configure(font=('Roboto', 8))
+        self.mv_select1_cb['values'] = list(self.simulation_runs.loc[self.simulation_runs['experiment'] == exp].drop_duplicates(subset='parameter_name')['parameter_name'])
+        self.mv_select1_cb.bind('<<ComboboxSelected>>', lambda e: self.graph3D(eventObject=e, exp=exp))
+        self.mv_select1_cb.grid(sticky = tk.W,row=3, column=5)
+
+        self.mv_select2_svar = tk.StringVar()
+        self.mv_select2_svar.set('Select another parameter to plot')
+        self.mv_select2_cb = ttk.Combobox(self, width=15,textvariable=self.mv_select2_svar,state='readonly')
+        self.mv_select2_cb.configure(font=('Roboto', 8))
+        self.mv_select2_cb['values'] = list(self.simulation_runs.loc[self.simulation_runs['experiment'] == exp].drop_duplicates(subset='parameter_name')['parameter_name'])
+        self.mv_select2_cb.bind('<<ComboboxSelected>>', lambda e: self.graph3D(eventObject=e, exp=exp))
+        self.mv_select2_cb.grid(sticky = tk.W,row=3, column=6)
+
+        self.line3dplt = Figure(figsize=(3,3), dpi=100)
+        self.line3dplt_canvas = FigureCanvasTkAgg(self.line3dplt, self)
+        self.line3dplt_canvas.draw()
+        self.line3dplt_canvas._tkcanvas.grid(row=2, column=4)
+        toolbarframe_3dlineplt = tk.Frame(self)
+        toolbarframe_3dlineplt.grid(row=4, column=4)
+        line3dplt_toolbar = NavigationToolbar2Tk(self.line3dplt_canvas, toolbarframe_3dlineplt)
+        line3dplt_toolbar.update()
+        self.line3dplt_canvas.get_tk_widget().grid(row=3,column=4,sticky = tk.W)
+        self.line3dplt_subplot = self.line3dplt.add_subplot(111,projection='3d')
+        '''
+
+
+    def chooseParameter(self,eventObject, exp):
+
+        p_name = str(eventObject.widget.get())   
+
+        mean = self.simulation_runs.loc[(self.simulation_runs['experiment']==int(exp)) & (self.simulation_runs['parameter_name']==p_name)].groupby('parameter_value').mean()['results']
+        std = self.simulation_runs.loc[(self.simulation_runs['experiment']==int(exp)) & (self.simulation_runs['parameter_name']==p_name)].groupby('parameter_value').std()['results']
+        category = mean.index
+        n = self.simulation_runs.loc[(self.simulation_runs['experiment']==int(exp)) & (self.simulation_runs['parameter_name']==p_name)].count()
+        ci = (1.96/np.sqrt(n)) * std
+        print(n)
+        print('mean')
+        print(mean)
+        print('std')
+        print(std)
+        print('category')
+        print(category)
+        self.ciplot_subplot.errorbar(category, mean, xerr=0.1, yerr = ci, linestyle='',capsize=5)
+        self.ciplot_subplot.set_ylabel(str(self.datapoints_df.loc[self.datapoints_df['experiment']==int(exp)]['perf_measure'].item()))
+        self.ciplot_subplot.set_xlabel('%s value' % (p_name))
+        self.ciplot_subplot.set_title(p_name)
+        self.ciplot_canvas.draw()
+        #TODO formatar ci plot
+
+    def changeGraph_1(self, eventObject, exp):
+        
+        #line chart
+        p_lvl = eventObject.widget.get()        
+        print(p_lvl)
+        y_data_l = list(self.simulation_runs.loc[(self.simulation_runs['experiment']==int(exp)) & (self.simulation_runs['parameter_value']==float(p_lvl))]['results'])
+        x_data_l = range(len(y_data_l))
+
+        print(y_data_l)
+        print(x_data_l)
+
+        self.line_subplot.plot(x_data_l,y_data_l)
+        self.line_subplot.set_title(str(list(self.simulation_runs.loc[(self.simulation_runs['experiment']==int(exp)) & (self.simulation_runs['parameter_value']==float(p_lvl))]['parameter_name'])[0]))
+        self.line_subplot.set_ylabel(str(self.datapoints_df.loc[self.datapoints_df['experiment']==int(exp)]['perf_measure'].item()))
+        self.line_subplot.set_xlabel('Simulation Run')
+        self.t1_plot_canvas.draw()
+
+        #scatter plot
+        p_lvl1_s = self.p_cb_lvl1.get()
+        p_lvl2_s = self.p_cb_lvl2.get()
+
+        if p_lvl1_s != None or p_lvl2_s != None:
+
+            y_data_s = list(self.simulation_runs.loc[(self.simulation_runs['experiment']==int(exp)) & (self.simulation_runs['parameter_value']==float(p_lvl1_s))]['results'])
+            x_data_s = list(self.simulation_runs.loc[(self.simulation_runs['experiment']==int(exp)) & (self.simulation_runs['parameter_value']==float(p_lvl2_s))]['results'])
+            self.scatter_subplot.scatter(x_data_s,y_data_s)
+            parameter_name = str(list(self.simulation_runs.loc[(self.simulation_runs['experiment']==int(exp)) & (self.simulation_runs['parameter_value']==float(p_lvl))]['parameter_name'])[0])
+            parameter_value_l = str(p_lvl1_s)
+            parameter_value_h = str(p_lvl2_s)
+            self.scatter_subplot.set_title(parameter_name)
+            self.scatter_subplot.set_ylabel(str(self.datapoints_df.loc[self.datapoints_df['experiment']==int(exp)]['perf_measure'].item() + '  %s = %s' %(parameter_name,parameter_value_l)))
+            self.scatter_subplot.set_xlabel(str(self.datapoints_df.loc[self.datapoints_df['experiment']==int(exp)]['perf_measure'].item() + '  %s = %s' %(parameter_name,parameter_value_h)))
+
+            self.t2_plot_canvas.draw()
+
+        #TODO implementar outros gráficos
+
+    def graph3D(self, eventObject, exp):
+
+        p1 = self.mv_select1_cb.get()
+        p2 = self.mv_select2_cb.get()
+
+        x = self.simulation_runs.loc[(self.simulation_runs['experiment']==exp) & (self.simulation_runs['parameter_name']==p1)]['parameter_value']
+        print(x)
+        #x = [1,2,3,4]
+        y = self.simulation_runs.loc[(self.simulation_runs['experiment']==exp) & (self.simulation_runs['parameter_name']==p2)]['parameter_value']
+        print(y)
+        #y=[8,7,6,4]
+        z = self.simulation_runs.loc[(self.simulation_runs['experiment']==exp) & (self.simulation_runs['parameter_name']==p2)]['results']
+        print(z)
+        #z = [123,13,3,4]
+        self.line3dplt_subplot.plot(x,y,z)
+        self.line3dplt_canvas.draw()
 
 
 
