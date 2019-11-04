@@ -903,9 +903,21 @@ class ResultsPage(tk.Frame):
     def __init__(self, parent, controller):
 
         tk.Frame.__init__(self,parent)
-        self.frame = tk.Frame(self)
-        self.frame.pack()
-        #basic navigation
+
+        self.canvas = tk.Canvas(self, borderwidth=0, background="#ffffff",height='800',width='1510')
+        self.frame = tk.Frame(self.canvas, background="#ffffff")
+        self.vsb = tk.Scrollbar(self, orient="vertical", command=self.canvas.yview)
+        self.canvas.configure(yscrollcommand=self.vsb.set)
+
+        self.vsb.pack(side="right", fill="y")
+        self.canvas.pack(side="left", fill="both", expand=True)
+        self.canvas.create_window((6,6), window=self.frame, anchor="nw", 
+                                  tags="self.frame")
+
+        self.frame.bind("<Configure>", self.onFrameConfigure)
+
+
+
         label = tk.Label(self.frame, text="Results Dashboard", font=LARGE_FONT)
         label.grid(row=0,column=0)
  
@@ -916,8 +928,6 @@ class ResultsPage(tk.Frame):
         button2 = tk.Button(self.frame, text="Back to Home",
                             command=lambda: controller.show_frame(StartPage))
         button2.grid(row=0,column=2)
-
-        
 
         #loading data
         existing_experiments_qry = "SELECT * FROM experiments"
@@ -940,7 +950,7 @@ class ResultsPage(tk.Frame):
         lineChart_cbbox.bind('<<ComboboxSelected>>', lambda e: self.plotLinechart(eventObject = e)) 
         lineChart_cbbox.grid(row=3,column=1)
 
-        self.lineChart_plot = Figure(figsize=(7,7), dpi=100)
+        self.lineChart_plot = Figure(figsize=(4,4), dpi=100)
         self.lineChart_subplot = self.lineChart_plot.add_subplot(111)
 
         self.lineChart_canvas = FigureCanvasTkAgg(self.lineChart_plot, lineChart_frame) 
@@ -972,6 +982,10 @@ class ResultsPage(tk.Frame):
         scatterChart_tframe = tk.Frame(scatterChart_frame)
         scatterChart_tframe.grid(row=4,column=0)
         scatterChart_toolbar = NavigationToolbar2Tk(self.scatterChart_canvas,scatterChart_tframe)
+
+    def onFrameConfigure(self, event):
+        '''Reset the scroll region to encompass the inner frame'''
+        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
     def plotLinechart(self,eventObject): #function that plots the line chart getting input from lineChart_cbbox
         
