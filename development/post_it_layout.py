@@ -8,6 +8,7 @@ import tkinter as tk
 import sqlite3
 import pandas as pd
 import math
+from scipy import stats
 from tkinter import ttk
 from tkinter import messagebox
 from generate_dcdf import generate_dcdf
@@ -933,7 +934,7 @@ class ResultsPage(tk.Frame):
 
         #Line chart
         lineChart_frame = tk.Frame(self.frame,highlightbackground="green", highlightcolor="green", highlightthickness=1, width=100, height=100, bd= 0)
-        lineChart_frame.grid(row=2,column=0,sticky='w')
+        lineChart_frame.grid(row=1,column=0,sticky='w')
         lineChart_label = tk.Label(lineChart_frame,text="" ,anchor=tk.E)
         lineChart_label.grid(row=0, column=1)
         
@@ -957,30 +958,32 @@ class ResultsPage(tk.Frame):
         #Scatter chart
         
         scatterChart_frame = tk.Frame(self.frame,highlightbackground="green", highlightcolor="green", highlightthickness=1, width=100, height=100, bd= 0)
-        scatterChart_frame.grid(row=3,column=0)
+        scatterChart_frame.grid(row=2,column=0)
         scatterChart_label = tk.Label(scatterChart_frame,text="" ,anchor=tk.E)
         scatterChart_label.grid(row=0, column=1)        
+        scatterChart_framewidget = tk.Frame(scatterChart_frame)
+        scatterChart_framewidget.grid(row=3,column=1, sticky='w')
 
         self.scatterChart_esvar = tk.StringVar()
         self.scatterChart_esvar.set('Select a experiment')
-        scatterChart_ecbbox = ttk.Combobox(scatterChart_frame, width=5,textvariable=str(self.scatterChart_esvar),state='readonly')
+        scatterChart_ecbbox = ttk.Combobox(scatterChart_framewidget, width=5,textvariable=str(self.scatterChart_esvar),state='readonly')
         scatterChart_ecbbox['values'] = list(existing_experiments['id'])
         scatterChart_ecbbox.bind('<<ComboboxSelected>>', lambda e: self.expSelect(eventObject = e)) 
-        scatterChart_ecbbox.grid(row=3,column=1)
+        scatterChart_ecbbox.grid(row=0,column=0, sticky='w')
 
         self.scatterChart_p1svar = tk.StringVar()
         self.scatterChart_p1svar.set('Select a parameter level')
-        self.scatterChart_p1cbbox = ttk.Combobox(scatterChart_frame, width=30,textvariable=str(self.scatterChart_p1svar),state='readonly')
+        self.scatterChart_p1cbbox = ttk.Combobox(scatterChart_framewidget, width=30,textvariable=str(self.scatterChart_p1svar),state='readonly')
         self.scatterChart_p1cbbox['values'] = []
         self.scatterChart_p1cbbox.bind('<<ComboboxSelected>>', lambda e: self.plotScatterchart(eventObject = e)) 
-        self.scatterChart_p1cbbox.grid(row=3,column=2)
+        self.scatterChart_p1cbbox.grid(row=1,column=0, sticky='w')
 
         self.scatterChart_p2svar = tk.StringVar()
         self.scatterChart_p2svar.set('Select another parameter level')
-        self.scatterChart_p2cbbox = ttk.Combobox(scatterChart_frame, width=30,textvariable=str(self.scatterChart_p2svar),state='readonly')
+        self.scatterChart_p2cbbox = ttk.Combobox(scatterChart_framewidget, width=30,textvariable=str(self.scatterChart_p2svar),state='readonly')
         self.scatterChart_p2cbbox['values'] = []
         self.scatterChart_p2cbbox.bind('<<ComboboxSelected>>', lambda e: self.plotScatterchart(eventObject = e)) 
-        self.scatterChart_p2cbbox.grid(row=3,column=3)
+        self.scatterChart_p2cbbox.grid(row=2,column=0, sticky='w')
 
         self.scatterChart_plot = Figure(figsize=(5,4), dpi=100)
         self.scatterChart_subplot = self.scatterChart_plot.add_subplot(111)
@@ -991,7 +994,13 @@ class ResultsPage(tk.Frame):
         scatterChart_tframe = tk.Frame(scatterChart_frame)
         scatterChart_tframe.grid(row=4,column=0)
         scatterChart_toolbar = NavigationToolbar2Tk(self.scatterChart_canvas,scatterChart_tframe)
-    
+
+        #Boxplot 
+
+        #Boxplot c/ I.C
+
+        #Dif. means
+
     def expSelect(self,eventObject):
 
         exp = int(eventObject.widget.get())
@@ -1063,8 +1072,15 @@ class ResultsPage(tk.Frame):
         labelTxt = str(parPerf_key_1) + str(' ') + str(parPerf_key_2)
         x_data = list(simData.loc[simData['sim_perf']==cfg_1]['results'].drop_duplicates())
         y_data = list(simData.loc[simData['sim_perf']==cfg_2]['results'].drop_duplicates())
-
+        linreg = stats.linregress(x_data, y_data)
+        r_squared = linreg.rvalue
+        print(r_squared)
         #self.scatterChart_subplot.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.,prop={'size': 8})
+        #self.scatterChart_subplot.text(x_data[0], y_data[0], 'R-squared = %0.2f' % r_squared)
+        anchored_text = matplotlib.offsetbox.AnchoredText('R-squared = %0.2f \n P-value = %0.2f' % (r_squared,linreg.pvalue), loc=4, prop = dict(fontsize=8))
+        
+        self.scatterChart_subplot.add_artist(anchored_text)
+        self.scatterChart_subplot.plot(np.unique(x_data), np.poly1d(np.polyfit(x_data, y_data, 1))(np.unique(x_data)))
         self.scatterChart_subplot.scatter(x_data,y_data)
         #self.scatterChart_plot.subplots_adjust(left=0.1) #adjust legend problem here!
         self.scatterChart_subplot.set_title(labelTxt,fontsize=8)
@@ -1072,6 +1088,7 @@ class ResultsPage(tk.Frame):
         self.scatterChart_subplot.set_xlabel(list(self.datapoints_df.loc[self.datapoints_df['experiment']==exp]['perf_measure'].drop_duplicates()))
         self.scatterChart_canvas.draw()
         #self.scatterChart_subplot.tight_layout()
+
 
     def onFrameConfigure(self, event):
 
