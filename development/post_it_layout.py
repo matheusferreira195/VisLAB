@@ -495,9 +495,6 @@ class Board(tk.Frame):
         cursor.execute('REINDEX experiments') #FIXME nao funciona, a tabela experimetns vazia tem ids que quebram o codigo
         cnx.commit() 
         self.canvas_l[exp-1].destroy() 
-        
-
- 
 class edit_windows(tk.Frame):
 
     def __init__(self,parent,experiment,cfg,new):
@@ -897,7 +894,6 @@ class edit_windows(tk.Frame):
                 self.datapoints_cperfmeasure_dropdown['values'] = ['QLen', 'QLenMax', 'QStops']
 
             print(self.datapoints_df)    
-
 class ResultsPage(tk.Frame):
 
     def __init__(self, parent, controller):
@@ -915,8 +911,6 @@ class ResultsPage(tk.Frame):
                                   tags="self.frame")
 
         self.frame.bind("<Configure>", self.onFrameConfigure)
-
-
 
         label = tk.Label(self.frame, text="Results Dashboard", font=LARGE_FONT)
         label.grid(row=0,column=0)
@@ -939,23 +933,23 @@ class ResultsPage(tk.Frame):
 
         #Line chart
         lineChart_frame = tk.Frame(self.frame,highlightbackground="green", highlightcolor="green", highlightthickness=1, width=100, height=100, bd= 0)
-        lineChart_frame.grid(row=2,column=0)
+        lineChart_frame.grid(row=2,column=0,sticky='w')
         lineChart_label = tk.Label(lineChart_frame,text="" ,anchor=tk.E)
         lineChart_label.grid(row=0, column=1)
         
-        lineChart_svar = tk.StringVar()
-        lineChart_svar.set('Select a experiment')
-        lineChart_cbbox = ttk.Combobox(lineChart_frame, width=5,textvariable=str(lineChart_svar),state='readonly')
+        self.lineChart_svar = tk.StringVar()
+        self.lineChart_svar.set('Select a experiment')
+        lineChart_cbbox = ttk.Combobox(lineChart_frame, width=5,textvariable=str(self.lineChart_svar),state='readonly')
         lineChart_cbbox['values'] = list(existing_experiments['id'])
         lineChart_cbbox.bind('<<ComboboxSelected>>', lambda e: self.plotLinechart(eventObject = e)) 
         lineChart_cbbox.grid(row=3,column=1)
 
-        self.lineChart_plot = Figure(figsize=(4,4), dpi=100)
+        self.lineChart_plot = Figure(figsize=(5,4), dpi=100)
         self.lineChart_subplot = self.lineChart_plot.add_subplot(111)
 
         self.lineChart_canvas = FigureCanvasTkAgg(self.lineChart_plot, lineChart_frame) 
         self.lineChart_canvas.draw()
-        self.lineChart_canvas._tkcanvas.grid(row=3,column=0)
+        self.lineChart_canvas._tkcanvas.grid(row=3,column=0,sticky='e')
         lineChart_tframe = tk.Frame(lineChart_frame)
         lineChart_tframe.grid(row=4,column=0)
         lineChart_toolbar = NavigationToolbar2Tk(self.lineChart_canvas,lineChart_tframe)
@@ -966,14 +960,29 @@ class ResultsPage(tk.Frame):
         scatterChart_frame.grid(row=3,column=0)
         scatterChart_label = tk.Label(scatterChart_frame,text="" ,anchor=tk.E)
         scatterChart_label.grid(row=0, column=1)        
-        scatterChart_svar = tk.StringVar()
-        scatterChart_svar.set('Select a experiment')
-        scatterChart_cbbox = ttk.Combobox(scatterChart_frame, width=5,textvariable=str(scatterChart_svar),state='readonly')
-        scatterChart_cbbox['values'] = list(existing_experiments['id'])
-        scatterChart_cbbox.bind('<<ComboboxSelected>>', lambda e: self.plotScatterchart(eventObject = e)) 
-        scatterChart_cbbox.grid(row=3,column=1)
 
-        self.scatterChart_plot = Figure(figsize=(3,3), dpi=100)
+        self.scatterChart_esvar = tk.StringVar()
+        self.scatterChart_esvar.set('Select a experiment')
+        scatterChart_ecbbox = ttk.Combobox(scatterChart_frame, width=5,textvariable=str(self.scatterChart_esvar),state='readonly')
+        scatterChart_ecbbox['values'] = list(existing_experiments['id'])
+        scatterChart_ecbbox.bind('<<ComboboxSelected>>', lambda e: self.expSelect(eventObject = e)) 
+        scatterChart_ecbbox.grid(row=3,column=1)
+
+        self.scatterChart_p1svar = tk.StringVar()
+        self.scatterChart_p1svar.set('Select a parameter level')
+        self.scatterChart_p1cbbox = ttk.Combobox(scatterChart_frame, width=30,textvariable=str(self.scatterChart_p1svar),state='readonly')
+        self.scatterChart_p1cbbox['values'] = []
+        self.scatterChart_p1cbbox.bind('<<ComboboxSelected>>', lambda e: self.plotScatterchart(eventObject = e)) 
+        self.scatterChart_p1cbbox.grid(row=3,column=2)
+
+        self.scatterChart_p2svar = tk.StringVar()
+        self.scatterChart_p2svar.set('Select another parameter level')
+        self.scatterChart_p2cbbox = ttk.Combobox(scatterChart_frame, width=30,textvariable=str(self.scatterChart_p2svar),state='readonly')
+        self.scatterChart_p2cbbox['values'] = []
+        self.scatterChart_p2cbbox.bind('<<ComboboxSelected>>', lambda e: self.plotScatterchart(eventObject = e)) 
+        self.scatterChart_p2cbbox.grid(row=3,column=3)
+
+        self.scatterChart_plot = Figure(figsize=(5,4), dpi=100)
         self.scatterChart_subplot = self.scatterChart_plot.add_subplot(111)
 
         self.scatterChart_canvas = FigureCanvasTkAgg(self.scatterChart_plot, scatterChart_frame) 
@@ -982,15 +991,40 @@ class ResultsPage(tk.Frame):
         scatterChart_tframe = tk.Frame(scatterChart_frame)
         scatterChart_tframe.grid(row=4,column=0)
         scatterChart_toolbar = NavigationToolbar2Tk(self.scatterChart_canvas,scatterChart_tframe)
+    
+    def expSelect(self,eventObject):
 
-    def onFrameConfigure(self, event):
-        '''Reset the scroll region to encompass the inner frame'''
-        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+        exp = int(eventObject.widget.get())
+
+        simData = self.simulation_runs.loc[self.simulation_runs['experiment'] == exp]
+        simCfgs = list(simData['sim_perf'].drop_duplicates())
+        labelTxt_ls = []
+        self.cfgsDict = {}
+        for cfg in simCfgs:
+
+            y_data = list(simData.loc[simData['sim_perf']==cfg]['results'].drop_duplicates())
+            x_data = list(simData.loc[simData['sim_perf']==cfg]['seed'].drop_duplicates())
+            txtData = simData.loc[simData['sim_perf']==cfg].drop_duplicates(subset='parameter_name')
+            labelTxt = ''
+
+            for index, row in txtData.iterrows():
+
+                labelTxt = labelTxt + '|%s = %s|' % (str(row['parameter_name']),str(row['parameter_value']))
+                #print(labelTxt)
+
+            self.cfgsDict[labelTxt] = cfg
+            labelTxt_ls.append(labelTxt)
+            #print(self.cfgsDict)
+            #print(labelTxt_ls)
+
+        self.scatterChart_p1cbbox['values'] = self.scatterChart_p2cbbox['values'] = labelTxt_ls   
+
 
     def plotLinechart(self,eventObject): #function that plots the line chart getting input from lineChart_cbbox
         
-        exp = int(eventObject.widget.get())
-        
+        self.lineChart_subplot.cla()
+
+        exp = int(eventObject.widget.get())        
         simData = self.simulation_runs.loc[self.simulation_runs['experiment'] == exp]
         simCfgs = list(simData['sim_perf'].drop_duplicates())
         self.lineChart_subplot.set_title("Perf. Measure by Parameter and replication ")
@@ -1013,184 +1047,36 @@ class ResultsPage(tk.Frame):
             self.lineChart_subplot.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.,prop={'size': 8})
             self.lineChart_canvas.draw()
             self.lineChart_subplot.plot(x_data,y_data,label=labelTxt)
-            self.lineChart_plot.subplots_adjust(right=0.74) #adjust legend problem here!
+            self.lineChart_plot.subplots_adjust(right=0.64) #adjust legend problem here!
 
+    def plotScatterchart(self,eventObject): #function that plots the scatter chart
 
+        self.scatterChart_subplot.cla()
 
-        '''
-        second_p = tk.Label(second_p_frame,text="Add second parameter to plot" ,anchor=tk.E)
-        second_p.grid(row=4, column=1)
-        self.p_svar_lvl1 = tk.StringVar()
-        self.p_cb_lvl1 = ttk.Combobox(second_p_frame, width=5,textvariable=self.p_svar_lvl1,state='readonly')
-        self.p_cb_lvl1.configure(font=('Roboto', 8))
-        self.p_cb_lvl1['values'] = list(others)
-        self.p_cb_lvl1.bind('<<ComboboxSelected>>', lambda e: self.changeGraph_1(eventObject=e, exp=exp))
-        self.p_cb_lvl1.grid(sticky = tk.W,row=5, column=1)
+        exp = int(self.scatterChart_esvar.get())
+        parPerf_key_1 = self.scatterChart_p1cbbox.get()
+        parPerf_key_2 = self.scatterChart_p2cbbox.get()
+        cfg_1 = self.cfgsDict[parPerf_key_1]
+        cfg_2 = self.cfgsDict[parPerf_key_2]
+        simData = self.simulation_runs.loc[self.simulation_runs['experiment'] == exp]
+        simCfgs = list(simData['sim_perf'].drop_duplicates())
+        labelTxt = str(parPerf_key_1) + str(' ') + str(parPerf_key_2)
+        x_data = list(simData.loc[simData['sim_perf']==cfg_1]['results'].drop_duplicates())
+        y_data = list(simData.loc[simData['sim_perf']==cfg_2]['results'].drop_duplicates())
 
+        #self.scatterChart_subplot.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.,prop={'size': 8})
+        self.scatterChart_subplot.scatter(x_data,y_data)
+        #self.scatterChart_plot.subplots_adjust(left=0.1) #adjust legend problem here!
+        self.scatterChart_subplot.set_title(labelTxt,fontsize=8)
+        self.scatterChart_subplot.set_ylabel(list(self.datapoints_df.loc[self.datapoints_df['experiment']==exp]['perf_measure'].drop_duplicates()))
+        self.scatterChart_subplot.set_xlabel(list(self.datapoints_df.loc[self.datapoints_df['experiment']==exp]['perf_measure'].drop_duplicates()))
+        self.scatterChart_canvas.draw()
+        #self.scatterChart_subplot.tight_layout()
 
-        self.p_svar_lvl2 = tk.StringVar()
-        self.p_cb_lvl2 = ttk.Combobox(second_p_frame, width=5,textvariable=self.p_svar_lvl2,state='readonly')
-        self.p_cb_lvl2.configure(font=('Roboto', 8))
-        self.p_cb_lvl2['values'] = list(others)
-        self.p_cb_lvl2.bind('<<ComboboxSelected>>', lambda e: self.changeGraph_1(eventObject=e, exp=exp))
-        self.p_cb_lvl2.grid(sticky = tk.W,row=5, column=2)
- 
-        self.p_select_svar = tk.StringVar()
-        self.p_select_svar.set('Select a parameter to CI plot')
-        self.p_select_cb = ttk.Combobox(second_p_frame, width=15,textvariable=self.p_select_svar,state='readonly')
-        self.p_select_cb.configure(font=('Roboto', 8))
-        self.p_select_cb['values'] = list(self.simulation_runs.loc[self.simulation_runs['experiment'] == exp].drop_duplicates(subset='parameter_name')['parameter_name'])
-        self.p_select_cb.bind('<<ComboboxSelected>>', lambda e: self.chooseParameter(eventObject=e, exp=exp))
-        self.p_select_cb.grid(sticky = tk.W,row=6, column=1)
+    def onFrameConfigure(self, event):
 
-        self.line_plot = Figure(figsize=(3,3), dpi=100)
-        self.line_subplot = self.line_plot.add_subplot(111)
-        #y_data = list(self.results_df.loc[self.results_df['experiment']==exp]['perf_measure_value'])
-        #x_data = range(len(y_data))
-        #self.line_subplot.plot(x_data,y_data)
-
-        self.t1_plot_canvas = FigureCanvasTkAgg(self.line_plot, self) 
-        self.t1_plot_canvas.draw()
-        self.t1_plot_canvas._tkcanvas.grid(row=3,column=1)
-        toolbarframe_t1 = tk.Frame(self) 
-        toolbarframe_t1.grid(row=4,column=1)
-        t1_toolbar = NavigationToolbar2Tk(self.t1_plot_canvas,toolbarframe_t1)
-        t1_toolbar.update()        
-        self.t1_plot_canvas.get_tk_widget().grid(row=3,column=1,sticky = tk.W)
-
-        self.scatter_plot = Figure(figsize=(3,3), dpi=100)
-        self.scatter_subplot = self.scatter_plot.add_subplot(111)
-        self.t2_plot_canvas = FigureCanvasTkAgg(self.scatter_plot, self) 
-        self.t2_plot_canvas.draw()
-        self.t2_plot_canvas._tkcanvas.grid(row=3,column=2)
-        toolbarframe_t2 = tk.Frame(self) 
-        toolbarframe_t2.grid(row=4,column=2)
-        t2_toolbar = NavigationToolbar2Tk(self.t2_plot_canvas,toolbarframe_t2)
-        t2_toolbar.update()        
-        self.t2_plot_canvas.get_tk_widget().grid(row=3,column=2,sticky = tk.W)
-
-        self.ciplot = Figure(figsize=(3,3), dpi=100)
-        self.ciplot_subplot = self.ciplot.add_subplot(111)
-        self.ciplot_canvas = FigureCanvasTkAgg(self.ciplot, self)
-        self.ciplot_canvas.draw()
-        self.ciplot_canvas._tkcanvas.grid(row=5, column=1)
-        toolbarframe_ciplot = tk.Frame(self)
-        toolbarframe_ciplot.grid(row=7, column=1)
-        ciplot_toolbar = NavigationToolbar2Tk(self.ciplot_canvas, toolbarframe_ciplot)
-        ciplot_toolbar.update()
-        self.ciplot_canvas.get_tk_widget().grid(row=6,column=1) 
-
-        #multi variable layout
-        mult_v_label = tk.Label(self,text="Multi variable analysis" ,anchor=tk.CENTER)
-        mult_v_label.grid(row=1, column=4)
-
-        self.mv_select1_svar = tk.StringVar()
-        self.mv_select1_svar.set('Select first parameter to plot')
-        self.mv_select1_cb = ttk.Combobox(self, width=15,textvariable=self.mv_select1_svar,state='readonly')
-        self.mv_select1_cb.configure(font=('Roboto', 8))
-        self.mv_select1_cb['values'] = list(self.simulation_runs.loc[self.simulation_runs['experiment'] == exp].drop_duplicates(subset='parameter_name')['parameter_name'])
-        self.mv_select1_cb.bind('<<ComboboxSelected>>', lambda e: self.graph3D(eventObject=e, exp=exp))
-        self.mv_select1_cb.grid(sticky = tk.W,row=3, column=5)
-
-        self.mv_select2_svar = tk.StringVar()
-        self.mv_select2_svar.set('Select another parameter to plot')
-        self.mv_select2_cb = ttk.Combobox(self, width=15,textvariable=self.mv_select2_svar,state='readonly')
-        self.mv_select2_cb.configure(font=('Roboto', 8))
-        self.mv_select2_cb['values'] = list(self.simulation_runs.loc[self.simulation_runs['experiment'] == exp].drop_duplicates(subset='parameter_name')['parameter_name'])
-        self.mv_select2_cb.bind('<<ComboboxSelected>>', lambda e: self.graph3D(eventObject=e, exp=exp))
-        self.mv_select2_cb.grid(sticky = tk.W,row=3, column=6)
-
-        self.line3dplt = Figure(figsize=(3,3), dpi=100)
-        self.line3dplt_canvas = FigureCanvasTkAgg(self.line3dplt, self)
-        self.line3dplt_canvas.draw()
-        self.line3dplt_canvas._tkcanvas.grid(row=2, column=4)
-        toolbarframe_3dlineplt = tk.Frame(self)
-        toolbarframe_3dlineplt.grid(row=4, column=4)
-        line3dplt_toolbar = NavigationToolbar2Tk(self.line3dplt_canvas, toolbarframe_3dlineplt)
-        line3dplt_toolbar.update()
-        self.line3dplt_canvas.get_tk_widget().grid(row=3,column=4,sticky = tk.W)
-        self.line3dplt_subplot = self.line3dplt.add_subplot(111,projection='3d')
-        '''
-
-
-    def chooseParameter(self,eventObject, exp):
-
-        p_name = str(eventObject.widget.get())   
-
-        mean = self.simulation_runs.loc[(self.simulation_runs['experiment']==int(exp)) & (self.simulation_runs['parameter_name']==p_name)].groupby('parameter_value').mean()['results']
-        std = self.simulation_runs.loc[(self.simulation_runs['experiment']==int(exp)) & (self.simulation_runs['parameter_name']==p_name)].groupby('parameter_value').std()['results']
-        category = mean.index
-        n = self.simulation_runs.loc[(self.simulation_runs['experiment']==int(exp)) & (self.simulation_runs['parameter_name']==p_name)].count()
-        ci = (1.96/np.sqrt(n)) * std
-        print(n)
-        print('mean')
-        print(mean)
-        print('std')
-        print(std)
-        print('category')
-        print(category)
-        self.ciplot_subplot.errorbar(category, mean, xerr=0.1, yerr = ci, linestyle='',capsize=5)
-        self.ciplot_subplot.set_ylabel(str(self.datapoints_df.loc[self.datapoints_df['experiment']==int(exp)]['perf_measure'].item()))
-        self.ciplot_subplot.set_xlabel('%s value' % (p_name))
-        self.ciplot_subplot.set_title(p_name)
-        self.ciplot_canvas.draw()
-        #TODO formatar ci plot
-
-    def changeGraph_1(self, eventObject, exp):
-        
-        #line chart
-        p_lvl = eventObject.widget.get()        
-        print(p_lvl)
-        y_data_l = list(self.simulation_runs.loc[(self.simulation_runs['experiment']==int(exp)) & (self.simulation_runs['parameter_value']==float(p_lvl))]['results'])
-        x_data_l = range(len(y_data_l))
-
-        print(y_data_l)
-        print(x_data_l)
-
-        self.line_subplot.plot(x_data_l,y_data_l)
-        self.line_subplot.set_title(str(list(self.simulation_runs.loc[(self.simulation_runs['experiment']==int(exp)) & (self.simulation_runs['parameter_value']==float(p_lvl))]['parameter_name'])[0]))
-        self.line_subplot.set_ylabel(str(self.datapoints_df.loc[self.datapoints_df['experiment']==int(exp)]['perf_measure'].item()))
-        self.line_subplot.set_xlabel('Simulation Run')
-        self.t1_plot_canvas.draw()
-
-        #scatter plot
-        p_lvl1_s = self.p_cb_lvl1.get()
-        p_lvl2_s = self.p_cb_lvl2.get()
-
-        if p_lvl1_s != None or p_lvl2_s != None:
-
-            y_data_s = list(self.simulation_runs.loc[(self.simulation_runs['experiment']==int(exp)) & (self.simulation_runs['parameter_value']==float(p_lvl1_s))]['results'])
-            x_data_s = list(self.simulation_runs.loc[(self.simulation_runs['experiment']==int(exp)) & (self.simulation_runs['parameter_value']==float(p_lvl2_s))]['results'])
-            self.scatter_subplot.scatter(x_data_s,y_data_s)
-            parameter_name = str(list(self.simulation_runs.loc[(self.simulation_runs['experiment']==int(exp)) & (self.simulation_runs['parameter_value']==float(p_lvl))]['parameter_name'])[0])
-            parameter_value_l = str(p_lvl1_s)
-            parameter_value_h = str(p_lvl2_s)
-            self.scatter_subplot.set_title(parameter_name)
-            self.scatter_subplot.set_ylabel(str(self.datapoints_df.loc[self.datapoints_df['experiment']==int(exp)]['perf_measure'].item() + '  %s = %s' %(parameter_name,parameter_value_l)))
-            self.scatter_subplot.set_xlabel(str(self.datapoints_df.loc[self.datapoints_df['experiment']==int(exp)]['perf_measure'].item() + '  %s = %s' %(parameter_name,parameter_value_h)))
-
-            self.t2_plot_canvas.draw()
-
-        #TODO implementar outros gráficos
-
-    def graph3D(self, eventObject, exp):
-
-        p1 = self.mv_select1_cb.get()
-        p2 = self.mv_select2_cb.get()
-
-        x = self.simulation_runs.loc[(self.simulation_runs['experiment']==exp) & (self.simulation_runs['parameter_name']==p1)]['parameter_value']
-        print(x)
-        #x = [1,2,3,4]
-        y = self.simulation_runs.loc[(self.simulation_runs['experiment']==exp) & (self.simulation_runs['parameter_name']==p2)]['parameter_value']
-        print(y)
-        #y=[8,7,6,4]
-        z = self.simulation_runs.loc[(self.simulation_runs['experiment']==exp) & (self.simulation_runs['parameter_name']==p2)]['results']
-        print(z)
-        #z = [123,13,3,4]
-        self.line3dplt_subplot.plot(x,y,z)
-        self.line3dplt_canvas.draw()
-
-
+        '''Reset the scroll region to encompass the inner frame'''
+        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
 app = SeaofBTCapp()
 app.geometry("1920x1080")    
