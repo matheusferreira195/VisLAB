@@ -374,7 +374,7 @@ class Board(tk.Frame):
         
         #loading existing post its (experiments)
 
-        existing_experiments_qry = "SELECT * FROM experiments"
+        existing_experiments_qry = "SELECT id FROM experiments"
         existing_experiments = pd.read_sql(existing_experiments_qry,cnx)
 
         self.datapoints_df = pd.read_sql(str('SELECT * FROM datapoints'), cnx)
@@ -997,9 +997,52 @@ class ResultsPage(tk.Frame):
 
         #Boxplot 
 
+        self.boxplotFrame = tk.Frame(self.frame,highlightbackground="green", highlightcolor="green", highlightthickness=1, width=100, height=100, bd= 0)
+        self.boxplotFrame.grid(row=1,column=1)
+
+        self.boxplotWidgetframe = tk.Frame(self.boxplotFrame)
+        self.boxplotWidgetframe.grid(row=0,column=1)
+
+        self.boxplotSvar = tk.StringVar()
+        self.boxplotSvar.set('Select an experiment')
+        self.boxplotexpCbbox = ttk.Combobox(self.boxplotWidgetframe,width=15,textvariable=str(self.boxplotSvar),state='readonly')
+        self.boxplotexpCbbox['values'] = list(existing_experiments['id'])
+        self.boxplotexpCbbox.bind('<<ComboboxSelected>>', lambda e: self.boxPlot(eventObject=e))
+        self.boxplotexpCbbox.grid(row=1,column=1)
+
+        self.boxplotFigure = Figure(figsize=(5,4), dpi=100)
+        self.boxplotSubplot = self.boxplotFigure.add_subplot(111)
+        self.boxplotCanvas = FigureCanvasTkAgg(self.boxplotFigure, self.boxplotFrame)
+        self.boxplotCanvas.draw()
+        self.boxplotCanvas._tkcanvas.grid(row=0,column=0)
+        self.boxplotTFrame = tk.Frame(self.boxplotFrame)
+        self.boxplotTFrame.grid(row=1,column=0)
+        self.boxplotToolbar = NavigationToolbar2Tk(self.boxplotCanvas, self.boxplotTFrame)
+        
         #Boxplot c/ I.C
 
+        self.ciboxplotFrame = tk.Frame(self.frame,highlightbackground="green", highlightcolor="green", highlightthickness=1, width=100, height=100, bd= 0)
+        self.ciboxplotFrame.grid(row=2,column=1)
+        self.ciboxplotWidgetframe = tk.Frame(self.ciboxplotFrame)
+        self.ciboxplotWidgetframe.grid(row=0,column=1)
+        self.ciboxplotSvar = tk.StringVar()
+        self.ciboxplotSvar.set('Select an experiment')
+        self.ciboxplotexpCbbox = ttk.Combobox(self.ciboxplotWidgetframe,width=15,textvariable=str(self.ciboxplotSvar),state='readonly')
+        self.ciboxplotexpCbbox['values'] = list(existing_experiments['id'])
+        self.ciboxplotexpCbbox.bind('<<ComboboxSelected>>', lambda e: self.ciboxPlot(eventObject=e))
+        self.ciboxplotexpCbbox.grid(row=1,column=1)
+        self.ciboxplotFigure = Figure(figsize=(5,4), dpi=100)
+        self.ciboxplotSubplot = self.ciboxplotFigure.add_subplot(111)
+        self.ciboxplotCanvas = FigureCanvasTkAgg(self.ciboxplotFigure, self.ciboxplotFrame)
+        self.ciboxplotCanvas.draw()
+        self.ciboxplotCanvas._tkcanvas.grid(row=0,column=0)
+        self.ciboxplotTFrame = tk.Frame(self.ciboxplotFrame)
+        self.ciboxplotTFrame.grid(row=1,column=0)
+        self.ciboxplotToolbar = NavigationToolbar2Tk(self.ciboxplotCanvas, self.ciboxplotTFrame)
+
+
         #Dif. means
+        #Here how to use StatsModels' CompareMeans to calculate the confidence interval for the difference between means:
 
     def expSelect(self,eventObject):
 
@@ -1027,7 +1070,6 @@ class ResultsPage(tk.Frame):
             #print(labelTxt_ls)
 
         self.scatterChart_p1cbbox['values'] = self.scatterChart_p2cbbox['values'] = labelTxt_ls   
-
 
     def plotLinechart(self,eventObject): #function that plots the line chart getting input from lineChart_cbbox
         
@@ -1089,12 +1131,89 @@ class ResultsPage(tk.Frame):
         self.scatterChart_canvas.draw()
         #self.scatterChart_subplot.tight_layout()
 
+    def boxPlot(self, eventObject):
+
+        self.boxplotSubplot.cla()
+
+        exp = int(eventObject.widget.get())        
+        simData = self.simulation_runs.loc[self.simulation_runs['experiment'] == exp]
+        simCfgs = list(simData['sim_perf'].drop_duplicates())
+
+        labels = []
+        samples =[]
+
+        for cfg in simCfgs:
+
+            labelTxt=''
+
+            samples.append(list(simData.loc[simData['sim_perf'] == cfg].drop_duplicates(subset='results')['results']))
+            txtData = simData.loc[simData['sim_perf']==cfg].drop_duplicates(subset='parameter_name')
+            #print(txtData)
+            for index, row in txtData.iterrows():
+
+                labelTxt = labelTxt + '%s = %s\n' % (str(row['parameter_name']),str(row['parameter_value']))
+            labels.append(labelTxt)
+
+        #print(labels)
+        self.boxplotSubplot.set_xticklabels(labels,rotation=45,fontsize=8)     
+        self.boxplotSubplot.set_ylabel(list(self.datapoints_df.loc[self.datapoints_df['experiment']==exp]['perf_measure'].drop_duplicates()))   
+        self.boxplotSubplot.boxplot(samples)
+        self.boxplotFigure.tight_layout()#subplots_adjust(bottom=0.15)
+        self.boxplotCanvas.draw()
+
+    def ciboxPlot(self,eventObject):
+        
+        self.boxplotSubplot.cla()
+
+        exp = int(eventObject.widget.get())        
+        simData = self.simulation_runs.loc[self.simulation_runs['experiment'] == exp]
+        simCfgs = list(simData['sim_perf'].drop_duplicates())
+
+        labels = []
+        samples =[]
+
+        for cfg in simCfgs:
+
+            labelTxt=''
+
+            samples.append(list(simData.loc[simData['sim_perf'] == cfg].drop_duplicates(subset='results')['results']))
+            txtData = simData.loc[simData['sim_perf']==cfg].drop_duplicates(subset='parameter_name')
+            #print(txtData)
+            for index, row in txtData.iterrows():
+
+                labelTxt = labelTxt + '%s = %s\n' % (str(row['parameter_name']),str(row['parameter_value']))
+            labels.append(labelTxt)
+
+        means = simData.groupby('sim_perf')['results'].mean().rename('mean')
+        std = simData.groupby('sim_perf')['results'].std().rename('std')
+        ns = simData.groupby('sim_perf')['results'].count().rename('count')
+        simStats = pd.concat([means,std,ns],axis=1,sort=False)
+        cis = []
+
+        for index, stat in simStats.iterrows():
+            
+            ci = stats.t.interval(0.95, loc=stat['mean'], scale=stat['std']/np.sqrt(stat['count']),df=stat['count']-1)
+            print(ci)
+            cis.append(ci[1]-stat['mean'])
+
+        print(cis)
+        simStats.insert(1,'ci',value=cis)  
+
+        x = list(labels)
+        y = list(simStats['mean'])
+        e = list(simStats['ci'])
+        self.ciboxplotSubplot.set_xticklabels(labels,rotation=45,fontsize=8)
+        self.ciboxplotSubplot.set_ylabel(list(self.datapoints_df.loc[self.datapoints_df['experiment']==exp]['perf_measure'].drop_duplicates()))   
+        self.ciboxplotSubplot.errorbar(x, y, yerr=e, fmt='s',capsize=5)
+        self.ciboxplotFigure.tight_layout()
+        self.ciboxplotCanvas.draw()
+
 
     def onFrameConfigure(self, event):
 
         '''Reset the scroll region to encompass the inner frame'''
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
-
+    
 app = SeaofBTCapp()
 app.geometry("1920x1080")    
 app.mainloop()
