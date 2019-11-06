@@ -29,12 +29,15 @@ import glob
 import os
 import win32com.client as com
 
+#loading assets
 NORM_FONT= ("Roboto", 10)
 LARGE_FONT = ("Roboto", 20)
+
 
 #Database connection and set up
 
 cnx = sqlite3.connect(r'E:\Google Drive\Scripts\VisLab\resources\vislab.db')#, isolation_level=None)
+gaCnx = sqlite3.connect(r'E:\Google Drive\Scripts\VisLab\resources\ga.db')
 sqlite3.register_adapter(np.int64, lambda val: int(val))
 sqlite3.register_adapter(np.int32, lambda val: int(val))
 cursor = cnx.cursor()
@@ -323,7 +326,7 @@ class SeaofBTCapp(tk.Tk):
 
         self.frames = {}
 
-        for F in (StartPage, Board, ResultsPage):
+        for F in (StartPage, Board, ResultsPage, CalibrationPage):
 
             frame = F(container, self)
 
@@ -347,17 +350,27 @@ class StartPage(tk.Frame):
     def __init__(self, parent, controller):
 
         tk.Frame.__init__(self,parent)
+        frame = tk.Frame(self)
+        frame.pack(fill="both", expand=True, padx=20, pady=20)
+        frame.place(in_=self, anchor="c", relx=.5, rely=.5)
 
-        label = tk.Label(self, text="VisLab", font=LARGE_FONT)
+        self.calPhoto = tk.PhotoImage(file = r"E:\Google Drive\Scripts\VisLab\resources\ga.png")  #https://www.flaticon.com/packs/science-121
+        self.saPhoto = tk.PhotoImage(file = r"E:\Google Drive\Scripts\VisLab\resources\sa.png")
+        self.flaskPhoto = tk.PhotoImage(file = r"E:\Google Drive\Scripts\VisLab\resources\flask.png")
+        label = tk.Label(frame, text="VisLab", font=LARGE_FONT)
         label.grid(row=0,column=1)
  
-        button = tk.Button(self, text="Experiment board",
-                            command=lambda: controller.show_frame(Board))
-        button.grid(row=1,column=0)
+        button = tk.Button(frame, text="Experiment board",
+                            command=lambda: controller.show_frame(Board),image=self.flaskPhoto)
+        button.grid(row=1,column=0,pady=200)
 
-        button2 = tk.Button(self, text="Results Dashboard",
-                            command=lambda: controller.show_frame(ResultsPage))
-        button2.grid(row=1,column=1)
+        button2 = tk.Button(frame, text="Results Dashboard",
+                            command=lambda: controller.show_frame(ResultsPage),image=self.saPhoto)
+        button2.grid(row=1,column=1,pady=200)
+
+        button2 = tk.Button(frame, text="Calibration",
+                            command=lambda: controller.show_frame(CalibrationPage),image=self.calPhoto)
+        button2.grid(row=1,column=2,pady=200)
 
 dc_data = generate_dcdf_test()
 parameter_db = pd.read_csv(r'E:\Google Drive\Scripts\VisLab\resources\parameters.visdb')       
@@ -1043,6 +1056,191 @@ class ResultsPage(tk.Frame):
 
         #Dif. means
         #Here how to use StatsModels' CompareMeans to calculate the confidence interval for the difference between means:
+        self.difmeansFrame = tk.Frame(self.frame,highlightbackground="green", highlightcolor="green", highlightthickness=1, width=100, height=100, bd= 0)
+        self.difmeansFrame.grid(row=3,column=1)
+        self.difmeansMainText = tk.Label(self.difmeansFrame, text="Difference of means test", anchor=tk.CENTER)
+        self.difmeansMainText.grid(row=0,column=0)
+
+        self.difmeansSvar1 = tk.StringVar()
+        self.difmeansSvar1.set('Select an experiment')
+        self.difmeansExp1Cbbox = ttk.Combobox(self.difmeansFrame,width=15,textvariable=str(self.difmeansSvar1),state='readonly')
+        self.difmeansExp1Cbbox['values'] = list(existing_experiments['id'])
+        self.difmeansExp1Cbbox.bind('<<ComboboxSelected>>', lambda e: self.difmeanSelect(eventObject=e))
+        self.difmeansExp1Cbbox.grid(row=1,column=0)
+
+        self.difmeansSvarp1 = tk.StringVar()
+        self.difmeansSvarp1.set('Select a param. profile')
+        self.difmeansCbboxp1 = ttk.Combobox(self.difmeansFrame,width=30,textvariable=str(self.difmeansSvarp1),state='readonly')
+        self.difmeansCbboxp1['values'] = []
+        #self.difmeansCbboxp1.bind('<<ComboboxSelected>>', lambda e: self.difmeanSelect(eventObject=e))
+        self.difmeansCbboxp1.grid(row=1,column=1)
+
+        self.difmeansSvar2 = tk.StringVar()
+        self.difmeansSvar2.set('Select an experiment')
+        self.difmeansExp2Cbbox = ttk.Combobox(self.difmeansFrame,width=15,textvariable=str(self.difmeansSvar2),state='readonly')
+        self.difmeansExp2Cbbox['values'] = list(existing_experiments['id'])
+        self.difmeansExp2Cbbox.bind('<<ComboboxSelected>>', lambda e: self.difmeanSelect(eventObject=e))
+        self.difmeansExp2Cbbox.grid(row=2,column=0)
+
+        self.difmeansSvarp2 = tk.StringVar()
+        self.difmeansSvarp2.set('Select a param. profile')
+        self.difmeansCbboxp2 = ttk.Combobox(self.difmeansFrame,width=30,textvariable=str(self.difmeansSvarp2),state='readonly')
+        self.difmeansCbboxp2['values'] = []
+        #self.difmeansCbboxp2.bind('<<ComboboxSelected>>', lambda e: self.difmeanSelect(eventObject=e,tp=1))
+        self.difmeansCbboxp2.grid(row=2,column=1)
+
+        self.genButton = ttk.Button(self.difmeansFrame,text='Generate report', command= self.difmeanReport)
+        self.genButton.grid(row=3,column=0)
+    def difmeanReport(self):
+
+        try:            
+
+            #Data loading
+            exp1 = self.difmeansExp1Cbbox.get()
+            exp2 = self.difmeansExp2Cbbox.get()
+            par1 = self.cfgsDict[self.difmeansCbboxp1.get()]
+            print(par1)
+            par2 = self.cfgsDict[self.difmeansCbboxp2.get()]
+            print(par2)
+            dados_1 = pd.read_sql('select * from simulation_runs where experiment = %s and sim_perf = %s' % (exp1,par1),cnx)['results'].drop_duplicates()
+            dados_2 = pd.read_sql('select * from simulation_runs where experiment = %s and sim_perf = %s' % (exp2,par2),cnx)['results'].drop_duplicates()
+            #frontend
+            print('clicked')
+            reportWin = tk.Toplevel()
+            reportWin.wm_title("Edit experiment")
+            frame = tk.Frame(reportWin)
+            frame.grid(row=0,column=0)
+
+            #Analysis
+            linreg = stats.linregress(dados_1, dados_2)
+            
+            mean1 = dados_1.mean()
+            mean2 = dados_2.mean()
+            n = dados_2.count()
+            var1 = dados_1.std()**2
+            var2 = dados_2.std()**2
+            r_values = stats.pearsonr(dados_1,dados_2)
+            r = r_values[0]
+            r_p = r_values[1]
+            df = n-1
+            statt = stats.ttest_rel(dados_1,dados_2)
+
+            if r_p < 0.05:
+                #dependent
+                d_test = stats.ttest_rel(dados_1,dados_2)
+                tp = 'Paired'
+            else:
+                i_test = stats.ttest_ind(dados_1,dados_2,equal_var=False)
+                tp = 'Independent'
+            teste = {'mean1':[mean1],'mean2':[mean2],'var1':[var1],'var2':[var2],'n':[n],'r':[r],'h0':[0],'df':[df],'statt':[i_test[0]],'pvalue':[i_test[1]],'type':tp}    
+            teste_df = pd.DataFrame.from_dict(teste) 
+
+            testLabel = tk.Label(frame,text='T test: paired sample mean difference')
+            testLabel.grid(row=0,column=2)
+
+            var1Label = tk.Label(frame,text='Variable 1')
+            var1Label.grid(row=1,column=2)
+
+            var2Label = tk.Label(frame,text='Variable 2')
+            var2Label.grid(row=1,column=4)
+
+            meanLabel = tk.Label(frame,text='Mean')
+            meanLabel.grid(row=2,column=0)
+            mean1Value = tk.Label(frame,text=teste['mean1'])
+            mean1Value.grid(row=2,column=2)
+            mean2Value = tk.Label(frame,text=teste['mean2'])
+            mean2Value.grid(row=2,column=4)
+
+            varLabel = tk.Label(frame,text='Variance')
+            varLabel.grid(row=3,column=0)
+            var1Value = tk.Label(frame,text=teste['var1'])
+            var1Value.grid(row=3,column=2)
+            var2Value = tk.Label(frame,text=teste['var2'])
+            var2Value.grid(row=3,column=4)
+
+            obsLabel = tk.Label(frame,text='Observation')
+            obsLabel.grid(row=4,column=0)
+            obsValue = tk.Label(frame,text=teste['n'])
+            obsValue.grid(row=4,column=2)
+
+            pearsonLabel = tk.Label(frame,text='Pearson Correlation')
+            pearsonLabel.grid(row=5,column=0)
+            pearsonValue = tk.Label(frame,text=teste['r'])
+            pearsonValue.grid(row=5,column=2)
+
+            pearsonLabel = tk.Label(frame,text='Type test')
+            pearsonLabel.grid(row=6,column=0)
+            pearsonValue = tk.Label(frame,text=teste['type'])
+            pearsonValue.grid(row=6,column=2)
+
+            h0Label = tk.Label(frame,text='Mean difference hypothesis')
+            h0Label.grid(row=7,column=0)
+            h0Value = tk.Label(frame,text=teste['h0'])
+            h0Value.grid(row=7,column=2)
+
+            dfLabel = tk.Label(frame,text='Degrees of freedom')
+            dfLabel.grid(row=8,column=0)
+            dfValue = tk.Label(frame,text=teste['df'])
+            dfValue.grid(row=8,column=2)
+
+            stattLabel = ttk.Label(frame,text='Stat t')
+            stattLabel.grid(row=9,column=0)
+            stattValue = ttk.Label(frame,text=teste['statt'])
+            stattValue.grid(row=9,column=2)
+
+            criticaltLabel = ttk.Label(frame,text='Two-tailed teste p-value')
+            criticaltLabel.grid(row=10,column=0)
+            criticaltValue = ttk.Label(frame,text=teste['pvalue'])
+            criticaltValue.grid(row=10,column=2)
+
+            vertical1 = ttk.Separator(frame, orient="vertical")
+            vertical1.grid(row=0, column=1, sticky='ns', rowspan=100)
+            vertical2 = ttk.Separator(frame, orient="vertical")
+            vertical2.grid(row=0, column=3, sticky='ns', rowspan=100)
+
+            blank = tk.Label(frame,text='')
+            blank.grid(row=11,column=2)
+            copyButton = ttk.Button(frame,text='Copy to clipboard',command= lambda: teste_df.to_clipboard())
+            copyButton.grid(row=12,column=2)
+        
+        except:
+
+            popup = tk.Tk()
+            popup.wm_title("!")
+            label = ttk.Label(popup, text='Please select parameters', font=NORM_FONT)
+            label.pack(side="top", fill="x", pady=10)
+            B1 = ttk.Button(popup, text="Okay boss", command = popup.destroy)
+            B1.pack()
+            popup.mainloop()
+
+    def difmeanSelect(self,eventObject):
+
+
+        exp = int(eventObject.widget.get())
+        simData = self.simulation_runs.loc[self.simulation_runs['experiment'] == exp]
+        simCfgs = list(simData['sim_perf'].drop_duplicates())
+        labelTxt_ls = []
+        self.cfgsDict = {}
+
+        for cfg in simCfgs:
+
+            txtData = simData.loc[simData['sim_perf']==cfg].drop_duplicates(subset='parameter_name')
+            labelTxt = ''
+
+            for index, row in txtData.iterrows():
+
+                labelTxt = labelTxt + '|%s = %s|' % (str(row['parameter_name']),str(row['parameter_value']))
+
+            self.cfgsDict[labelTxt] = cfg
+            labelTxt_ls.append(labelTxt)
+
+        if '3' in str(eventObject.widget):
+
+            self.difmeansCbboxp2['values'] = labelTxt_ls
+        
+        else:
+
+            self.difmeansCbboxp1['values'] = labelTxt_ls
 
     def expSelect(self,eventObject):
 
@@ -1052,6 +1250,7 @@ class ResultsPage(tk.Frame):
         simCfgs = list(simData['sim_perf'].drop_duplicates())
         labelTxt_ls = []
         self.cfgsDict = {}
+
         for cfg in simCfgs:
 
             y_data = list(simData.loc[simData['sim_perf']==cfg]['results'].drop_duplicates())
@@ -1208,12 +1407,61 @@ class ResultsPage(tk.Frame):
         self.ciboxplotFigure.tight_layout()
         self.ciboxplotCanvas.draw()
 
-
     def onFrameConfigure(self, event):
 
         '''Reset the scroll region to encompass the inner frame'''
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
-    
+
+class CalibrationPage(tk.Frame):
+
+    def __init__(self, parent, controller):
+
+        tk.Frame.__init__(self,parent)
+        frame = tk.Frame(self)
+        frame.pack(fill="both", expand=True, padx=20, pady=20)
+        frame.place(in_=self, anchor="c", relx=.5, rely=.5)
+
+        self.runPhoto = tk.PhotoImage(file = r"E:\Google Drive\Scripts\VisLab\resources\power.png")  #https://www.flaticon.com/packs/science-121
+        self.cfgPhoto = tk.PhotoImage(file = r"E:\Google Drive\Scripts\VisLab\resources\settings.png")
+        self.resultsPhoto = tk.PhotoImage(file = r"E:\Google Drive\Scripts\VisLab\resources\results.png")
+        
+        label = tk.Label(frame, text="Calibration", font=LARGE_FONT)
+        label.grid(row=0,column=1)
+
+        runLabel = tk.Label(frame, text="Run calibration")
+        runLabel.grid(row=1,column=2)
+        runButton = tk.Button(frame, text="Run calibration",
+                            command=lambda: runCalibration,image=self.runPhoto)
+        runButton.grid(row=2,column=2)
+
+        cfgLabel = tk.Label(frame, text="Config calibration")
+        cfgLabel.grid(row=1,column=1)
+        cfgButton = tk.Button(frame, text="Config calibration",
+                            command=lambda: cfgCalibration,image=self.cfgPhoto)
+        cfgButton.grid(row=2,column=1)
+
+        resultsLabel = tk.Label(frame, text="Results calibration")
+        resultsLabel.grid(row=1,column=3)        
+        resultsButton = tk.Button(frame, text="Results calibration",
+                            command=lambda: resultsCalibration,image=self.resultsPhoto)
+        resultsButton.grid(row=2,column=3)
+
+class Calibration:
+
+    #data initialization
+    def __init__(self):
+
+        cfgData = pd.read_sql()
+
+
+
+
+
+
+
+
+
 app = SeaofBTCapp()
-app.geometry("1920x1080")    
+app.geometry("1920x1080")
+app.state('zoomed')
 app.mainloop()
