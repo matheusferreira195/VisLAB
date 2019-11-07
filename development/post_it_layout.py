@@ -28,7 +28,7 @@ from os.path import isfile, join
 import glob
 import os
 import win32com.client as com
-
+from random import random
 #loading assets
 NORM_FONT= ("Roboto", 10)
 LARGE_FONT = ("Roboto", 20)
@@ -1446,20 +1446,108 @@ class CalibrationPage(tk.Frame):
                             command=lambda: resultsCalibration,image=self.resultsPhoto)
         resultsButton.grid(row=2,column=3)
 
-class Calibration:
+class runCalibration:
 
     #data initialization
-    def __init__(self):
+    def __init__(self,name):
 
-        cfgData = pd.read_sql()
+        self.cfgData = pd.read_sql(("select * from configurations where name = ?",name),gaCnx)
+        self.parData = pd.read_sql(("select * from parameters where name = ?",name),gaCnx)
+        self.resultData = pd.read_sql(("select * from results where name = ?",name),gaCnx)    
+    
+    def simulation(self,name,gen,rep,ind,genes):
 
+        '''Vissim = None #com.Dispatch('Vissim.Vissim')
+        Vissim = com.Dispatch("Vissim.Vissim") #Abrindo o Vissim
+        path_network =r'E:\Google Drive\Scripts\VisLab\development\net\teste\teste.inpx'
+        flag = False 
+        Vissim.LoadNet(path_network, flag) #Carregando o arquivo'''
 
+        datapoint_id = self.cfgData['datapoint_id']
+        datapoint_name = self.cfgData['datapoint_name']
+        perf_measure = self.cfgData['perf_measure']
+        time_p = self.cfgData['time_p']
+        field_value = self.cfgData['field_data']
+        #Vissim.Simulation.SetAttValue('NumRuns', rep)
+        
+        for gene_name, gene_value in genes.items(): #sets parameters (called genes here)
 
+            #Vissim.Net.DrivingBehaviors[0].SetAttValue(gene_name, gene_value)
+            pass
+        #Vissim.Graphics.CurrentNetworkWindow.SetAttValue("QuickMode",1) #Ativando Quick Mode
+        #Vissim.Simulation.RunContinuous() #Iniciando Simulação 
 
+        for replication in range(1,rep+1):
+                    
+            if datapoint_name == 'Data Collector':
 
+                if perf_measure == 'Saturation Headway':
+                    
+                    #A função ja tem replication handling
+                    result = calculate_shdwy(path_network, datapoint_id, replication) 
+                    
+                else:
 
+                    selected_dc = Vissim.Net.DataCollectionMeasurements.ItemByKey(int(datapoint_id)) 
+                    result = selected_dc.AttValue('{}({},{},All)'.format(str(perf_measure), 
+                                                str(replication), 
+                                                str(time_p)))
 
+            elif datapoint_name == 'Travel Time Collector':
 
+                selected_ttc = Vissim.Net.DelayMeasurements.ItemByKey(int(datapoint_id))
+                result = selected_ttc.AttValue('{}({},{},All)'.format(str(perf_measure), 
+                                            str(replication), 
+                                            str(time_p)))
+                                            
+            else:    
+                
+                selected_qc = Vissim.Net.QueueCounters.ItemByKey(int(datapoint_id))
+                result = selected_qc.AttValue('{}({},{})'.format(str(perf_measure), 
+                                            str(replication), 
+                                            str(time_p)))
+
+            seed = Vissim.Net.SimulationRuns.GetMultipleAttributes(['Randseed'])
+
+            fitness = (result-field_value)/result
+
+            for p_name,p_value in row.iteritems():
+
+                cursor.execute("INSERT results SET name,seed,gen,ind,rep,par_name,par_value,perf_measure,result_value,fitness" 
+                                % (name,seed,gen,ind,replication,par_name,par_value,perf_measure,result,fitness))
+                cnx.commit()
+        
+        Vissim = None   
+
+    def gen0(self):
+
+        name = 'teste'#TODO add name key from field in cfg window
+
+        rep = self.cfgData['rep']
+        ind = self.cfgData['ind']
+        
+        for individual in range(ind): #generating gen0 individuals
+            
+            genes = {}
+
+            for index, pdata in self.parData.iterrows(): #creating gen0 ind genes
+                
+                up = pdata['parameter_u_value']
+                down = pdata['parameter_d_value']
+                gene_name = pdata['parameter_name']                
+                gene_value = random.uniform(down,up)
+                genes[gene_name] = gene_value
+            
+            self.simulation(name,gen,rep,ind,genes)
+
+    def genN(self):
+        pass
+
+            
+
+            
+
+               
 
 app = SeaofBTCapp()
 app.geometry("1920x1080")
