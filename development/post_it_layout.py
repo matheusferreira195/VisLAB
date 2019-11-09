@@ -8,6 +8,7 @@ import tkinter as tk
 import sqlite3
 import pandas as pd
 import math
+from statistics import mean
 from scipy import stats
 from tkinter import ttk
 from tkinter import messagebox
@@ -1314,11 +1315,11 @@ class ResultsPage(tk.Frame):
         x_data = list(simData.loc[simData['sim_perf']==cfg_1]['results'].drop_duplicates())
         y_data = list(simData.loc[simData['sim_perf']==cfg_2]['results'].drop_duplicates())
         linreg = stats.linregress(x_data, y_data)
-        r_squared = linreg.rvalue
-        print(r_squared)
+        r = linreg.rvalue
+        print(r)
         #self.scatterChart_subplot.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.,prop={'size': 8})
         #self.scatterChart_subplot.text(x_data[0], y_data[0], 'R-squared = %0.2f' % r_squared)
-        anchored_text = matplotlib.offsetbox.AnchoredText('R-squared = %0.2f \n P-value = %0.2f' % (r_squared,linreg.pvalue), loc=4, prop = dict(fontsize=8))
+        anchored_text = matplotlib.offsetbox.AnchoredText('R = %0.2f \n P-value = %0.2f' % (r,linreg.pvalue), loc=4, prop = dict(fontsize=8))
         
         self.scatterChart_subplot.add_artist(anchored_text)
         self.scatterChart_subplot.plot(np.unique(x_data), np.poly1d(np.polyfit(x_data, y_data, 1))(np.unique(x_data)))
@@ -1431,7 +1432,7 @@ class CalibrationPage(tk.Frame):
         runLabel = tk.Label(frame, text="Run calibration")
         runLabel.grid(row=1,column=2)
         runButton = tk.Button(frame, text="Run calibration",
-                            command=lambda: runCalibration,image=self.runPhoto)
+                            command=lambda: runCalibration(name='teste'),image=self.runPhoto)
         runButton.grid(row=2,column=2)
 
         cfgLabel = tk.Label(frame, text="Config calibration")
@@ -1450,12 +1451,16 @@ class runCalibration:
 
     #data initialization
     def __init__(self,name):
+        name = 'teste'
+        self.cfgGA = pd.read_sql(("select * from configurationsGA where name = '?'",name),gaCnx)
+        self.parGA = pd.read_sql(("select * from parametersGA where name = '?'",name),gaCnx)
+        self.resultsGA = pd.read_sql(("select * from resultsGA where name = '?'",name),gaCnx)
 
-        self.cfgData = pd.read_sql(("select * from configurations where name = ?",name),gaCnx)
-        self.parData = pd.read_sql(("select * from parameters where name = ?",name),gaCnx)
-        self.resultData = pd.read_sql(("select * from results where name = ?",name),gaCnx)    
-    
-    def simulation(self,name,gen,rep,ind,genes):
+        self.gen0()
+        self.genN()    
+        self.name = name
+
+    def simulationGA(self,name,gen,rep,ind,genes):
 
         '''Vissim = None #com.Dispatch('Vissim.Vissim')
         Vissim = com.Dispatch("Vissim.Vissim") #Abrindo o Vissim
@@ -1463,22 +1468,26 @@ class runCalibration:
         flag = False 
         Vissim.LoadNet(path_network, flag) #Carregando o arquivo'''
 
-        datapoint_id = self.cfgData['datapoint_id']
-        datapoint_name = self.cfgData['datapoint_name']
-        perf_measure = self.cfgData['perf_measure']
-        time_p = self.cfgData['time_p']
-        field_value = self.cfgData['field_data']
-        #Vissim.Simulation.SetAttValue('NumRuns', rep)
+        datapoint_id = self.cfgGA['datapoint_id']
+        datapoint_name = self.cfgGA['datapoint_name']
+        perf_measure = self.cfgGA['perf_measure'].item()
+        time_p =  self.cfgGA['time_p']
+        field_value =  self.cfgGA['field_data'].item()
+        Vissim.Simulation.SetAttValue('NumRuns', rep)
         
         for gene_name, gene_value in genes.items(): #sets parameters (called genes here)
 
-            #Vissim.Net.DrivingBehaviors[0].SetAttValue(gene_name, gene_value)
-            pass
-        #Vissim.Graphics.CurrentNetworkWindow.SetAttValue("QuickMode",1) #Ativando Quick Mode
-        #Vissim.Simulation.RunContinuous() #Iniciando Simulação 
+            Vissim.Net.DrivingBehaviors[0].SetAttValue(gene_name, gene_value)
 
+        Vissim.Graphics.CurrentNetworkWindow.SetAttValue("QuickMode",1) #Ativando Quick Mode
+        Vissim.Simulation.RunContinuous() #Iniciando Simulação 
+
+        seed = 40
+        rep_results = []
+        results = []
+        
         for replication in range(1,rep+1):
-                    
+
             if datapoint_name == 'Data Collector':
 
                 if perf_measure == 'Saturation Headway':
@@ -1501,47 +1510,139 @@ class runCalibration:
                                             str(time_p)))
                                             
             else:    
-                
-                selected_qc = Vissim.Net.QueueCounters.ItemByKey(int(datapoint_id))
-                result = selected_qc.AttValue('{}({},{})'.format(str(perf_measure), 
-                                            str(replication), 
-                                            str(time_p)))
+                    
+                    selected_qc = Vissim.Net.QueueCounters.ItemByKey(int(datapoint_id))
+                    result = selected_qc.AttValue('{}({},{})'.format(str(perf_measure), 
+                                                str(replication), 
+                                                str(time_p)))
 
             seed = Vissim.Net.SimulationRuns.GetMultipleAttributes(['Randseed'])
 
-            fitness = (result-field_value)/result
+            fitness = abs((result-field_value)/result)
+            
+            seed += 1
+            fitness = abs((np.random.randn() - field_value) / field_value)
+            rep_results.append(fitness)
+            results.append(result)
 
-            for p_name,p_value in row.iteritems():
+        for gene_name, gene_value in genes.items():
 
-                cursor.execute("INSERT results SET name,seed,gen,ind,rep,par_name,par_value,perf_measure,result_value,fitness" 
-                                % (name,seed,gen,ind,replication,par_name,par_value,perf_measure,result,fitness))
-                cnx.commit()
+            query = ("""INSERT INTO resultsGA (name,seed,gen,ind,par_name,par_value,perf_measure,result_value,epam) 
+            VALUES ('%s',%s,%s,%s,'%s',%s,'%s',%s,%s)""" % (str(name),str(int(seed)),str(int(gen)),
+                                                               str(int(ind)),str(p_name),str(p_value),
+                                                               str(perf_measure),str(mean(results)),str(mean(rep_results))))
+            #print(query)
+            cursorGA.execute(query)
+            gaCnx.commit()
         
-        Vissim = None   
+        Vissim = None 
 
     def gen0(self):
 
         name = 'teste'#TODO add name key from field in cfg window
 
-        rep = self.cfgData['rep']
-        ind = self.cfgData['ind']
-        
+        rep = self.cfgGA['rep'].item()
+        ind = self.cfgGA['ind'].item()
+        gen = 0
+
         for individual in range(ind): #generating gen0 individuals
             
             genes = {}
 
-            for index, pdata in self.parData.iterrows(): #creating gen0 ind genes
+            for index, pdata in parGA.iterrows(): #creating gen0 ind genes
                 
-                up = pdata['parameter_u_value']
-                down = pdata['parameter_d_value']
+                up = pdata['parameter_b_value']
+                down = pdata['parameter_u_value']
                 gene_name = pdata['parameter_name']                
                 gene_value = random.uniform(down,up)
                 genes[gene_name] = gene_value
-            
-            self.simulation(name,gen,rep,ind,genes)
+            print(genes)
+            self.simulationGA(name,gen,rep,individual,genes)
 
     def genN(self):
-        pass
+        
+        #TODO add name key from field in cfg window
+
+        name = 'teste'
+        cfgGA = pd.read_sql("SELECT * FROM configurationsGA WHERE name ='%s'" % name,gaCnx)
+        parGA = pd.read_sql("SELECT * FROM parametersGA WHERE name ='%s'" % name,gaCnx)
+        rep_number = cfgGA['rep'][0]
+        ind_number = cfgGA['ind'][0]
+        n_generations = int(cfgGA['gen'][0])
+        #print(n_generations)
+        
+        for gen in range(n_generations): #generations loop
+            
+            gen_number = gen
+            print('gen %s' % gen_number)
+            old_genData = pd.read_sql(("SELECT * FROM resultsGA WHERE gen = %s AND name = '%s'" % (gen_number,name)),gaCnx)
+            #print(old_genData)
+            #print('\n')
+            old_genData['rank'] = old_genData['epam'].rank(method='dense')
+            old_genData = old_genData.sort_values(by='rank').reset_index()            
+            cutRank = int(0.2*ind_number)+1    
+            #print(old_genData)
+            fitness = old_genData.loc[old_genData['rank']==1]['epam'][0]
+            #print('gen: %s fitness = %s' % (gen_number,fitness))
+            gen_number += 1
+            #print(old_genData)
+            #print('\n')
+            print('cut rank = %s' % cutRank)
+            
+            for ind in range(ind_number):
+                
+                old_genData_ind = old_genData.loc[old_genData['ind']==ind]
+                
+                #print(old_genData_ind)
+                #print('\n')
+                genes = {}
+                
+                for index_ind, old_ind in old_genData_ind.iterrows(): #individuals loop
+
+                    rank = old_ind['rank']
+                    gene_name = old_ind['par_name']
+                    print(old_ind)
+                    
+                    if rank == 1: 
+
+                        gene_value = old_ind['par_value']
+                        genes[gene_name] = gene_value
+
+                    elif rank > 1 and rank <= cutRank:  #parent gene heritage (crossover)   
+
+                        gene_value = old_ind['par_value']*random.uniform(0.7,1.7)
+                        genes[gene_name] = gene_value
+
+                    else: #new random ind
+
+                        up = parGA.loc[parGA['parameter_name']==gene_name]['parameter_u_value'].item() #gene upper limit
+                        down = parGA.loc[parGA['parameter_name']==gene_name]['parameter_b_value'].item() #gene bottom limit
+                        #print(down)
+                        gene_value = np.random.uniform(int(down),int(up))
+                        #print(gene_value)
+                        genes[gene_name] = gene_value
+                                    
+                self.simulationGA(name,gen_number,rep_number,ind,genes)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                
+            
+
+
+
+
 
             
 
