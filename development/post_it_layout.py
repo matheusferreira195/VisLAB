@@ -30,6 +30,9 @@ import glob
 import os
 import win32com.client as com
 from random import random
+import random
+from statistics import mean
+from random import randrange, uniform
 #loading assets
 NORM_FONT= ("Roboto", 10)
 LARGE_FONT = ("Roboto", 20)
@@ -39,9 +42,12 @@ LARGE_FONT = ("Roboto", 20)
 
 cnx = sqlite3.connect(r'E:\Google Drive\Scripts\VisLab\resources\vislab.db')#, isolation_level=None)
 gaCnx = sqlite3.connect(r'E:\Google Drive\Scripts\VisLab\resources\ga.db')
+
 sqlite3.register_adapter(np.int64, lambda val: int(val))
 sqlite3.register_adapter(np.int32, lambda val: int(val))
+
 cursor = cnx.cursor()
+cursorGA = gaCnx.cursor()
 
 def formatting(tipe, path):
     skipline = 0
@@ -70,6 +76,7 @@ def formatting(tipe, path):
     
 
 def calculate_shdwy(path, dc, replication):
+
     lsa_columns = ['SimSec', 'CycleSec', 'SC', 'SG', 'Aspect', 'Prev', 'Crit', 'duetoSG']
     os.chdir(path)
     mers = [file for file in glob.glob("*.mer")]
@@ -199,8 +206,8 @@ def vissim_simulation(experiment,default = 0):
                         cnx.commit()
     else:
 
-        #Vissim.Simulation.SetAttValue('RandSeed', seed)
-        #Vissim.Simulation.SetAttValue('NumRuns', runs)
+        Vissim.Simulation.SetAttValue('RandSeed', seed)
+        Vissim.Simulation.SetAttValue('NumRuns', runs)
 
         raw_possibilities = {}
 
@@ -267,13 +274,13 @@ def vissim_simulation(experiment,default = 0):
                     cursor.execute(query)
                     cnx.commit() 
 
-                #Vissim.Net.DrivingBehaviors[0].SetAttValue(parameter_name,parameter_df_)
+                Vissim.Net.DrivingBehaviors[0].SetAttValue(parameter_name,parameter_df_)
 
-            #Vissim.Simulation.SetAttValue('RandSeed', seed)
-            #Vissim.Graphics.CurrentNetworkWindow.SetAttValue("QuickMode",1) #Ativando Quick Mode
-            #Vissim.Simulation.RunContinuous() #Iniciando Simulação 
+            Vissim.Simulation.SetAttValue('RandSeed', seed)
+            Vissim.Graphics.CurrentNetworkWindow.SetAttValue("QuickMode",1) #Ativando Quick Mode
+            Vissim.Simulation.RunContinuous() #Iniciando Simulação 
 
-            '''for index, dc_data in selected_datapts.iterrows(): #Collects perf_measure data #FIXME Trocar pra pegar os dc_data filtrados por experiemnto
+            for index, dc_data in selected_datapts.iterrows(): #Collects perf_measure data
                 
                 for replication in range(1,runs+1):
                     
@@ -314,7 +321,7 @@ def vissim_simulation(experiment,default = 0):
 
                         cursor.execute("UPDATE simulation_runs SET results = %s WHERE experiment = %s AND parameter_name = '%s' AND parameter_value = %s AND seed = %s" % (result,experiment,p_name,p_value,seedDb))
                         cnx.commit()
-        Vissim = None '''  
+        Vissim = None 
  
 class SeaofBTCapp(tk.Tk):
 
@@ -1422,6 +1429,8 @@ class CalibrationPage(tk.Frame):
         frame.pack(fill="both", expand=True, padx=20, pady=20)
         frame.place(in_=self, anchor="c", relx=.5, rely=.5)
 
+        #dc_data = generate_dcdf_test()
+        parameter_db = pd.read_csv(r'E:\Google Drive\Scripts\VisLab\resources\parameters.visdb') 
         self.runPhoto = tk.PhotoImage(file = r"E:\Google Drive\Scripts\VisLab\resources\power.png")  #https://www.flaticon.com/packs/science-121
         self.cfgPhoto = tk.PhotoImage(file = r"E:\Google Drive\Scripts\VisLab\resources\settings.png")
         self.resultsPhoto = tk.PhotoImage(file = r"E:\Google Drive\Scripts\VisLab\resources\results.png")
@@ -1438,23 +1447,332 @@ class CalibrationPage(tk.Frame):
         cfgLabel = tk.Label(frame, text="Config calibration")
         cfgLabel.grid(row=1,column=1)
         cfgButton = tk.Button(frame, text="Config calibration",
-                            command=lambda: cfgCalibration,image=self.cfgPhoto)
+                            command=lambda: self.cfgCalibration(),image=self.cfgPhoto)
         cfgButton.grid(row=2,column=1)
 
         resultsLabel = tk.Label(frame, text="Results calibration")
         resultsLabel.grid(row=1,column=3)        
         resultsButton = tk.Button(frame, text="Results calibration",
-                            command=lambda: resultsCalibration,image=self.resultsPhoto)
+                            command=lambda: self.resultsCalibration(),image=self.resultsPhoto)
         resultsButton.grid(row=2,column=3)
+        
+    def cfgCalibration(self):
+        
+        s = ttk.Style()
+        s.configure('TCombobox', background='white')
+
+        self.presets = pd.read_sql("SELECT * FROM configurationsGA",gaCnx)
+
+        self.cfgGAWindow = tk.Toplevel()
+        self.cfgGAWindow.wm_title("Genetic Algorithm configuration")
+        
+        self.cfgGAMasterFrame = tk.Frame(self.cfgGAWindow)
+        self.cfgGAMasterFrame.grid(row=0,column=0)
+
+        self.cfgGALabel = tk.Label(self.cfgGAMasterFrame, text="Config calibration")
+        self.cfgGALabel.pack(pady=15,anchor=tk.W)
+
+        self.selectCfgFrame = tk.Frame(self.cfgGAMasterFrame)
+        self.selectCfgFrame.pack(fill=tk.X)
+        self.selectCfgLabel = tk.Label(self.selectCfgFrame, text="Select saved config preset: ")
+        self.selectCfgLabel.grid(row=0,column=0)
+        self.selectCfgSvar = tk.StringVar()
+        self.selectCfgCbbox = ttk.Combobox(self.selectCfgFrame, width=5,textvariable=self.selectCfgSvar,state='readonly')
+        self.selectCfgCbbox['values'] = list(self.presets['name'].drop_duplicates())
+        self.selectCfgCbbox.bind('<<ComboboxSelected>>', lambda e: self.presetSelect(eventObject=e))
+        self.selectCfgCbbox.configure(font=('Roboto', 8))
+        self.selectCfgCbbox.grid(row=0,column=1)
+        self.selectCfgLabel2 = tk.Label(self.selectCfgFrame, text="(don't select if you want start a new one)")
+        self.selectCfgLabel2.grid(row=0,column=3)
+
+        self.nameGAFrame = tk.Frame(self.cfgGAMasterFrame)
+        self.nameGAFrame.pack(fill=tk.X)
+        self.nameGASvar = tk.StringVar()
+        self.nameGALabel = tk.Label(self.nameGAFrame, text="Preset name: ")
+        self.nameGALabel.grid(row=1,column=0,sticky='w')
+        self.nameGAEntry = tk.Entry(self.nameGAFrame,textvariable=self.nameGASvar)
+        self.nameGAEntry.grid(row=1,column=1,sticky='w')
+        self.separator1h = ttk.Separator(self.cfgGAMasterFrame, orient="horizontal")
+        self.separator1h.pack(fill=tk.X,pady=10)#grid(row=2,column=0,sticky='we',columnspan=100)
+
+        self.genGAFrame = tk.Frame(self.cfgGAMasterFrame)
+        self.genGAFrame.pack(fill=tk.X)
+        self.genGALabel = tk.Label(self.genGAFrame, text="Number of generations: ")
+        self.genGALabel.grid(row=3,column=0,sticky='w')
+        self.genGASvar = tk.StringVar()
+        self.genGAEntry = tk.Entry(self.genGAFrame,textvariable=self.genGASvar)
+        self.genGAEntry.grid(row=3,column=1,sticky='w')
+
+        self.indGAFrame = tk.Frame(self.cfgGAMasterFrame)
+        self.indGAFrame.pack(fill=tk.X)
+        self.indGALabel = tk.Label(self.indGAFrame, text="Number of individuals: ")
+        self.indGALabel.grid(row=4,column=0,sticky='w')
+        self.indGASvar = tk.StringVar()
+        self.indGAEntry = tk.Entry(self.indGAFrame, textvariable=self.indGASvar)
+        self.indGAEntry.grid(row=4,column=1,sticky='w')
+
+        self.repGAFrame = tk.Frame(self.cfgGAMasterFrame)
+        self.repGAFrame.pack(fill=tk.X)
+        self.repGALabel = tk.Label(self.repGAFrame, text="Number of replications: ")
+        self.repGALabel.grid(row=5,column=0,sticky='w')
+        self.repGASvar = tk.StringVar()
+        self.repGAEntry = tk.Entry(self.repGAFrame,textvariable=self.repGASvar)
+        self.repGAEntry.grid(row=5,column=1,sticky='w')
+        self.separator2h = ttk.Separator(self.cfgGAMasterFrame, orient="horizontal")
+        self.separator2h.pack(fill=tk.X,pady=10)
+
+        self.dp_nameGAFrame = tk.Frame(self.cfgGAMasterFrame)
+        self.dp_nameGAFrame.pack(fill=tk.X)
+        self.dp_nameGALabel = tk.Label(self.dp_nameGAFrame, text="Data Point: ")
+        self.dp_nameGALabel.grid(row=8,column=0,sticky='w')
+        self.dp_nameGASvar = tk.StringVar()
+        self.dp_nameGACbbox = ttk.Combobox(self.dp_nameGAFrame, width=25,textvariable=self.dp_nameGASvar,state='readonly')
+        self.dp_nameGACbbox['values'] = list(dc_data['Display'])
+        self.dp_nameGACbbox.bind('<<ComboboxSelected>>', lambda e: self.datapointSelect(eventObject=e))
+        self.dp_nameGACbbox.configure(font=('Roboto', 8))
+        self.dp_nameGACbbox.grid(row=8,column=1)
+
+        self.perfmeasureFrame = tk.Frame(self.cfgGAMasterFrame,bg='white')
+        self.perfmeasureFrame.pack(fill=tk.X)
+        self.perfmeasureLabel = tk.Label(self.perfmeasureFrame, text="Perf. measure: ",bg='white')
+        self.perfmeasureLabel.grid(row=9,column=0,sticky='w')
+        self.perfmeasureSvar = tk.StringVar()
+        self.perfmeasuresCbbox = ttk.Combobox(self.perfmeasureFrame,textvariable=self.perfmeasureSvar, width=25,style='TCombobox')
+        self.perfmeasuresCbbox['values'] = []
+        self.perfmeasuresCbbox.configure(font=('Roboto', 8))
+        self.perfmeasuresCbbox.grid(row=9,column=1)
+
+        self.fieldLabel = tk.Label(self.perfmeasureFrame, text="Field value: ")
+        self.fieldLabel.grid(row=9,column=2,sticky='w',pady=10)
+        self.fieldSvar = tk.StringVar()
+        self.fieldEntry = tk.Entry(self.perfmeasureFrame, textvariable=self.fieldSvar)
+        self.fieldEntry.grid(row=9,column=3,sticky='w')
+
+        self.parameterCbboxList = []
+        self.parameterUpList = []
+        self.parameterDownList = []
+
+        self.parameterFrame = tk.Frame(self.cfgGAMasterFrame)
+        self.parameterFrame.pack()
+
+        self.parameterCbboxSvar = tk.StringVar()
+        self.parameterLabel = tk.Label(self.parameterFrame, text="Parameter: ")
+        self.parameterLabel.grid(row=10,column=0,sticky='w')
+        self.parameterCbbox = ttk.Combobox(self.parameterFrame,textvariable=self.parameterCbboxSvar, width=25)
+        self.parameterCbbox['values'] = list(parameter_db['Identifier'])
+        self.parameterCbbox.configure(font=('Roboto', 8))
+        self.parameterCbbox.grid(row=10,column=1)
+        self.parameterCbboxList.append(self.parameterCbboxSvar)
+
+        self.parameterDownSvar = tk.StringVar()
+        self.parameterDownLabel = tk.Label(self.parameterFrame, text="Bottom limit: ")
+        self.parameterDownLabel.grid(row=10,column=2,sticky='w',padx=5)
+        self.parameterDown = tk.Entry(self.parameterFrame,textvariable = self.parameterDownSvar)
+        self.parameterDown.grid(row=10,column=3,sticky='w')
+        self.parameterDownList.append(self.parameterDownSvar)
+
+        self.parameterUpSvar = tk.StringVar()
+        self.parameterUpLabel = tk.Label(self.parameterFrame, text="Upper limit: ")
+        self.parameterUpLabel.grid(row=10,column=4,sticky='w',padx=5)
+        self.parameterUp = tk.Entry(self.parameterFrame,textvariable = self.parameterUpSvar)
+        self.parameterUp.grid(row=10,column=5,sticky='w')
+        self.parameterUpList.append(self.parameterUpSvar)
+
+        self.addParameterButton = tk.Button(self.parameterFrame,text='+ Parameter')
+        self.addParameterButton.bind("<Button-1>",lambda e: self.addParameter(eventObject=e))
+        self.addParameterButton.grid(row=11,column=1)
+
+        self.cfgGAWindow.protocol("WM_DELETE_WINDOW", self.onClose)
+
+    def presetSelect(self,eventObject):
+
+        selected = self.selectCfgSvar.get()
+        
+        if len(selected) != 0:
+            
+            self.parameterFrame.destroy()
+
+            del(self.parameterUpList[0])
+            del(self.parameterDownList[0])
+            del(self.parameterCbboxList[0])
+
+            dataSelected = self.presets.loc[self.presets['name']==selected].reset_index(drop=True)
+            parametersSelected = pd.read_sql("SELECT * FROM parametersGA WHERE name = '%s'" % selected,gaCnx).reset_index(drop=True)
+            
+            print(dataSelected)
+            print(parametersSelected)
+
+            self.nameGASvar.set(selected)
+            self.genGASvar.set(dataSelected['gen'][0])
+            self.indGASvar.set(dataSelected['ind'][0])
+            self.repGASvar.set(dataSelected['rep'][0])
+            self.dp_nameGASvar.set( '#%s / %s' % (dataSelected['datapoint_id'][0],dataSelected['datapoint_type'][0]))
+            self.perfmeasureSvar.set(dataSelected['perf_measure'][0])
+            self.fieldSvar.set(dataSelected['field_data'][0])
+            #print(parametersSelected)
+
+            for index, par in parametersSelected.iterrows():
+
+                #print(index)
+
+                self.parameterFrame = tk.Frame(self.cfgGAMasterFrame)
+                self.parameterFrame.pack()    
+                    
+                self.parameterCbboxSvar = tk.StringVar()
+                self.parameterLabel = tk.Label(self.parameterFrame, text="Parameter: ")
+                self.parameterLabel.grid(row=10,column=0,sticky='w')
+                self.parameterCbbox = ttk.Combobox(self.parameterFrame,textvariable=self.parameterCbboxSvar, width=25)
+                self.parameterCbbox['values'] = list(parameter_db['Identifier'])
+                self.parameterCbbox.configure(font=('Roboto', 8))
+                self.parameterCbbox.grid(row=10,column=1)
+                self.parameterCbboxList.append(self.parameterCbboxSvar)
+
+                self.parameterDownSvar = tk.StringVar()
+                self.parameterDownLabel = tk.Label(self.parameterFrame, text="Bottom limit: ")
+                self.parameterDownLabel.grid(row=10,column=2,sticky='w',padx=5)
+                self.parameterDown = tk.Entry(self.parameterFrame,textvariable = self.parameterDownSvar)
+                self.parameterDown.grid(row=10,column=3,sticky='w')
+                self.parameterDownList.append(self.parameterDownSvar)
+
+                self.parameterUpSvar = tk.StringVar()
+                self.parameterUpLabel = tk.Label(self.parameterFrame, text="Upper limit: ")
+                self.parameterUpLabel.grid(row=10,column=4,sticky='w',padx=5)
+                self.parameterUp = tk.Entry(self.parameterFrame,textvariable = self.parameterUpSvar)
+                self.parameterUp.grid(row=10,column=5,sticky='w')
+                self.parameterUpList.append(self.parameterUpSvar)
+                
+                self.parameterCbboxSvar.set(par['parameter_name'])
+                self.parameterDownSvar.set(par['parameter_b_value'])
+                self.parameterUpSvar.set(par['parameter_u_value'])
+
+                if index == len(parametersSelected.index)-1:
+
+                    self.addParameterButton = tk.Button(self.parameterFrame,text='+ Parameter')
+                    self.addParameterButton.bind("<Button-1>",lambda e: self.addParameter(eventObject=e))
+                    self.addParameterButton.grid(row=11,column=1)
+
+    def addParameter(self,eventObject):
+
+        eventObject.widget.destroy()
+
+        self.parameterFrame = tk.Frame(self.cfgGAMasterFrame)
+        self.parameterFrame.pack()    
+               
+        self.parameterCbboxSvar = tk.StringVar()
+        self.parameterLabel = tk.Label(self.parameterFrame, text="Parameter: ")
+        self.parameterLabel.grid(row=10,column=0,sticky='w')
+        self.parameterCbbox = ttk.Combobox(self.parameterFrame,textvariable=self.parameterCbboxSvar, width=25)
+        self.parameterCbbox['values'] = list(parameter_db['Identifier'])
+        self.parameterCbbox.configure(font=('Roboto', 8))
+        self.parameterCbbox.grid(row=10,column=1)
+        self.parameterCbboxList.append(self.parameterCbboxSvar)
+
+        self.parameterDownSvar = tk.StringVar()
+        self.parameterDownLabel = tk.Label(self.parameterFrame, text="Bottom limit: ")
+        self.parameterDownLabel.grid(row=10,column=2,sticky='w',padx=5)
+        self.parameterDown = tk.Entry(self.parameterFrame,textvariable = self.parameterDownSvar)
+        self.parameterDown.grid(row=10,column=3,sticky='w')
+        self.parameterDownList.append(self.parameterDownSvar)
+
+        self.parameterUpSvar = tk.StringVar()
+        self.parameterUpLabel = tk.Label(self.parameterFrame, text="Upper limit: ")
+        self.parameterUpLabel.grid(row=10,column=4,sticky='w',padx=5)
+        self.parameterUp = tk.Entry(self.parameterFrame,textvariable = self.parameterUpSvar)
+        self.parameterUp.grid(row=10,column=5,sticky='w')
+        self.parameterUpList.append(self.parameterUpSvar)
+
+        self.addParameterButton = tk.Button(self.parameterFrame,text='+ Parameter')
+        self.addParameterButton.bind("<Button-1>",lambda e: self.addParameter(eventObject=e))
+        self.addParameterButton.grid(row=11,column=1)
+
+    def datapointSelect(self,eventObject):
+
+        value = eventObject.widget.get()
+
+        dc_match = dc_data.loc[dc_data['Display'] == value]
+        data_point_type = dc_match['Type'].item()
+        Dc_Number = dc_match['No'].item()         
+
+        if data_point_type == 'Data Collector':
+            self.perfmeasuresCbbox['values'] = ['QueueDelay', 'SpeedAvgArith', 'OccupRate','Acceleration', 'Lenght', 'Vehs', 'Pers','Saturation Headway']
+
+        elif data_point_type == 'Travel Time Collector':
+            self.perfmeasuresCbbox['values'] = ['StopDelay', 'Stops', 'VehDelay', 'Vehs', 'Persons Delay', 'Persons']
+            
+        else:
+            self.perfmeasuresCbbox['values'] = ['QLen', 'QLenMax', 'QStops']
+
+    def parameterSelect(self,eventObject):
+        pass
+
+    def onClose(self):
+
+        answer = messagebox.askyesnocancel("Exit", "Do you want to save and exit?")
+
+        if answer == True:
+
+            name = self.nameGAEntry.get()
+
+            gen = self.genGAEntry.get()
+
+            ind = self.indGAEntry.get()
+
+            rep = self.repGAEntry.get()
+
+            dp_name = self.dp_nameGASvar.get()
+            dc_match = dc_data.loc[dc_data['Display'] == dp_name]
+            datapoint_type = dc_match['Type'].item()
+            Dc_Number = dc_match['No'].item() 
+            print(datapoint_type)
+            perf_measure = self.perfmeasureSvar.get()
+
+            field_data = self.fieldSvar.get()
+
+            gaCnx.execute("""INSERT OR REPLACE INTO configurationsGA (name,rep,ind,gen,datapoint_type,datapoint_id,perf_measure,field_data) 
+                            VALUES ('%s',%s,%s,%s,'%s',%s,'%s',%s)""" % (name,rep,ind,gen,datapoint_type,Dc_Number,perf_measure,field_data))
+
+            for i in range(len(self.parameterCbboxList)):
+
+                parameter = self.parameterCbboxList[i].get()
+                down = self.parameterDownList[i].get()
+                up = self.parameterUpList[i].get()
+                query = """INSERT OR REPLACE INTO parametersGA (name,parameter_name,parameter_b_value,parameter_u_value)
+                                    VALUES ('%s','%s',%s,%s)""" % (name,parameter,down,up)
+                print(query)
+                gaCnx.execute(query)
+
+            gaCnx.commit()
+
+            self.cfgGAWindow.destroy()
+
+        elif answer == False:
+
+            self.cfgGAWindow.destroy()
+
+        else:
+
+            self.cfgGAWindow.lift()
+
+    def resultsCalibration(self):
+
+        self.resultsGAWindom = tk.Toplevel()
+        self.resultsGAWindom.wm_title("GA Calibration Results")
+        
+        self.resultsGAFrame = tk.Frame(self.resultsGAWindom)
+        self.resultsGAFrame.grid(row=0,column=0)
+        
+        self.resultsGALabel = tk.Label(self.resultsGAFrame, text="GA Calibration results")
+        self.resultsGALabel.grid(row=0,column=0)
 
 class runCalibration:
 
     #data initialization
     def __init__(self,name):
+
         name = 'teste'
-        self.cfgGA = pd.read_sql(("select * from configurationsGA where name = '?'",name),gaCnx)
-        self.parGA = pd.read_sql(("select * from parametersGA where name = '?'",name),gaCnx)
-        self.resultsGA = pd.read_sql(("select * from resultsGA where name = '?'",name),gaCnx)
+        self.cfgGA = pd.read_sql(("select * from configurationsGA where name = '%s'" % name),gaCnx)
+        self.parGA = pd.read_sql(("select * from parametersGA where name = '%s'" % name),gaCnx)
+        self.resultsGA = pd.read_sql(("select * from resultsGA where name = '%s'" % name),gaCnx)
 
         self.gen0()
         self.genN()    
@@ -1478,7 +1796,7 @@ class runCalibration:
         for gene_name, gene_value in genes.items(): #sets parameters (called genes here)
 
             Vissim.Net.DrivingBehaviors[0].SetAttValue(gene_name, gene_value)
-
+            
         Vissim.Graphics.CurrentNetworkWindow.SetAttValue("QuickMode",1) #Ativando Quick Mode
         Vissim.Simulation.RunContinuous() #Iniciando Simulação 
 
@@ -1487,6 +1805,7 @@ class runCalibration:
         results = []
         
         for replication in range(1,rep+1):
+            
 
             if datapoint_name == 'Data Collector':
 
@@ -1519,13 +1838,11 @@ class runCalibration:
             seed = Vissim.Net.SimulationRuns.GetMultipleAttributes(['Randseed'])
 
             fitness = abs((result-field_value)/result)
-            
-            seed += 1
-            fitness = abs((np.random.randn() - field_value) / field_value)
+
             rep_results.append(fitness)
             results.append(result)
 
-        for gene_name, gene_value in genes.items():
+        for p_name, p_value in genes.items():
 
             query = ("""INSERT INTO resultsGA (name,seed,gen,ind,par_name,par_value,perf_measure,result_value,epam) 
             VALUES ('%s',%s,%s,%s,'%s',%s,'%s',%s,%s)""" % (str(name),str(int(seed)),str(int(gen)),
@@ -1549,7 +1866,7 @@ class runCalibration:
             
             genes = {}
 
-            for index, pdata in parGA.iterrows(): #creating gen0 ind genes
+            for index, pdata in self.parGA.iterrows(): #creating gen0 ind genes
                 
                 up = pdata['parameter_b_value']
                 down = pdata['parameter_u_value']
@@ -1561,8 +1878,6 @@ class runCalibration:
 
     def genN(self):
         
-        #TODO add name key from field in cfg window
-
         name = 'teste'
         cfgGA = pd.read_sql("SELECT * FROM configurationsGA WHERE name ='%s'" % name,gaCnx)
         parGA = pd.read_sql("SELECT * FROM parametersGA WHERE name ='%s'" % name,gaCnx)
