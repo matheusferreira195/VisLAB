@@ -1754,15 +1754,53 @@ class CalibrationPage(tk.Frame):
             self.cfgGAWindow.lift()
 
     def resultsCalibration(self):
-
-        self.resultsGAWindom = tk.Toplevel()
-        self.resultsGAWindom.wm_title("GA Calibration Results")
         
-        self.resultsGAFrame = tk.Frame(self.resultsGAWindom)
+        self.presets = pd.read_sql("SELECT * FROM configurationsGA",gaCnx)
+        self.resultsGAWindow = tk.Toplevel()
+        self.resultsGAWindow.wm_title("GA Calibration Results")
+        
+        self.resultsGAFrame = tk.Frame(self.resultsGAWindow)
         self.resultsGAFrame.grid(row=0,column=0)
         
-        self.resultsGALabel = tk.Label(self.resultsGAFrame, text="GA Calibration results")
-        self.resultsGALabel.grid(row=0,column=0)
+        self.cbboxLabelFrame = tk.Frame(self.resultsGAFrame)
+        self.cbboxLabelFrame.grid(row=0,column=0,sticky='w')
+        self.resultsGALabel = tk.Label(self.cbboxLabelFrame, text="GA Calibration results")
+        self.resultsGALabel.grid(row=0,column=0,sticky='w')
+        
+        self.selectCfgLabel = tk.Label(self.cbboxLabelFrame, text="\n Select saved config preset: ")
+        self.selectCfgLabel.grid(row=1,column=0,sticky='w')
+        self.selectCfgSvar = tk.StringVar()
+        self.selectCfgCbbox = ttk.Combobox(self.cbboxLabelFrame, width=5,textvariable=self.selectCfgSvar,state='readonly')
+        self.selectCfgCbbox['values'] = list(self.presets['name'].drop_duplicates())
+        self.selectCfgCbbox.bind('<<ComboboxSelected>>', lambda e: self.presetSelectResults(eventObject=e))
+        self.selectCfgCbbox.configure(font=('Roboto', 8))
+        self.selectCfgCbbox.grid(row=1,column=1,sticky='w')
+
+        self.perfChartLabel = tk.Label(self.resultsGAFrame, text="\n Performance: ")
+        self.perfChartLabel.grid(row=2,column=0,sticky='w')
+
+        perfChart_frame = tk.Frame(self.resultsGAFrame,highlightbackground="green", highlightcolor="green", highlightthickness=1, width=100, height=100, bd= 0)
+        perfChart_frame.grid(row=3,column=0,sticky='w')
+
+        self.perfChart_plot = Figure(figsize=(5,4), dpi=100)
+        self.perfChart_subplot = self.perfChart_plot.add_subplot(111)
+
+        self.perfChart_canvas = FigureCanvasTkAgg(self.perfChart_plot, perfChart_frame) 
+        self.perfChart_canvas.draw()
+        self.perfChart_canvas._tkcanvas.grid(row=4,column=0,sticky='e')
+        perfChart_tframe = tk.Frame(perfChart_frame)
+        perfChart_tframe.grid(row=5,column=0)
+        perfChart_toolbar = NavigationToolbar2Tk(self.perfChart_canvas,perfChart_tframe)
+
+    def presetSelectResults(self,eventObject):
+
+        
+        pass
+
+
+
+        
+
 
 class runCalibration:
 
