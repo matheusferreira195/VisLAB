@@ -1761,7 +1761,8 @@ class CalibrationPage(tk.Frame):
         
         self.resultsGAFrame = tk.Frame(self.resultsGAWindow)
         self.resultsGAFrame.grid(row=0,column=0)
-        
+
+        #perf chart section
         self.cbboxLabelFrame = tk.Frame(self.resultsGAFrame)
         self.cbboxLabelFrame.grid(row=0,column=0,sticky='w')
         self.resultsGALabel = tk.Label(self.cbboxLabelFrame, text="GA Calibration results")
@@ -1794,10 +1795,58 @@ class CalibrationPage(tk.Frame):
 
     def presetSelectResults(self,eventObject):
 
+        selected = eventObject.widget.get()
+        self.perfChart_subplot.cla()
+
+        self.perfChart_subplot.set_title("GA performance chart")
+        self.perfChart_subplot.set_ylabel("EPAM (%)")
+        self.perfChart_subplot.set_xlabel('Generations')
+
+        resultsData = pd.read_sql("SELECT * FROM resultsGA WHERE name ='%s'" % selected,gaCnx)
+        resultsDataDrop = resultsData.drop_duplicates(subset='epam').reset_index() #this table has each individual's data multiplied by the number of genes, dropping to pick only one value
+
+        alphas = [] #store the alpha individuals for each generation
+
+        genNumber = len(resultsDataDrop['gen'].drop_duplicates().index) #pick the total of generations, an easy way
         
-        pass
+        for g in range(genNumber): #iterating over generations results
 
+            alpha = resultsDataDrop.loc[resultsDataDrop['gen']==g]['epam'].sort_values().reset_index(drop=True)
+            alphas.append(alpha[0]) #storing on a list
 
+        x_data = range(genNumber)
+        y_data = alphas
+
+        self.perfChart_subplot.plot(x_data,y_data)
+        self.perfChart_canvas.draw()
+
+        #report Section
+
+        self.reportFrame = tk.Frame(self.resultsGAWindow)
+        self.reportFrame.grid(row=0,column=1)
+        
+
+        genesNumber = len(resultsData.drop_duplicates(subset='par_name').index)
+        bestIndData = resultsData.sort_values(by='epam').reset_index(drop=True).iloc[:genesNumber]
+        bestGen = bestIndData['gen'][0]
+        bestInd = bestIndData['ind'][0]
+        bestEPAM = bestIndData['epam'][0]
+
+        self.bestGenLabel = tk.Label(self.reportFrame,text='Best generation: %s' % bestGen)
+        self.bestGenLabel.grid(row=0,column=0,sticky='w')
+        self.bestIndLabel = tk.Label(self.reportFrame,text='Best individual: %s\n' % bestInd)
+        self.bestIndLabel.grid(row=1,column=0,sticky='w')
+        self.bestEPAMLabel = tk.Label(self.reportFrame,text='Best EPAM: %s %%' % (round(bestEPAM*100,2)))
+        self.bestEPAMLabel.grid(row=0,column=1,padx=10) 
+        self.geneLabel = tk.Label(self.reportFrame,text='Genes: ')
+        self.geneLabel.grid(row=2,column=0,sticky='w')
+        self.geneFrame = tk.Frame(self.reportFrame)
+        self.geneFrame.grid(row=3,column=0)
+
+        for index, gene in bestIndData.iterrows():
+
+            self.geneLabel = tk.Label(self.geneFrame,text='%s = %s' % (gene['par_name'],round(gene['par_value'],2)))
+            self.geneLabel.pack(anchor=tk.W)
 
         
 
