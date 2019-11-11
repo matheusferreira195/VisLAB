@@ -33,11 +33,12 @@ from random import random
 import random
 from statistics import mean
 from random import randrange, uniform
+
 #loading assets
 NORM_FONT= ("Roboto", 10)
 LARGE_FONT = ("Roboto", 20)
-
-
+WELCOME_FONT = ("Segoe UI", 60)
+path = os.path.realpath('..')
 #Database connection and set up
 
 cnx = sqlite3.connect(r'E:\Google Drive\Scripts\VisLab\resources\vislab.db')#, isolation_level=None)
@@ -361,24 +362,30 @@ class StartPage(tk.Frame):
         frame = tk.Frame(self)
         frame.pack(fill="both", expand=True, padx=20, pady=20)
         frame.place(in_=self, anchor="c", relx=.5, rely=.5)
+        
+        backgroundColor1 = '#202126'
+        firstFrame = tk.Frame(self, background=backgroundColor1)
+        firstFrame.pack(side=tk.LEFT,fill=tk.Y)
 
+        self.welcomeLabel = tk.Label(firstFrame,text='Vislab', font = WELCOME_FONT,background=backgroundColor1,fg="white")
+        self.welcomeLabel.grid(row=0,column=0)
         self.calPhoto = tk.PhotoImage(file = r"E:\Google Drive\Scripts\VisLab\resources\ga.png")  #https://www.flaticon.com/packs/science-121
         self.saPhoto = tk.PhotoImage(file = r"E:\Google Drive\Scripts\VisLab\resources\sa.png")
         self.flaskPhoto = tk.PhotoImage(file = r"E:\Google Drive\Scripts\VisLab\resources\flask.png")
-        label = tk.Label(frame, text="VisLab", font=LARGE_FONT)
-        label.grid(row=0,column=1)
+        #label = tk.Label(firstFrame, text="VisLab", font=LARGE_FONT)
+        #label.grid(row=0,column=1)
  
-        button = tk.Button(frame, text="Experiment board",
+        button = tk.Button(firstFrame, text="Experiment board",
                             command=lambda: controller.show_frame(Board),image=self.flaskPhoto)
-        button.grid(row=1,column=0,pady=200)
+        button.grid(row=1,column=0,pady=5)
 
-        button2 = tk.Button(frame, text="Results Dashboard",
+        button2 = tk.Button(firstFrame, text="Results Dashboard",
                             command=lambda: controller.show_frame(ResultsPage),image=self.saPhoto)
-        button2.grid(row=1,column=1,pady=200)
+        button2.grid(row=1,column=0,pady=5)
 
-        button2 = tk.Button(frame, text="Calibration",
+        button2 = tk.Button(firstFrame, text="Calibration",
                             command=lambda: controller.show_frame(CalibrationPage),image=self.calPhoto)
-        button2.grid(row=1,column=2,pady=200)
+        button2.grid(row=1,column=0,pady=5)
 
 dc_data = generate_dcdf_test()
 parameter_db = pd.read_csv(r'E:\Google Drive\Scripts\VisLab\resources\parameters.visdb')       
@@ -1099,6 +1106,151 @@ class ResultsPage(tk.Frame):
 
         self.genButton = ttk.Button(self.difmeansFrame,text='Generate report', command= self.difmeanReport)
         self.genButton.grid(row=3,column=0)
+
+        #difmeans boxplot
+
+        self.difmeansBpFrame = tk.Frame(self.frame,highlightbackground="green", highlightcolor="green", highlightthickness=1, width=100, height=100, bd= 0)
+        self.difmeansBpFrame.grid(row=4,column=0)
+
+        self.difmeansBpWidgetFrame = tk.Frame(self.difmeansBpFrame,highlightbackground="green", highlightcolor="green", highlightthickness=1, width=100, height=100, bd= 0)
+        self.difmeansBpWidgetFrame.grid(row=0,column=0)
+
+        self.difmeansBpMainLabel = tk.Label(self.difmeansBpWidgetFrame, text="Difference of means test plot", anchor=tk.CENTER)
+        self.difmeansBpMainLabel.grid(row=0,column=0)
+
+        self.difmeansBpSvarExpList = []
+        self.difmeansBpSvarParList = []
+
+        self.difmeansBpLabel1 = tk.Label(self.difmeansBpWidgetFrame, text="\nFirst Difference: \n", anchor=tk.CENTER)
+        self.difmeansBpLabel1.grid(row=1,column=0)
+        self.difmeansBpSvar1 = tk.StringVar()
+        self.difmeansBpSvar1.set('Select an experiment')
+        self.difmeansBpExp1Cbbox = ttk.Combobox(self.difmeansBpWidgetFrame,width=15,textvariable=str(self.difmeansBpSvar1),state='readonly')
+        self.difmeansBpExp1Cbbox['values'] = list(existing_experiments['id'])
+        self.difmeansBpExp1Cbbox.bind('<<ComboboxSelected>>', lambda e: self.difmeanSelectPlot(eventObject=e))
+        self.difmeansBpExp1Cbbox.grid(row=2,column=0)
+
+        self.difmeansBpSvarp1 = tk.StringVar()
+        self.difmeansBpSvarp1.set('Select a param. profile')
+        self.difmeansBpCbboxp1 = ttk.Combobox(self.difmeansBpWidgetFrame,width=30,textvariable=str(self.difmeansBpSvarp1),state='readonly')
+        self.difmeansBpCbboxp1['values'] = []
+        #self.difmeansCbboxp1.bind('<<ComboboxSelected>>', lambda e: self.difmeanSelect(eventObject=e))
+        self.difmeansBpCbboxp1.grid(row=2,column=1)
+        
+        self.difmeansBpSvar2 = tk.StringVar()
+        self.difmeansBpSvar2.set('Select an experiment')
+        self.difmeansBpExp2Cbbox = ttk.Combobox(self.difmeansBpWidgetFrame,width=15,textvariable=str(self.difmeansBpSvar2),state='readonly')
+        self.difmeansBpExp2Cbbox['values'] = list(existing_experiments['id'])
+        self.difmeansBpExp2Cbbox.bind('<<ComboboxSelected>>', lambda e: self.difmeanSelectPlot(eventObject=e))
+        self.difmeansBpExp2Cbbox.grid(row=3,column=0)
+        
+        self.difmeansBpSvarp2 = tk.StringVar()
+        self.difmeansBpSvarp2.set('Select a param. profile')
+        self.difmeansBpCbboxp2 = ttk.Combobox(self.difmeansBpWidgetFrame,width=30,textvariable=str(self.difmeansBpSvarp2),state='readonly')
+        self.difmeansBpCbboxp2['values'] = []
+        self.difmeansBpCbboxp2.grid(row=3,column=1,pady=(0,10))
+
+        self.difmeansBpLabel2 = tk.Label(self.difmeansBpWidgetFrame, text="\nSecond Difference: \n", anchor=tk.CENTER)
+        self.difmeansBpLabel2.grid(row=4,column=0)        
+        self.difmeansBpSvar3 = tk.StringVar()
+        self.difmeansBpSvar3.set('Select an experiment')
+        self.difmeansBpExp3Cbbox = ttk.Combobox(self.difmeansBpWidgetFrame,width=15,textvariable=str(self.difmeansBpSvar3),state='readonly')
+        self.difmeansBpExp3Cbbox['values'] = list(existing_experiments['id'])
+        self.difmeansBpExp3Cbbox.bind('<<ComboboxSelected>>', lambda e: self.difmeanSelectPlot(eventObject=e))
+        self.difmeansBpExp3Cbbox.grid(row=5,column=0)
+
+        self.difmeansBpSvarp3 = tk.StringVar()
+        self.difmeansBpSvarp3.set('Select a param. profile')
+        self.difmeansBpCbboxp3 = ttk.Combobox(self.difmeansBpWidgetFrame,width=30,textvariable=str(self.difmeansBpSvarp3),state='readonly')
+        self.difmeansBpCbboxp3['values'] = []
+        #self.difmeansCbboxp1.bind('<<ComboboxSelected>>', lambda e: self.difmeanSelect(eventObject=e))
+        self.difmeansBpCbboxp3.grid(row=5,column=1)
+
+
+        self.difmeansBpSvar4 = tk.StringVar()
+        self.difmeansBpSvar4.set('Select an experiment')
+        self.difmeansBpExp4Cbbox = ttk.Combobox(self.difmeansBpWidgetFrame,width=15,textvariable=str(self.difmeansBpSvar4),state='readonly')
+        self.difmeansBpExp4Cbbox['values'] = list(existing_experiments['id'])
+        self.difmeansBpExp4Cbbox.bind('<<ComboboxSelected>>', lambda e: self.difmeanSelectPlot(eventObject=e))
+        self.difmeansBpExp4Cbbox.grid(row=6,column=0,pady=(0,10))
+
+        self.difmeansBpSvarp4 = tk.StringVar()
+        self.difmeansBpSvarp4.set('Select a param. profile')
+        self.difmeansBpCbboxp4 = ttk.Combobox(self.difmeansBpWidgetFrame,width=30,textvariable=str(self.difmeansBpSvarp4),state='readonly')
+        self.difmeansBpCbboxp4['values'] = []
+        self.difmeansBpCbboxp4.grid(row=6,column=1)
+
+        self.difmeansBpLabel3 = tk.Label(self.difmeansBpWidgetFrame, text="\nThird Difference: \n", anchor=tk.CENTER)
+        self.difmeansBpLabel3.grid(row=7,column=0)
+        self.difmeansBpSvar5 = tk.StringVar()
+        self.difmeansBpSvar5.set('Select an experiment')
+        self.difmeansBpExp5Cbbox = ttk.Combobox(self.difmeansBpWidgetFrame,width=15,textvariable=str(self.difmeansBpSvar5),state='readonly')
+        self.difmeansBpExp5Cbbox['values'] = list(existing_experiments['id'])
+        self.difmeansBpExp5Cbbox.bind('<<ComboboxSelected>>', lambda e: self.difmeanSelectPlot(eventObject=e))
+        self.difmeansBpExp5Cbbox.grid(row=8,column=0)
+
+        self.difmeansBpSvarp5 = tk.StringVar()
+        self.difmeansBpSvarp5.set('Select a param. profile')
+        self.difmeansBpCbboxp5 = ttk.Combobox(self.difmeansBpWidgetFrame,width=30,textvariable=str(self.difmeansBpSvarp5),state='readonly')
+        self.difmeansBpCbboxp5['values'] = []
+        #self.difmeansCbboxp1.bind('<<ComboboxSelected>>', lambda e: self.difmeanSelect(eventObject=e))
+        self.difmeansBpCbboxp5.grid(row=8,column=1)
+
+        self.difmeansBpSvar6 = tk.StringVar()
+        self.difmeansBpSvar6.set('Select an experiment')
+        self.difmeansBpExp6Cbbox = ttk.Combobox(self.difmeansBpWidgetFrame,width=15,textvariable=str(self.difmeansBpSvar6),state='readonly')
+        self.difmeansBpExp6Cbbox['values'] = list(existing_experiments['id'])
+        self.difmeansBpExp6Cbbox.bind('<<ComboboxSelected>>', lambda e: self.difmeanSelectPlot(eventObject=e))
+        self.difmeansBpExp6Cbbox.grid(row=9,column=0)
+
+        self.difmeansBpSvarp6 = tk.StringVar()
+        self.difmeansBpSvarp6.set('Select a param. profile')
+        self.difmeansBpCbboxp6 = ttk.Combobox(self.difmeansBpWidgetFrame,width=30,textvariable=str(self.difmeansBpSvarp6),state='readonly')
+        self.difmeansBpCbboxp6['values'] = []
+        self.difmeansBpCbboxp6.grid(row=9,column=1)
+        self.genButton = ttk.Button(self.difmeansBpWidgetFrame,text='Plot', command= self.difmeanPlot)
+        self.genButton.grid(row=10,column=0,pady=10,padx= 50)
+
+        #putting svars in lists to iterate later
+        self.difmeansBpSvarExpList1 = []
+        self.difmeansBpSvarParList1 = []
+        self.difmeansBpSvarExpList2 = []
+        self.difmeansBpSvarParList2 = []
+        self.difmeansBpSvarExpList3 = []
+        self.difmeansBpSvarParList3 = []
+
+        self.difmeansBpSvarExpList1.append(self.difmeansBpSvar1)        
+        self.difmeansBpSvarExpList1.append(self.difmeansBpSvar2)
+        self.difmeansBpSvarParList1.append(self.difmeansBpSvarp1)
+        self.difmeansBpSvarParList1.append(self.difmeansBpSvarp2)
+
+        self.difmeansBpSvarExpList2.append(self.difmeansBpSvar3)
+        self.difmeansBpSvarExpList2.append(self.difmeansBpSvar4)
+        self.difmeansBpSvarParList2.append(self.difmeansBpSvarp3)        
+        self.difmeansBpSvarParList2.append(self.difmeansBpSvarp4)
+
+        self.difmeansBpSvarExpList3.append(self.difmeansBpSvar5)
+        self.difmeansBpSvarExpList3.append(self.difmeansBpSvar6)
+        self.difmeansBpSvarParList3.append(self.difmeansBpSvarp5)        
+        self.difmeansBpSvarParList3.append(self.difmeansBpSvarp6)
+
+        self.difmeansBpSvarExpMetaList = [self.difmeansBpSvarExpList1, self.difmeansBpSvarExpList2, self.difmeansBpSvarExpList3]
+        self.difmeansBpSvarParMetaList = [self.difmeansBpSvarParList1, self.difmeansBpSvarParList2, self.difmeansBpSvarParList3]
+
+        #difmeans plot
+
+        self.difmeansBpPlotFrame = tk.Frame(self.difmeansBpFrame)
+        self.difmeansBpPlotFrame.grid(row=0,column=1)
+  
+        self.difmeansBpPlotFigure = Figure(figsize=(5,4), dpi=100)
+        self.difmeansBpPlotSubplot = self.difmeansBpPlotFigure.add_subplot(111)
+        self.difmeansBpPlotCanvas = FigureCanvasTkAgg(self.difmeansBpPlotFigure, self.difmeansBpPlotFrame)
+        self.difmeansBpPlotCanvas.draw()
+        self.difmeansBpPlotCanvas._tkcanvas.grid(row=0,column=0)
+        self.difmeansBpPlotTFrame = tk.Frame(self.difmeansBpPlotFrame)
+        self.difmeansBpPlotTFrame.grid(row=1,column=0)
+        self.difmeansBpPlotToolbar = NavigationToolbar2Tk(self.difmeansBpPlotCanvas, self.difmeansBpPlotTFrame)
+
     def difmeanReport(self):
 
         try:            
@@ -1223,7 +1375,6 @@ class ResultsPage(tk.Frame):
 
     def difmeanSelect(self,eventObject):
 
-
         exp = int(eventObject.widget.get())
         simData = self.simulation_runs.loc[self.simulation_runs['experiment'] == exp]
         simCfgs = list(simData['sim_perf'].drop_duplicates())
@@ -1249,6 +1400,109 @@ class ResultsPage(tk.Frame):
         else:
 
             self.difmeansCbboxp1['values'] = labelTxt_ls
+
+    def difmeanSelectPlot(self, eventObject):
+
+        #print(eventObject.widget)
+
+        index_cbbx = self.difmeansBpWidgetFrame.winfo_children().index(eventObject.widget)
+        #print(index_cbbx)
+        #print(self.difmeansBpWidgetFrame.winfo_children())
+
+        exp = int(eventObject.widget.get())
+        simData = self.simulation_runs.loc[self.simulation_runs['experiment'] == exp]
+        simCfgs = list(simData['sim_perf'].drop_duplicates())
+        labelTxt_ls = []
+        self.cfgsDict = {}
+
+        for cfg in simCfgs:
+
+            txtData = simData.loc[simData['sim_perf']==cfg].drop_duplicates(subset='parameter_name')
+            labelTxt = ''
+
+            for index, row in txtData.iterrows():
+
+                labelTxt = labelTxt + '|%s = %s|' % (str(row['parameter_name']),str(row['parameter_value']))
+
+            self.cfgsDict[labelTxt] = cfg
+            labelTxt_ls.append(labelTxt)
+
+        self.difmeansBpWidgetFrame.winfo_children()[index_cbbx+1]['values'] = labelTxt_ls
+
+    def difmeanPlot(self):
+        
+        self.difmeansBpPlotSubplot.cla()
+        xs=[]
+        ys=[]
+        Es=[]
+        labels =[]
+
+        for i in range(3):
+
+            #print(i)
+            difExp = self.difmeansBpSvarExpMetaList[i]
+            difPar = self.difmeansBpSvarParMetaList[i]
+            #data
+            exp1 = difExp[0].get()
+            par1 = self.cfgsDict[difPar[0].get()]
+            exp2 = difExp[1].get()
+            par2 = self.cfgsDict[difPar[1].get()]
+            print(exp1)
+            dados_1 = pd.read_sql('select * from simulation_runs where experiment = %s and sim_perf = %s' % (exp1,par1),cnx)['results'].drop_duplicates()
+            dados_2 = pd.read_sql('select * from simulation_runs where experiment = %s and sim_perf = %s' % (exp2,par2),cnx)['results'].drop_duplicates()
+
+            #Analysis
+            linreg = stats.linregress(dados_1, dados_2)            
+            mean1 = dados_1.mean()
+            mean2 = dados_2.mean()
+            difmean = mean1-mean2
+            n1 = dados_1.count()
+            n2 = dados_2.count()
+            n = min(n1,n2)
+            var1 = dados_1.std()**2
+            var2 = dados_2.std()**2
+            r_values = stats.pearsonr(dados_1,dados_2)
+            r = r_values[0]
+            r_p = r_values[1]
+            df = n-1
+            statt = stats.ttest_rel(dados_1,dados_2)
+
+            if r_p < 0.05:
+                #dependent
+
+                difData = dados_1 - dados_2
+                difData_std = difData.std()
+                talfa = stats.t.ppf(0.975, df)
+                difData_n = difData.count()
+                mean = difData.mean() #mean of differences
+                E = talfa*(difData_std/np.sqrt(difData_n))
+
+                tp = 'Paired'
+                
+            else:
+                #independent
+                talfa = stats.t.ppf(0.975, df)
+                stdn1 = var1/n1
+                stdn2 = var2/n2
+                mean = difmean #difference of means
+
+                E = talfa*np.sqrt(stdn1+stdn2)
+
+                tp = 'Independent'
+            #print(tp)
+            x = i#list(labels)
+            y = mean
+            e = E
+            xs.append(x)
+            ys.append(y)
+            Es.append(E)
+            labels.append('%sº difference\n %s' % (i+1,tp))
+
+        self.difmeansBpPlotSubplot.set_ylabel(list(self.datapoints_df.loc[self.datapoints_df['experiment']==(int(exp1))]['perf_measure'].drop_duplicates()))   
+        self.difmeansBpPlotSubplot.errorbar(labels, ys, yerr=Es, fmt='s',capsize=5)
+        self.difmeansBpPlotSubplot.set_xticklabels(labels,rotation=45,fontsize=8)
+        self.difmeansBpPlotFigure.tight_layout()        
+        self.difmeansBpPlotCanvas.draw()
 
     def expSelect(self,eventObject):
 
@@ -1847,9 +2101,6 @@ class CalibrationPage(tk.Frame):
 
             self.geneLabel = tk.Label(self.geneFrame,text='%s = %s' % (gene['par_name'],round(gene['par_value'],2)))
             self.geneLabel.pack(anchor=tk.W)
-
-        
-
 
 class runCalibration:
 
