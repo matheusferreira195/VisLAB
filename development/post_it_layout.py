@@ -33,16 +33,21 @@ from random import random
 import random
 from statistics import mean
 from random import randrange, uniform
+import sys,os
+from tkinter import filedialog
+
+sys.path.append(os.path.realpath('..'))
 
 #loading assets
-NORM_FONT= ("Roboto", 10)
+NORM_FONT= ("Segoe UI", 10)
+NORM_FONT_BOLD= ("Segoe UI Bold", 20)
 LARGE_FONT = ("Roboto", 20)
 WELCOME_FONT = ("Segoe UI", 60)
-path = os.path.realpath('..')
+path = os.path.realpath('..')+r'\VisLab'
 #Database connection and set up
-
-cnx = sqlite3.connect(r'E:\Google Drive\Scripts\VisLab\resources\vislab.db')#, isolation_level=None)
-gaCnx = sqlite3.connect(r'E:\Google Drive\Scripts\VisLab\resources\ga.db')
+print(path)
+cnx = sqlite3.connect(path + r'\resources\vislab.db')#, isolation_level=None)
+gaCnx = sqlite3.connect(path + r'\resources\ga.db')
 
 sqlite3.register_adapter(np.int64, lambda val: int(val))
 sqlite3.register_adapter(np.int32, lambda val: int(val))
@@ -141,9 +146,9 @@ def calculate_shdwy(path, dc, replication):
         
 def vissim_simulation(experiment,default = 0):
 
-    '''Vissim = None #com.Dispatch('Vissim.Vissim')
+    Vissim = None #com.Dispatch('Vissim.Vissim')
     Vissim = com.Dispatch("Vissim.Vissim") #Abrindo o Vissim
-    path_network =r'E:\Google Drive\Scripts\VisLab\development\net\teste\teste.inpx'
+    path_network = vissimFile
     flag = False 
     Vissim.LoadNet(path_network, flag) #Carregando o arquivo'''
 
@@ -199,7 +204,7 @@ def vissim_simulation(experiment,default = 0):
                                                     str(dc_data['time_p'])))
                     
 
-                    for p_name,p_value in row.iteritems():
+                    for p_name,p_value in dc_data.iteritems():
 
                         seedDb = seed + replication*seed_inc
 
@@ -359,36 +364,78 @@ class StartPage(tk.Frame):
     def __init__(self, parent, controller):
 
         tk.Frame.__init__(self,parent)
-        frame = tk.Frame(self)
-        frame.pack(fill="both", expand=True, padx=20, pady=20)
-        frame.place(in_=self, anchor="c", relx=.5, rely=.5)
-        
+
         backgroundColor1 = '#202126'
+        backgroundColor2 = '#3d68d5'
+
         firstFrame = tk.Frame(self, background=backgroundColor1)
         firstFrame.pack(side=tk.LEFT,fill=tk.Y)
 
-        self.welcomeLabel = tk.Label(firstFrame,text='Vislab', font = WELCOME_FONT,background=backgroundColor1,fg="white")
-        self.welcomeLabel.grid(row=0,column=0)
-        self.calPhoto = tk.PhotoImage(file = r"E:\Google Drive\Scripts\VisLab\resources\ga.png")  #https://www.flaticon.com/packs/science-121
-        self.saPhoto = tk.PhotoImage(file = r"E:\Google Drive\Scripts\VisLab\resources\sa.png")
-        self.flaskPhoto = tk.PhotoImage(file = r"E:\Google Drive\Scripts\VisLab\resources\flask.png")
-        #label = tk.Label(firstFrame, text="VisLab", font=LARGE_FONT)
-        #label.grid(row=0,column=1)
- 
-        button = tk.Button(firstFrame, text="Experiment board",
-                            command=lambda: controller.show_frame(Board),image=self.flaskPhoto)
-        button.grid(row=1,column=0,pady=5)
+        self.welcomeLabel = tk.Label(firstFrame,text='Vislab', font = WELCOME_FONT,background=backgroundColor1,fg='white')
+        self.welcomeLabel.grid(row=0,column=0,sticky='w',padx=50,pady=(100,0))
+        self.calPhoto = tk.PhotoImage(file = path + r"\resources\ga.png")  #https://www.flaticon.com/packs/science-121
+        self.saPhoto = tk.PhotoImage(file = path + r"\resources\sa.png")
+        self.flaskPhoto = tk.PhotoImage(file = path + r"\resources\flask.png")
+        self.folderPhoto = tk.PhotoImage(file = path + r"\resources\folder.png")
+        self.emptyVideo1 = tk.PhotoImage(file = path + r"\resources\video1.png")
+        self.emptyVideo2 = tk.PhotoImage(file = path + r"\resources\video2.png")
 
-        button2 = tk.Button(firstFrame, text="Results Dashboard",
-                            command=lambda: controller.show_frame(ResultsPage),image=self.saPhoto)
-        button2.grid(row=1,column=0,pady=5)
+        button = tk.Button(firstFrame, text="   Experiment board",
+                            command=lambda: controller.show_frame(Board),image=self.flaskPhoto,background=backgroundColor1, highlightthickness = 0, bd = 0,compound="left",fg='white')
+        button.grid(row=1,column=0,pady=(50,0),padx=50,sticky='w')
 
-        button2 = tk.Button(firstFrame, text="Calibration",
-                            command=lambda: controller.show_frame(CalibrationPage),image=self.calPhoto)
-        button2.grid(row=1,column=0,pady=5)
+        button2 = tk.Button(firstFrame, text="   Results Dashboard",
+                            command=lambda: controller.show_frame(ResultsPage),image=self.saPhoto,background=backgroundColor1, highlightthickness = 0, bd = 0,compound="left",fg='white')
+        button2.grid(row=2,column=0,pady=5,padx=50,sticky='w')
+
+        button2 = tk.Button(firstFrame, text="   Calibration",
+                            command=lambda: controller.show_frame(CalibrationPage),image=self.calPhoto,background=backgroundColor1, highlightthickness = 0, bd = 0,compound="left",fg='white')
+        button2.grid(row=3,column=0,pady=5,padx=50,sticky='w')
+
+        button3 = tk.Button(firstFrame, text="   Open Vissim net file (.ipnx)",
+                            command= self.openFile,image=self.folderPhoto,background=backgroundColor1, highlightthickness = 0, bd = 0,compound="left",fg='white')
+        button3.grid(row=4,column=0,pady=5,padx=50,sticky='w')
+
+        secondFrame = tk.Frame(self, background=backgroundColor2)
+        secondFrame.pack(fill=tk.BOTH,side=tk.RIGHT,expand=True)
+
+        labelVideo1 = tk.Label(secondFrame,text='Welcome tutorial', font=NORM_FONT,background=backgroundColor2,fg='black',compound='top',image=self.emptyVideo1,anchor='w')
+        labelVideo1.grid(row=0,column=0,pady=(50,0),padx=(50),sticky='w')
+
+        minivideosFrame = tk.Frame(secondFrame, background=backgroundColor2)
+        minivideosFrame.grid(row=1,column=0,pady=(5,0),sticky='w')
+
+        labelVideo2 = tk.Label(minivideosFrame,text='How to generate reports', font=NORM_FONT,background=backgroundColor2,fg='black',compound='top',image=self.emptyVideo2,anchor='w')
+        labelVideo2.grid(row=1,column=0,pady=(50,0),padx=(50),sticky='w')
+
+        textFrame = tk.Frame(secondFrame, background=backgroundColor2)
+        textFrame.grid(row=0,column=1,pady=(50,0),padx=(50),sticky='w')
+
+        labelIntro = tk.Label(textFrame,text='Contribute', font=NORM_FONT_BOLD,background=backgroundColor2,fg='black',anchor=tk.W, justify=tk.LEFT)
+        labelIntro.grid(row=0,column=3,pady=(50,0),padx=(10),sticky='w')
+
+        introtext = "You can contribute with this open project on GitHub:\nhttps://github.com/matheusferreira195/VisLAB"
+        introText = tk.Label(textFrame, text=introtext,font=NORM_FONT,background=backgroundColor2,fg='black',borderwidth=0,anchor=tk.W, justify=tk.LEFT)
+        introText.grid(row=1,column=3,pady=(5,0),padx=(10),sticky='w')
+        
+        labelAbout = tk.Label(textFrame,text='Changelog', font=NORM_FONT_BOLD,background=backgroundColor2,fg='black',anchor=tk.W, justify=tk.LEFT)
+        labelAbout.grid(row=2,column=3,pady=(5,0),padx=(10),sticky='w')
+
+        abouttext = """0.1.1: We are live!"""
+        aboutText = tk.Label(textFrame,text=abouttext, font=NORM_FONT,background=backgroundColor2,fg='black',borderwidth=0,anchor=tk.W, justify=tk.LEFT)
+        aboutText.grid(row=3,column=3,pady=(5,0),padx=(10),sticky='w')
+
+
+
+    def openFile(self):
+
+            global vissimFile
+            vissimFile = filedialog.askdirectory()
+
+
 
 dc_data = generate_dcdf_test()
-parameter_db = pd.read_csv(r'E:\Google Drive\Scripts\VisLab\resources\parameters.visdb')       
+parameter_db = pd.read_csv(path + r'\resources\parameters.visdb')       
 class Board(tk.Frame):
 
     #Experiment page, where the user models the sensitivity analysis experiments
@@ -436,12 +483,8 @@ class Board(tk.Frame):
         button_back.grid(row=0,column=1)
         
         button_calibration = tk.Button(self, text="Calibration",
-                            command=lambda: controller.show_frame(PageTwo))
+                            command=lambda: controller.show_frame(CalibrationPage))
         button_calibration.grid(row=0,column=2)
-        
-        button_signal = tk.Button(self, text="Signal Calibration",
-                            command=lambda: controller.show_frame(PageTwo))
-        button_signal.grid(row=0,column=3)
 
         button_results = tk.Button(self, text="Results Dashboard",
                        command=lambda: controller.show_frame(ResultsPage))
@@ -823,6 +866,7 @@ class edit_windows(tk.Frame):
         cnx.commit() #TODO Fazer com que todo o programa trabalhe com tabelas temporárias enquanto o user nao der "save"
 
     def destroy_exp_cfg(self, db_ids):
+
         print(db_ids)
 
         cursor.execute('DELETE FROM datapoints WHERE ID = ?', (int(db_ids[0]),))
@@ -2118,9 +2162,9 @@ class runCalibration:
 
     def simulationGA(self,name,gen,rep,ind,genes):
 
-        '''Vissim = None #com.Dispatch('Vissim.Vissim')
+        Vissim = None #com.Dispatch('Vissim.Vissim')
         Vissim = com.Dispatch("Vissim.Vissim") #Abrindo o Vissim
-        path_network =r'E:\Google Drive\Scripts\VisLab\development\net\teste\teste.inpx'
+        path_network = vissimFile
         flag = False 
         Vissim.LoadNet(path_network, flag) #Carregando o arquivo'''
 
