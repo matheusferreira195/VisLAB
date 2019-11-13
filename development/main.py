@@ -337,7 +337,7 @@ class SeaofBTCapp(tk.Tk):
 
         self.frames = {}
 
-        for F in (StartPage, Board, ResultsPage, CalibrationPage):
+        for F in (StartPage, Board, ResultsPage, CalibrationPage, ResultsPage2):
 
             frame = F(container, self)
 
@@ -995,7 +995,7 @@ class ResultsPage(tk.Frame):
         self.canvas.bind("<Configure>", self.onFrameConfigure)
 
         self.frameR = tk.Frame(self.canvas, background='white')    
-        self.canvas.create_window((10,10), window=self.frameR, anchor="nw", 
+        self.canvas.create_window((6,6), window=self.frameR, anchor="nw", 
                                   tags="self.frameR")
        
         self.plotsFrame = tk.Frame(self.frameR, background='white') 
@@ -1060,7 +1060,7 @@ class ResultsPage(tk.Frame):
         lineChart_cbbox.bind('<<ComboboxSelected>>', lambda e: self.plotLinechart(eventObject = e)) 
         lineChart_cbbox.grid(row=2,column=0, sticky='w', padx=(10), pady=(0,20))
 
-        self.lineChart_plot = Figure(figsize=(5,4), dpi=100)
+        self.lineChart_plot = Figure(figsize=(5,3), dpi=100)
         self.lineChart_subplot = self.lineChart_plot.add_subplot(111)
         
         self.lineChart_canvas = FigureCanvasTkAgg(self.lineChart_plot, lineChart_frame) 
@@ -1108,7 +1108,7 @@ class ResultsPage(tk.Frame):
         self.scatterChart_p2cbbox.bind('<<ComboboxSelected>>', lambda e: self.plotScatterchart(eventObject = e)) 
         self.scatterChart_p2cbbox.grid(row=6,column=0, sticky='w',padx=10)
     
-        self.scatterChart_plot = Figure(figsize=(5,4), dpi=100)
+        self.scatterChart_plot = Figure(figsize=(5,3), dpi=100)
         self.scatterChart_subplot = self.scatterChart_plot.add_subplot(111)
 
         self.scatterChart_canvas = FigureCanvasTkAgg(self.scatterChart_plot, scatterChart_frame) 
@@ -1142,7 +1142,7 @@ class ResultsPage(tk.Frame):
         self.boxplotexpCbbox.bind('<<ComboboxSelected>>', lambda e: self.boxPlot(eventObject=e))
         self.boxplotexpCbbox.grid(row=8,column=0,sticky='w', padx=(10))
         
-        self.boxplotFigure = Figure(figsize=(5,4), dpi=100)
+        self.boxplotFigure = Figure(figsize=(5,3), dpi=100)
         self.boxplotSubplot = self.boxplotFigure.add_subplot(111)
         self.boxplotCanvas = FigureCanvasTkAgg(self.boxplotFigure, self.boxplotFrame)
         self.boxplotCanvas.draw()
@@ -1176,7 +1176,7 @@ class ResultsPage(tk.Frame):
         self.ciboxplotexpCbbox.bind('<<ComboboxSelected>>', lambda e: self.ciboxPlot(eventObject=e))
         self.ciboxplotexpCbbox.grid(row=10,column=0,sticky='w', padx=(10))
         
-        self.ciboxplotFigure = Figure(figsize=(5,4), dpi=100)
+        self.ciboxplotFigure = Figure(figsize=(5,3), dpi=100)
         self.ciboxplotSubplot = self.ciboxplotFigure.add_subplot(111)
         self.ciboxplotCanvas = FigureCanvasTkAgg(self.ciboxplotFigure, self.ciboxplotFrame)
         self.ciboxplotCanvas.draw()
@@ -1386,7 +1386,7 @@ class ResultsPage(tk.Frame):
         self.difmeansBpPlotFrame = tk.Frame(self.difmeansBpFrame)
         self.difmeansBpPlotFrame.grid(row=1,column=0)
   
-        self.difmeansBpPlotFigure = Figure(figsize=(5,4), dpi=100)
+        self.difmeansBpPlotFigure = Figure(figsize=(5,3), dpi=100)
         self.difmeansBpPlotSubplot = self.difmeansBpPlotFigure.add_subplot(111)
         self.difmeansBpPlotCanvas = FigureCanvasTkAgg(self.difmeansBpPlotFigure, self.difmeansBpPlotFrame)
         self.difmeansBpPlotCanvas.draw()
@@ -1395,7 +1395,6 @@ class ResultsPage(tk.Frame):
         self.difmeansBpPlotTFrame.grid(row=2,column=0)
         self.difmeansBpPlotToolbar = NavigationToolbar2Tk(self.difmeansBpPlotCanvas, self.difmeansBpPlotTFrame)
     
-        
     def difmeanCfg(self):
 
         existing_experiments_qry = "SELECT * FROM experiments"
@@ -1861,6 +1860,16 @@ class ResultsPage(tk.Frame):
         '''Reset the scroll region to encompass the inner frame'''
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
+class ResultsPage2(tk.Frame):
+    def __init__(self, parent, controller):
+
+        backgroundColor1 = '#202126'
+        backgroundColor2 = '#3d68d5'
+        WELCOME_FONT_RESULTS = ("Segoe UI", 40)
+        NORM_FONT_RESULTS = ("Segoe UI", 15)
+        TINY_FONT_RESULTS = ("Segoe UI", 10)
+        tk.Frame.__init__(self,parent)
+    
 class CalibrationPage(tk.Frame):
 
     def __init__(self, parent, controller):
