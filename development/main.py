@@ -967,8 +967,83 @@ class ResultsPage(tk.Frame):
 
     def __init__(self, parent, controller):
 
+        backgroundColor1 = '#202126'
+        backgroundColor2 = '#3d68d5'
+        WELCOME_FONT_RESULTS = ("Segoe UI", 40)
+        NORM_FONT_RESULTS = ("Segoe UI", 15)
         tk.Frame.__init__(self,parent)
 
+        #icons
+        self.lineIcon = tk.PhotoImage(file = path + r"\resources\line-graph.png")  #https://www.flaticon.com/packs/science-121
+        self.scatterIcon = tk.PhotoImage(file = path + r"\resources\scatter-plot.png")
+        self.boxplotIcon = tk.PhotoImage(file = path + r"\resources\box-plot.png")
+        #self.folderPhoto = tk.PhotoImage(file = path + r"\resources\folder.png")
+        #self.emptyVideo1 = tk.PhotoImage(file = path + r"\resources\video1.png")
+        #self.emptyVideo2 = tk.PhotoImage(file = path + r"\resources\video2.png")
+
+        #left side bar
+        self.sideFrame = tk.Frame(self, background=backgroundColor1)
+        self.sideFrame.pack(side=tk.LEFT, fill=tk.Y)
+
+        self.titleLabel = tk.Label(self.sideFrame, text='Sensitivity\nAnalysis\nResults',
+                                                     font = WELCOME_FONT_RESULTS,
+                                                     background=backgroundColor1,
+                                                     fg=backgroundColor2, 
+                                                     anchor=tk.W, 
+                                                     justify=tk.LEFT)
+        self.titleLabel.grid(row=0,column=0, sticky='w', padx=(10), pady=(50,20))
+
+
+
+        self.lineLabel = tk.Label(self.sideFrame, text=' Line plot',
+                                                     font = NORM_FONT_RESULTS,
+                                                     background=backgroundColor1,
+                                                     fg=backgroundColor2, 
+                                                     anchor=tk.W, 
+                                                     justify=tk.LEFT, 
+                                                     image=self.lineIcon,
+                                                     compound='left')
+        #self.lineLabel.grid(row=1,column=0, sticky='w', padx=(10), pady=20)
+
+        self.scatterLabel = tk.Label(self.sideFrame, text=' Scatter plot',
+                                                     font = NORM_FONT_RESULTS,
+                                                     background=backgroundColor1,
+                                                     fg=backgroundColor2, 
+                                                     anchor=tk.W, 
+                                                     justify=tk.LEFT, 
+                                                     image=self.scatterIcon,
+                                                     compound='left')
+        self.titleLabel.grid(row=2,column=0, sticky='w', padx=(10), pady=20)
+
+        self.boxplotLabel = tk.Label(self.sideFrame, text='Profiles box plot',
+                                                     font = NORM_FONT_RESULTS,
+                                                     background=backgroundColor2,
+                                                     fg='white', 
+                                                     anchor=tk.W, 
+                                                     justify=tk.LEFT, 
+                                                     image=self.boxplotIcon,
+                                                     compound='left')
+        self.titleLabel.grid(row=3,column=0, sticky='w', padx=(10), pady=(20,20))
+
+        
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        #right side plots
         self.canvas = tk.Canvas(self, borderwidth=0, background="#ffffff",height='800',width='1510')
         self.frame = tk.Frame(self.canvas, background="#ffffff")
         self.vsb = tk.Scrollbar(self, orient="vertical", command=self.canvas.yview)
@@ -1008,10 +1083,10 @@ class ResultsPage(tk.Frame):
         
         self.lineChart_svar = tk.StringVar()
         self.lineChart_svar.set('Select a experiment')
-        lineChart_cbbox = ttk.Combobox(lineChart_frame, width=5,textvariable=str(self.lineChart_svar),state='readonly')
+        lineChart_cbbox = ttk.Combobox(self.sideFrame, width=5,textvariable=str(self.lineChart_svar),state='readonly')
         lineChart_cbbox['values'] = list(existing_experiments['id'])
         lineChart_cbbox.bind('<<ComboboxSelected>>', lambda e: self.plotLinechart(eventObject = e)) 
-        lineChart_cbbox.grid(row=3,column=1)
+        lineChart_cbbox.grid(row=2,column=1)
 
         self.lineChart_plot = Figure(figsize=(5,4), dpi=100)
         self.lineChart_subplot = self.lineChart_plot.add_subplot(111)
@@ -1027,31 +1102,31 @@ class ResultsPage(tk.Frame):
         
         scatterChart_frame = tk.Frame(self.frame,highlightbackground="green", highlightcolor="green", highlightthickness=1, width=100, height=100, bd= 0)
         scatterChart_frame.grid(row=2,column=0)
-        scatterChart_label = tk.Label(scatterChart_frame,text="" ,anchor=tk.E)
+        scatterChart_label = tk.Label(self.frame,text="" ,anchor=tk.E)
         scatterChart_label.grid(row=0, column=1)        
         scatterChart_framewidget = tk.Frame(scatterChart_frame)
         scatterChart_framewidget.grid(row=3,column=1, sticky='w')
 
         self.scatterChart_esvar = tk.StringVar()
         self.scatterChart_esvar.set('Select a experiment')
-        scatterChart_ecbbox = ttk.Combobox(scatterChart_framewidget, width=5,textvariable=str(self.scatterChart_esvar),state='readonly')
+        scatterChart_ecbbox = ttk.Combobox(self.sideFrame, width=5,textvariable=str(self.scatterChart_esvar),state='readonly')
         scatterChart_ecbbox['values'] = list(existing_experiments['id'])
         scatterChart_ecbbox.bind('<<ComboboxSelected>>', lambda e: self.expSelect(eventObject = e)) 
-        scatterChart_ecbbox.grid(row=0,column=0, sticky='w')
+        scatterChart_ecbbox.grid(row=3,column=1, sticky='w')
 
         self.scatterChart_p1svar = tk.StringVar()
         self.scatterChart_p1svar.set('Select a parameter level')
-        self.scatterChart_p1cbbox = ttk.Combobox(scatterChart_framewidget, width=30,textvariable=str(self.scatterChart_p1svar),state='readonly')
+        self.scatterChart_p1cbbox = ttk.Combobox(self.sideFrame, width=30,textvariable=str(self.scatterChart_p1svar),state='readonly')
         self.scatterChart_p1cbbox['values'] = []
         self.scatterChart_p1cbbox.bind('<<ComboboxSelected>>', lambda e: self.plotScatterchart(eventObject = e)) 
-        self.scatterChart_p1cbbox.grid(row=1,column=0, sticky='w')
+        self.scatterChart_p1cbbox.grid(row=4,column=1, sticky='w')
 
         self.scatterChart_p2svar = tk.StringVar()
         self.scatterChart_p2svar.set('Select another parameter level')
-        self.scatterChart_p2cbbox = ttk.Combobox(scatterChart_framewidget, width=30,textvariable=str(self.scatterChart_p2svar),state='readonly')
+        self.scatterChart_p2cbbox = ttk.Combobox(self.sideFrame, width=30,textvariable=str(self.scatterChart_p2svar),state='readonly')
         self.scatterChart_p2cbbox['values'] = []
         self.scatterChart_p2cbbox.bind('<<ComboboxSelected>>', lambda e: self.plotScatterchart(eventObject = e)) 
-        self.scatterChart_p2cbbox.grid(row=2,column=0, sticky='w')
+        self.scatterChart_p2cbbox.grid(row=5,column=1, sticky='w')
 
         self.scatterChart_plot = Figure(figsize=(5,4), dpi=100)
         self.scatterChart_subplot = self.scatterChart_plot.add_subplot(111)
@@ -1073,10 +1148,10 @@ class ResultsPage(tk.Frame):
 
         self.boxplotSvar = tk.StringVar()
         self.boxplotSvar.set('Select an experiment')
-        self.boxplotexpCbbox = ttk.Combobox(self.boxplotWidgetframe,width=15,textvariable=str(self.boxplotSvar),state='readonly')
+        self.boxplotexpCbbox = ttk.Combobox(self.sideFrame,width=15,textvariable=str(self.boxplotSvar),state='readonly')
         self.boxplotexpCbbox['values'] = list(existing_experiments['id'])
         self.boxplotexpCbbox.bind('<<ComboboxSelected>>', lambda e: self.boxPlot(eventObject=e))
-        self.boxplotexpCbbox.grid(row=1,column=1)
+        self.boxplotexpCbbox.grid(row=6,column=1)
 
         self.boxplotFigure = Figure(figsize=(5,4), dpi=100)
         self.boxplotSubplot = self.boxplotFigure.add_subplot(111)
@@ -1095,10 +1170,10 @@ class ResultsPage(tk.Frame):
         self.ciboxplotWidgetframe.grid(row=0,column=1)
         self.ciboxplotSvar = tk.StringVar()
         self.ciboxplotSvar.set('Select an experiment')
-        self.ciboxplotexpCbbox = ttk.Combobox(self.ciboxplotWidgetframe,width=15,textvariable=str(self.ciboxplotSvar),state='readonly')
+        self.ciboxplotexpCbbox = ttk.Combobox(self.sideFrame,width=15,textvariable=str(self.ciboxplotSvar),state='readonly')
         self.ciboxplotexpCbbox['values'] = list(existing_experiments['id'])
         self.ciboxplotexpCbbox.bind('<<ComboboxSelected>>', lambda e: self.ciboxPlot(eventObject=e))
-        self.ciboxplotexpCbbox.grid(row=1,column=1)
+        self.ciboxplotexpCbbox.grid(row=7,column=1)
         self.ciboxplotFigure = Figure(figsize=(5,4), dpi=100)
         self.ciboxplotSubplot = self.ciboxplotFigure.add_subplot(111)
         self.ciboxplotCanvas = FigureCanvasTkAgg(self.ciboxplotFigure, self.ciboxplotFrame)
@@ -1118,34 +1193,34 @@ class ResultsPage(tk.Frame):
 
         self.difmeansSvar1 = tk.StringVar()
         self.difmeansSvar1.set('Select an experiment')
-        self.difmeansExp1Cbbox = ttk.Combobox(self.difmeansFrame,width=15,textvariable=str(self.difmeansSvar1),state='readonly')
+        self.difmeansExp1Cbbox = ttk.Combobox(self.sideFrame,width=15,textvariable=str(self.difmeansSvar1),state='readonly')
         self.difmeansExp1Cbbox['values'] = list(existing_experiments['id'])
         self.difmeansExp1Cbbox.bind('<<ComboboxSelected>>', lambda e: self.difmeanSelect(eventObject=e))
-        self.difmeansExp1Cbbox.grid(row=1,column=0)
+        self.difmeansExp1Cbbox.grid(row=8,column=1)
 
         self.difmeansSvarp1 = tk.StringVar()
         self.difmeansSvarp1.set('Select a param. profile')
-        self.difmeansCbboxp1 = ttk.Combobox(self.difmeansFrame,width=30,textvariable=str(self.difmeansSvarp1),state='readonly')
+        self.difmeansCbboxp1 = ttk.Combobox(self.sideFrame,width=30,textvariable=str(self.difmeansSvarp1),state='readonly')
         self.difmeansCbboxp1['values'] = []
         #self.difmeansCbboxp1.bind('<<ComboboxSelected>>', lambda e: self.difmeanSelect(eventObject=e))
-        self.difmeansCbboxp1.grid(row=1,column=1)
+        self.difmeansCbboxp1.grid(row=9,column=2)
 
         self.difmeansSvar2 = tk.StringVar()
         self.difmeansSvar2.set('Select an experiment')
-        self.difmeansExp2Cbbox = ttk.Combobox(self.difmeansFrame,width=15,textvariable=str(self.difmeansSvar2),state='readonly')
+        self.difmeansExp2Cbbox = ttk.Combobox(self.sideFrame,width=15,textvariable=str(self.difmeansSvar2),state='readonly')
         self.difmeansExp2Cbbox['values'] = list(existing_experiments['id'])
         self.difmeansExp2Cbbox.bind('<<ComboboxSelected>>', lambda e: self.difmeanSelect(eventObject=e))
-        self.difmeansExp2Cbbox.grid(row=2,column=0)
+        self.difmeansExp2Cbbox.grid(row=10,column=1)
 
         self.difmeansSvarp2 = tk.StringVar()
         self.difmeansSvarp2.set('Select a param. profile')
-        self.difmeansCbboxp2 = ttk.Combobox(self.difmeansFrame,width=30,textvariable=str(self.difmeansSvarp2),state='readonly')
+        self.difmeansCbboxp2 = ttk.Combobox(self.sideFrame,width=30,textvariable=str(self.difmeansSvarp2),state='readonly')
         self.difmeansCbboxp2['values'] = []
         #self.difmeansCbboxp2.bind('<<ComboboxSelected>>', lambda e: self.difmeanSelect(eventObject=e,tp=1))
-        self.difmeansCbboxp2.grid(row=2,column=1)
+        self.difmeansCbboxp2.grid(row=11,column=2)
 
-        self.genButton = ttk.Button(self.difmeansFrame,text='Generate report', command= self.difmeanReport)
-        self.genButton.grid(row=3,column=0)
+        self.genButton = ttk.Button(self.sideFrame,text='Generate report', command= self.difmeanReport)
+        self.genButton.grid(row=12,column=1)
 
         #difmeans boxplot
 
@@ -1155,101 +1230,101 @@ class ResultsPage(tk.Frame):
         self.difmeansBpWidgetFrame = tk.Frame(self.difmeansBpFrame,highlightbackground="green", highlightcolor="green", highlightthickness=1, width=100, height=100, bd= 0)
         self.difmeansBpWidgetFrame.grid(row=0,column=0)
 
-        self.difmeansBpMainLabel = tk.Label(self.difmeansBpWidgetFrame, text="Difference of means test plot", anchor=tk.CENTER)
+        self.difmeansBpMainLabel = tk.Label(self.difmeansBpFrame, text="Difference of means test plot", anchor=tk.CENTER)
         self.difmeansBpMainLabel.grid(row=0,column=0)
 
         self.difmeansBpSvarExpList = []
         self.difmeansBpSvarParList = []
 
-        self.difmeansBpLabel1 = tk.Label(self.difmeansBpWidgetFrame, text="\nFirst Difference: \n", anchor=tk.CENTER)
-        self.difmeansBpLabel1.grid(row=1,column=0)
+        self.difmeansBpLabel1 = tk.Label(self.sideFrame, text="\nFirst Difference: \n", anchor=tk.CENTER)
+        self.difmeansBpLabel1.grid(row=13,column=0)
         self.difmeansBpSvar1 = tk.StringVar()
         self.difmeansBpSvar1.set('Select an experiment')
-        self.difmeansBpExp1Cbbox = ttk.Combobox(self.difmeansBpWidgetFrame,width=15,textvariable=str(self.difmeansBpSvar1),state='readonly')
+        self.difmeansBpExp1Cbbox = ttk.Combobox(self.sideFrame,width=15,textvariable=str(self.difmeansBpSvar1),state='readonly')
         self.difmeansBpExp1Cbbox['values'] = list(existing_experiments['id'])
         self.difmeansBpExp1Cbbox.bind('<<ComboboxSelected>>', lambda e: self.difmeanSelectPlot(eventObject=e))
-        self.difmeansBpExp1Cbbox.grid(row=2,column=0)
+        self.difmeansBpExp1Cbbox.grid(row=14,column=0)
 
         self.difmeansBpSvarp1 = tk.StringVar()
         self.difmeansBpSvarp1.set('Select a param. profile')
-        self.difmeansBpCbboxp1 = ttk.Combobox(self.difmeansBpWidgetFrame,width=30,textvariable=str(self.difmeansBpSvarp1),state='readonly')
+        self.difmeansBpCbboxp1 = ttk.Combobox(self.sideFrame,width=30,textvariable=str(self.difmeansBpSvarp1),state='readonly')
         self.difmeansBpCbboxp1['values'] = []
         #self.difmeansCbboxp1.bind('<<ComboboxSelected>>', lambda e: self.difmeanSelect(eventObject=e))
-        self.difmeansBpCbboxp1.grid(row=2,column=1)
+        self.difmeansBpCbboxp1.grid(row=15,column=1)
         
         self.difmeansBpSvar2 = tk.StringVar()
         self.difmeansBpSvar2.set('Select an experiment')
-        self.difmeansBpExp2Cbbox = ttk.Combobox(self.difmeansBpWidgetFrame,width=15,textvariable=str(self.difmeansBpSvar2),state='readonly')
+        self.difmeansBpExp2Cbbox = ttk.Combobox(self.sideFrame,width=15,textvariable=str(self.difmeansBpSvar2),state='readonly')
         self.difmeansBpExp2Cbbox['values'] = list(existing_experiments['id'])
         self.difmeansBpExp2Cbbox.bind('<<ComboboxSelected>>', lambda e: self.difmeanSelectPlot(eventObject=e))
-        self.difmeansBpExp2Cbbox.grid(row=3,column=0)
+        self.difmeansBpExp2Cbbox.grid(row=16,column=0)
         
         self.difmeansBpSvarp2 = tk.StringVar()
         self.difmeansBpSvarp2.set('Select a param. profile')
-        self.difmeansBpCbboxp2 = ttk.Combobox(self.difmeansBpWidgetFrame,width=30,textvariable=str(self.difmeansBpSvarp2),state='readonly')
+        self.difmeansBpCbboxp2 = ttk.Combobox(self.sideFrame,width=30,textvariable=str(self.difmeansBpSvarp2),state='readonly')
         self.difmeansBpCbboxp2['values'] = []
-        self.difmeansBpCbboxp2.grid(row=3,column=1,pady=(0,10))
+        self.difmeansBpCbboxp2.grid(row=17,column=1,pady=(0,10))
 
-        self.difmeansBpLabel2 = tk.Label(self.difmeansBpWidgetFrame, text="\nSecond Difference: \n", anchor=tk.CENTER)
-        self.difmeansBpLabel2.grid(row=4,column=0)        
+        self.difmeansBpLabel2 = tk.Label(self.sideFrame, text="\nSecond Difference: \n", anchor=tk.CENTER)
+        self.difmeansBpLabel2.grid(row=18,column=0)        
         self.difmeansBpSvar3 = tk.StringVar()
         self.difmeansBpSvar3.set('Select an experiment')
-        self.difmeansBpExp3Cbbox = ttk.Combobox(self.difmeansBpWidgetFrame,width=15,textvariable=str(self.difmeansBpSvar3),state='readonly')
+        self.difmeansBpExp3Cbbox = ttk.Combobox(self.sideFrame,width=15,textvariable=str(self.difmeansBpSvar3),state='readonly')
         self.difmeansBpExp3Cbbox['values'] = list(existing_experiments['id'])
         self.difmeansBpExp3Cbbox.bind('<<ComboboxSelected>>', lambda e: self.difmeanSelectPlot(eventObject=e))
-        self.difmeansBpExp3Cbbox.grid(row=5,column=0)
+        self.difmeansBpExp3Cbbox.grid(row=19,column=0)
 
         self.difmeansBpSvarp3 = tk.StringVar()
         self.difmeansBpSvarp3.set('Select a param. profile')
-        self.difmeansBpCbboxp3 = ttk.Combobox(self.difmeansBpWidgetFrame,width=30,textvariable=str(self.difmeansBpSvarp3),state='readonly')
+        self.difmeansBpCbboxp3 = ttk.Combobox(self.sideFrame,width=30,textvariable=str(self.difmeansBpSvarp3),state='readonly')
         self.difmeansBpCbboxp3['values'] = []
         #self.difmeansCbboxp1.bind('<<ComboboxSelected>>', lambda e: self.difmeanSelect(eventObject=e))
-        self.difmeansBpCbboxp3.grid(row=5,column=1)
+        self.difmeansBpCbboxp3.grid(row=20,column=1)
 
 
         self.difmeansBpSvar4 = tk.StringVar()
         self.difmeansBpSvar4.set('Select an experiment')
-        self.difmeansBpExp4Cbbox = ttk.Combobox(self.difmeansBpWidgetFrame,width=15,textvariable=str(self.difmeansBpSvar4),state='readonly')
+        self.difmeansBpExp4Cbbox = ttk.Combobox(self.sideFrame,width=15,textvariable=str(self.difmeansBpSvar4),state='readonly')
         self.difmeansBpExp4Cbbox['values'] = list(existing_experiments['id'])
         self.difmeansBpExp4Cbbox.bind('<<ComboboxSelected>>', lambda e: self.difmeanSelectPlot(eventObject=e))
-        self.difmeansBpExp4Cbbox.grid(row=6,column=0,pady=(0,10))
+        self.difmeansBpExp4Cbbox.grid(row=21,column=0,pady=(0,10))
 
         self.difmeansBpSvarp4 = tk.StringVar()
         self.difmeansBpSvarp4.set('Select a param. profile')
-        self.difmeansBpCbboxp4 = ttk.Combobox(self.difmeansBpWidgetFrame,width=30,textvariable=str(self.difmeansBpSvarp4),state='readonly')
+        self.difmeansBpCbboxp4 = ttk.Combobox(self.sideFrame,width=30,textvariable=str(self.difmeansBpSvarp4),state='readonly')
         self.difmeansBpCbboxp4['values'] = []
-        self.difmeansBpCbboxp4.grid(row=6,column=1)
+        self.difmeansBpCbboxp4.grid(row=22,column=1)
 
-        self.difmeansBpLabel3 = tk.Label(self.difmeansBpWidgetFrame, text="\nThird Difference: \n", anchor=tk.CENTER)
-        self.difmeansBpLabel3.grid(row=7,column=0)
+        self.difmeansBpLabel3 = tk.Label(self.sideFrame, text="\nThird Difference: \n", anchor=tk.CENTER)
+        #self.difmeansBpLabel3.grid(row=7,column=0)
         self.difmeansBpSvar5 = tk.StringVar()
         self.difmeansBpSvar5.set('Select an experiment')
-        self.difmeansBpExp5Cbbox = ttk.Combobox(self.difmeansBpWidgetFrame,width=15,textvariable=str(self.difmeansBpSvar5),state='readonly')
+        self.difmeansBpExp5Cbbox = ttk.Combobox(self.sideFrame,width=15,textvariable=str(self.difmeansBpSvar5),state='readonly')
         self.difmeansBpExp5Cbbox['values'] = list(existing_experiments['id'])
         self.difmeansBpExp5Cbbox.bind('<<ComboboxSelected>>', lambda e: self.difmeanSelectPlot(eventObject=e))
-        self.difmeansBpExp5Cbbox.grid(row=8,column=0)
+        self.difmeansBpExp5Cbbox.grid(row=23,column=0)
 
         self.difmeansBpSvarp5 = tk.StringVar()
         self.difmeansBpSvarp5.set('Select a param. profile')
-        self.difmeansBpCbboxp5 = ttk.Combobox(self.difmeansBpWidgetFrame,width=30,textvariable=str(self.difmeansBpSvarp5),state='readonly')
+        self.difmeansBpCbboxp5 = ttk.Combobox(self.sideFrame,width=30,textvariable=str(self.difmeansBpSvarp5),state='readonly')
         self.difmeansBpCbboxp5['values'] = []
         #self.difmeansCbboxp1.bind('<<ComboboxSelected>>', lambda e: self.difmeanSelect(eventObject=e))
-        self.difmeansBpCbboxp5.grid(row=8,column=1)
+        self.difmeansBpCbboxp5.grid(row=24,column=1)
 
         self.difmeansBpSvar6 = tk.StringVar()
         self.difmeansBpSvar6.set('Select an experiment')
-        self.difmeansBpExp6Cbbox = ttk.Combobox(self.difmeansBpWidgetFrame,width=15,textvariable=str(self.difmeansBpSvar6),state='readonly')
+        self.difmeansBpExp6Cbbox = ttk.Combobox(self.sideFrame,width=15,textvariable=str(self.difmeansBpSvar6),state='readonly')
         self.difmeansBpExp6Cbbox['values'] = list(existing_experiments['id'])
         self.difmeansBpExp6Cbbox.bind('<<ComboboxSelected>>', lambda e: self.difmeanSelectPlot(eventObject=e))
-        self.difmeansBpExp6Cbbox.grid(row=9,column=0)
+        self.difmeansBpExp6Cbbox.grid(row=25,column=0)
 
         self.difmeansBpSvarp6 = tk.StringVar()
         self.difmeansBpSvarp6.set('Select a param. profile')
-        self.difmeansBpCbboxp6 = ttk.Combobox(self.difmeansBpWidgetFrame,width=30,textvariable=str(self.difmeansBpSvarp6),state='readonly')
+        self.difmeansBpCbboxp6 = ttk.Combobox(self.sideFrame,width=30,textvariable=str(self.difmeansBpSvarp6),state='readonly')
         self.difmeansBpCbboxp6['values'] = []
         self.difmeansBpCbboxp6.grid(row=9,column=1)
-        self.genButton = ttk.Button(self.difmeansBpWidgetFrame,text='Plot', command= self.difmeanPlot)
-        self.genButton.grid(row=10,column=0,pady=10,padx= 50)
+        self.genButton = ttk.Button(self.sideFrame,text='Plot', command= self.difmeanPlot)
+        self.genButton.grid(row=26,column=1,pady=10,padx= 50)
 
         #putting svars in lists to iterate later
         self.difmeansBpSvarExpList1 = []
