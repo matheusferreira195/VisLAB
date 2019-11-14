@@ -85,12 +85,13 @@ def formatting(tipe, path):
 def calculate_shdwy(path, dc, replication):
 
     lsa_columns = ['SimSec', 'CycleSec', 'SC', 'SG', 'Aspect', 'Prev', 'Crit', 'duetoSG']
-    os.chdir(path)
-    mers = [file for file in glob.glob("*.mer")]
-    lsas = [file for file in glob.glob("*.lsa")]
+    path_p = os.path.dirname(path)
+    mers = [f for f in glob.glob(path_p + "**/*.mer", recursive=True)]
+    lsas = [f for f in glob.glob(path_p + "**/*.lsa", recursive=True)]
     headways_df = pd.DataFrame(columns=['Replication','Cicle','Position','Headway'])
     #print(mers)
     #print(len(mers))
+
     for i in range(len(mers)):
 
 
@@ -124,7 +125,7 @@ def calculate_shdwy(path, dc, replication):
                             & (cleaned_mer['t(Entry)'] < green_windows[j][1]) 
                             & (cleaned_mer['tQueue'] != 0)
                             & (cleaned_mer['Measurem.'] == dc)]
-            
+            #print(df)
             if not df.empty:
                 
                 
@@ -141,7 +142,9 @@ def calculate_shdwy(path, dc, replication):
                         headways_df = headways_df.append(headways_dict, ignore_index = True)
                         headways_df = headways_df[headways_df['Replication'] == replication]
                         headway_mean = headways_df[headways_df['Position'] == 4]['Headway'].mean()
-                
+            else:
+                pass
+                #print('erro df.empty')
     return headway_mean 
     
         
@@ -174,11 +177,11 @@ def vissim_simulation(experiment, Vissim, default = 0):
                     if dc_data['dc_type'] == 'Data Collector':
 
                         if dc_data['perf_measure'] == 'Saturation Headway':
-                            print('problema')
-                            result = calculate_shdwy(path_network, dc_data['dc_number'].item, replication) 
+                            #print('problema')
+                            result = calculate_shdwy(vissimFile, dc_data['dc_number'].item, replication) 
                             
                         else:
-                            print(dc_data['time_p'])
+                           # print(dc_data['time_p'])
                             selected_dc = Vissim.Net.DataCollectionMeasurements.ItemByKey(int(dc_data['dc_number'])) 
                             result = selected_dc.AttValue('{}({},{},All)'.format(str(dc_data['perf_measure']), 
                                                         str(replication), 
@@ -280,6 +283,7 @@ def vissim_simulation(experiment, Vissim, default = 0):
             Vissim.Simulation.SetAttValue('RandSeed', seed)
             Vissim.Graphics.CurrentNetworkWindow.SetAttValue("QuickMode",1) #Ativando Quick Mode
             Vissim.Simulation.RunContinuous() #Iniciando Simulação 
+            #print('running')
 
             for index, dc_data in selected_datapts.iterrows(): #Collects perf_measure data
                 
@@ -288,12 +292,12 @@ def vissim_simulation(experiment, Vissim, default = 0):
                     if dc_data['dc_type'] == 'Data Collector':
 
                         if dc_data['perf_measure'] == 'Saturation Headway':
-                            print('problema')
+                            #print('problema')
                             #A função ja tem replication handling
-                            result = calculate_shdwy(path_network, dc_data['dc_number'].item, replication) 
+                            result = calculate_shdwy(vissimFile, dc_data['dc_number'], replication) 
                             
                         else:
-                            print(dc_data['time_p'])
+                            #print(dc_data['time_p'])
                             selected_dc = Vissim.Net.DataCollectionMeasurements.ItemByKey(int(dc_data['dc_number'])) 
                             result = selected_dc.AttValue('{}({},{},All)'.format(str(dc_data['perf_measure']), 
                                                         str(replication), 
@@ -313,8 +317,8 @@ def vissim_simulation(experiment, Vissim, default = 0):
                                                     str(replication), 
                                                     str(dc_data['time_p'])))
                     
-                    print(row)
-                    print('\n')
+                    #print(row)
+                    #print('\n')
 
                     for p_name,p_value in row.iteritems():
 
@@ -423,13 +427,14 @@ class StartPage(tk.Frame):
             global Vissim
             global dc_data
             vissimFile = filedialog.askopenfilename().replace('/','\\')
-            print(vissimFile)
+            #print(vissimFile)
             Vissim = None #com.Dispatch('Vissim.Vissim')
             Vissim = com.Dispatch("Vissim.Vissim") #Abrindo o Vissim
             flag = False 
             Vissim.LoadNet(vissimFile, flag) #Carregando o arquivo'''            
             dc_data = generate_dcdf(Vissim)
-            print(dc_data)
+            #print(dc_data)
+            
 parameter_db = pd.read_csv(path + r'\resources\parameters.visdb')       
 class Board(tk.Frame):
 
@@ -543,8 +548,8 @@ class Board(tk.Frame):
         win = tk.Toplevel()
         win.wm_title("Edit experiment")
         
-        print('configurations')
-        print(configurations)
+        #print('configurations')
+        #print(configurations)
 
         for i in range(configurations):
 
@@ -554,7 +559,7 @@ class Board(tk.Frame):
         #print(self.experiment_data)
 
     def delete_postit(self,exp):
-        print(self.canvas_l)
+        #print(self.canvas_l)
         cursor.execute('DELETE FROM datapoints WHERE experiment = ?', (int(exp),))
         cursor.execute('DELETE FROM simulation_cfg WHERE experiment = ?',(int(exp),))
         cursor.execute('DELETE FROM parameters WHERE experiment = ?',(int(exp),))
@@ -997,7 +1002,7 @@ class ResultsPage(tk.Frame):
         self.datapoints_df = pd.read_sql(str('SELECT * FROM datapoints'), cnx)
         self.parameters_df = pd.read_sql(str('SELECT * FROM parameters'), cnx)
         self.simulation_runs = pd.read_sql(str('SELECT * FROM simulation_runs'), cnx)
-
+        print(self.simulation_runs)
         #Line chart
         lineChart_frame = tk.Frame(self.frame,highlightbackground="green", highlightcolor="green", highlightthickness=1, width=100, height=100, bd= 0)
         lineChart_frame.grid(row=1,column=0,sticky='w')
@@ -1764,7 +1769,7 @@ class CalibrationPage(tk.Frame):
         self.askCbbox['values'] = list(self.presets['name'])
         self.askCbbox.grid(row=0,column=1)
 
-        self.selectedButton = tk.Button(self.askingWindow, text = 'Ok', command=lambda: runCalibration(name=self.cbboxSvar.get(),Vissim=Vissim),background=backgroundColor1, highlightthickness = 0, bd = 0,compound="left",fg='white')
+        self.selectedButton = tk.Button(self.askingWindow, text = 'Ok', command=lambda: runCalibration(name=self.cbboxSvar.get()),background=backgroundColor1, highlightthickness = 0, bd = 0,compound="left",fg='white')
         self.selectedButton.grid(row=1,column=0)
 
     def cfgCalibration(self):
@@ -2164,7 +2169,7 @@ class runCalibration:
     #data initialization
     def __init__(self,name):
 
-        print(name)
+        #print(name)
         self.cfgGA = pd.read_sql(("select * from configurationsGA where name = '%s'" % name),gaCnx)
         self.parGA = pd.read_sql(("select * from parametersGA where name = '%s'" % name),gaCnx)
         self.resultsGA = pd.read_sql(("select * from resultsGA where name = '%s'" % name),gaCnx)
@@ -2173,24 +2178,20 @@ class runCalibration:
         self.genN()    
         self.name = name
 
-    def simulationGA(self,name,gen,rep,ind,genes, Vissim):
+    def simulationGA(self,name,gen,rep,ind,genes):
 
-        #Vissim = None #com.Dispatch('Vissim.Vissim')
-        #Vissim = com.Dispatch("Vissim.Vissim") #Abrindo o Vissim
-        #flag = False 
-        #Vissim.LoadNet(vissimFile, flag) #Carregando o arquivo'''
 
-        datapoint_id = self.cfgGA['datapoint_id']
-        datapoint_name = self.cfgGA['datapoint_type']
+        datapoint_id = self.cfgGA['datapoint_id'].item()
+        datapoint_name = self.cfgGA['datapoint_type'].item()
         perf_measure = self.cfgGA['perf_measure'].item()
-        time_p =  self.cfgGA['time_p']
+        time_p =  'avg'
         field_value =  self.cfgGA['field_data'].item()
-        Vissim.Simulation.SetAttValue('NumRuns', rep)
+        
         
         for gene_name, gene_value in genes.items(): #sets parameters (called genes here)
 
             Vissim.Net.DrivingBehaviors[0].SetAttValue(gene_name, gene_value)
-            
+        
         Vissim.Graphics.CurrentNetworkWindow.SetAttValue("QuickMode",1) #Ativando Quick Mode
         Vissim.Simulation.RunContinuous() #Iniciando Simulação 
 
@@ -2206,14 +2207,14 @@ class runCalibration:
                 if perf_measure == 'Saturation Headway':
                     
                     #A função ja tem replication handling
-                    result = calculate_shdwy(path_network, datapoint_id, replication) 
+                    result = calculate_shdwy(vissimFile, datapoint_id, replication) 
                     
                 else:
 
                     selected_dc = Vissim.Net.DataCollectionMeasurements.ItemByKey(int(datapoint_id)) 
                     result = selected_dc.AttValue('{}({},{},All)'.format(str(perf_measure), 
                                                 str(replication), 
-                                                str(time_p)))
+                                                str('time_p')))
 
             elif datapoint_name == 'Travel Time Collector':
 
@@ -2229,7 +2230,7 @@ class runCalibration:
                                                 str(replication), 
                                                 str(time_p)))
 
-            seed = Vissim.Net.SimulationRuns.GetMultipleAttributes(['Randseed'])
+            seed = Vissim.Net.SimulationRuns.GetMultipleAttributes(['Randseed'])[0][0]
 
             fitness = abs((result-field_value)/result)
 
@@ -2237,7 +2238,9 @@ class runCalibration:
             results.append(result)
 
         for p_name, p_value in genes.items():
-
+            #print(ind)
+            #print(seed)
+            #print(gen)
             query = ("""INSERT INTO resultsGA (name,seed,gen,ind,par_name,par_value,perf_measure,result_value,epam) 
             VALUES ('%s',%s,%s,%s,'%s',%s,'%s',%s,%s)""" % (str(name),str(int(seed)),str(int(gen)),
                                                                str(int(ind)),str(p_name),str(p_value),
@@ -2246,7 +2249,6 @@ class runCalibration:
             cursorGA.execute(query)
             gaCnx.commit()
         
-        Vissim = None 
 
     def gen0(self):
 
@@ -2256,6 +2258,8 @@ class runCalibration:
         ind = self.cfgGA['ind'].item()
         gen = 0
 
+        Vissim.Simulation.SetAttValue('NumRuns', rep)
+        
         for individual in range(ind): #generating gen0 individuals
             
             genes = {}
@@ -2267,7 +2271,8 @@ class runCalibration:
                 gene_name = pdata['parameter_name']                
                 gene_value = random.uniform(down,up)
                 genes[gene_name] = gene_value
-            print(genes)
+
+            print("\naqui esta a rep: %s\n" % rep)
             self.simulationGA(name,gen,rep,individual,genes)
 
     def genN(self):
@@ -2279,11 +2284,13 @@ class runCalibration:
         ind_number = cfgGA['ind'][0]
         n_generations = int(cfgGA['gen'][0])
         #print(n_generations)
-        
+
+        #Vissim.Simulation.SetAttValue('NumRuns', rep_number)
+
         for gen in range(n_generations): #generations loop
             
             gen_number = gen
-            print('gen %s' % gen_number)
+            #print('gen %s' % gen_number)
             old_genData = pd.read_sql(("SELECT * FROM resultsGA WHERE gen = %s AND name = '%s'" % (gen_number,name)),gaCnx)
             #print(old_genData)
             #print('\n')
@@ -2296,7 +2303,7 @@ class runCalibration:
             gen_number += 1
             #print(old_genData)
             #print('\n')
-            print('cut rank = %s' % cutRank)
+            #print('cut rank = %s' % cutRank)
             
             for ind in range(ind_number):
                 
