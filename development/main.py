@@ -1727,10 +1727,10 @@ class CalibrationPage(tk.Frame):
         frame.place(in_=self, anchor="c", relx=.5, rely=.5)
 
         #dc_data = generate_dcdf_test()
-        parameter_db = pd.read_csv(r'E:\Google Drive\Scripts\VisLab\resources\parameters.visdb') 
-        self.runPhoto = tk.PhotoImage(file = r"E:\Google Drive\Scripts\VisLab\resources\power.png")  #https://www.flaticon.com/packs/science-121
-        self.cfgPhoto = tk.PhotoImage(file = r"E:\Google Drive\Scripts\VisLab\resources\settings.png")
-        self.resultsPhoto = tk.PhotoImage(file = r"E:\Google Drive\Scripts\VisLab\resources\results.png")
+        parameter_db = pd.read_csv(path+ r'\resources\parameters.visdb') 
+        self.cfgPhoto = tk.PhotoImage(path +r"\resources\settings.png")
+        self.runPhoto = tk.PhotoImage(path +r"\resources\power.png")  #https://www.flaticon.com/packs/science-121
+        self.resultsPhoto = tk.PhotoImage(path +r"\resources\results.png")
         
         label = tk.Label(frame, text="Calibration", font=LARGE_FONT)
         label.grid(row=0,column=1)
@@ -2284,7 +2284,7 @@ class runCalibration:
         ind_number = cfgGA['ind'][0]
         n_generations = int(cfgGA['gen'][0])
         #print(n_generations)
-
+        n_
         #Vissim.Simulation.SetAttValue('NumRuns', rep_number)
 
         for gen in range(n_generations): #generations loop
@@ -2339,16 +2339,6 @@ class runCalibration:
                         genes[gene_name] = gene_value
                                     
                 self.simulationGA(name,gen_number,rep_number,ind,genes)
-
-
-
-
-
-
-
-
-
-
 
 app = SeaofBTCapp()
 app.geometry("1920x1080")
