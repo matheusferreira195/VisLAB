@@ -328,7 +328,7 @@ def vissim_simulation(experiment, Vissim, default = 0):
                         cnx.commit()
         Vissim = None 
  
-class SeaofBTCapp(tk.Tk):
+class VisLab(tk.Tk):
 
     def __init__(self, *args, **kwargs):
         
@@ -971,7 +971,7 @@ class ResultsPage(tk.Frame):
     def __init__(self, parent, controller):
 
         tk.Frame.__init__(self,parent)
-
+        self.cfgsDictdf = pd.DataFrame()
         self.canvas = tk.Canvas(self, borderwidth=0, background="#ffffff",height='800',width='1510')
         self.frame = tk.Frame(self.canvas, background="#ffffff")
         self.vsb = tk.Scrollbar(self, orient="vertical", command=self.canvas.yview)
@@ -1016,7 +1016,7 @@ class ResultsPage(tk.Frame):
         lineChart_cbbox.bind('<<ComboboxSelected>>', lambda e: self.plotLinechart(eventObject = e)) 
         lineChart_cbbox.grid(row=3,column=1)
 
-        self.lineChart_plot = Figure(figsize=(5,4), dpi=100)
+        self.lineChart_plot = Figure(figsize=(3,3), dpi=100)
         self.lineChart_subplot = self.lineChart_plot.add_subplot(111)
 
         self.lineChart_canvas = FigureCanvasTkAgg(self.lineChart_plot, lineChart_frame) 
@@ -1056,7 +1056,7 @@ class ResultsPage(tk.Frame):
         self.scatterChart_p2cbbox.bind('<<ComboboxSelected>>', lambda e: self.plotScatterchart(eventObject = e)) 
         self.scatterChart_p2cbbox.grid(row=2,column=0, sticky='w')
 
-        self.scatterChart_plot = Figure(figsize=(5,4), dpi=100)
+        self.scatterChart_plot = Figure(figsize=(3,3), dpi=100)
         self.scatterChart_subplot = self.scatterChart_plot.add_subplot(111)
 
         self.scatterChart_canvas = FigureCanvasTkAgg(self.scatterChart_plot, scatterChart_frame) 
@@ -1081,7 +1081,7 @@ class ResultsPage(tk.Frame):
         self.boxplotexpCbbox.bind('<<ComboboxSelected>>', lambda e: self.boxPlot(eventObject=e))
         self.boxplotexpCbbox.grid(row=1,column=1)
 
-        self.boxplotFigure = Figure(figsize=(5,4), dpi=100)
+        self.boxplotFigure = Figure(figsize=(3,3), dpi=100)
         self.boxplotSubplot = self.boxplotFigure.add_subplot(111)
         self.boxplotCanvas = FigureCanvasTkAgg(self.boxplotFigure, self.boxplotFrame)
         self.boxplotCanvas.draw()
@@ -1102,7 +1102,7 @@ class ResultsPage(tk.Frame):
         self.ciboxplotexpCbbox['values'] = list(existing_experiments['id'])
         self.ciboxplotexpCbbox.bind('<<ComboboxSelected>>', lambda e: self.ciboxPlot(eventObject=e))
         self.ciboxplotexpCbbox.grid(row=1,column=1)
-        self.ciboxplotFigure = Figure(figsize=(5,4), dpi=100)
+        self.ciboxplotFigure = Figure(figsize=(3,3), dpi=100)
         self.ciboxplotSubplot = self.ciboxplotFigure.add_subplot(111)
         self.ciboxplotCanvas = FigureCanvasTkAgg(self.ciboxplotFigure, self.ciboxplotFrame)
         self.ciboxplotCanvas.draw()
@@ -1153,7 +1153,7 @@ class ResultsPage(tk.Frame):
         #difmeans boxplot
 
         self.difmeansBpFrame = tk.Frame(self.frame,highlightbackground="green", highlightcolor="green", highlightthickness=1, width=100, height=100, bd= 0)
-        self.difmeansBpFrame.grid(row=4,column=0)
+        self.difmeansBpFrame.grid(row=1,column=3)
 
         self.difmeansBpWidgetFrame = tk.Frame(self.difmeansBpFrame,highlightbackground="green", highlightcolor="green", highlightthickness=1, width=100, height=100, bd= 0)
         self.difmeansBpWidgetFrame.grid(row=0,column=0)
@@ -1285,7 +1285,7 @@ class ResultsPage(tk.Frame):
         self.difmeansBpPlotFrame = tk.Frame(self.difmeansBpFrame)
         self.difmeansBpPlotFrame.grid(row=0,column=1)
   
-        self.difmeansBpPlotFigure = Figure(figsize=(5,4), dpi=100)
+        self.difmeansBpPlotFigure = Figure(figsize=(3,3), dpi=100)
         self.difmeansBpPlotSubplot = self.difmeansBpPlotFigure.add_subplot(111)
         self.difmeansBpPlotCanvas = FigureCanvasTkAgg(self.difmeansBpPlotFigure, self.difmeansBpPlotFrame)
         self.difmeansBpPlotCanvas.draw()
@@ -1299,11 +1299,11 @@ class ResultsPage(tk.Frame):
         try:            
 
             #Data loading
-            exp1 = self.difmeansExp1Cbbox.get()
-            exp2 = self.difmeansExp2Cbbox.get()
-            par1 = self.cfgsDict[self.difmeansCbboxp1.get()]
+            exp1 = int(self.difmeansExp1Cbbox.get())
+            exp2 = int(self.difmeansExp2Cbbox.get())
+            par1 = int(self.cfgsDictdf.loc[self.cfgsDictdf['exp']==exp1].loc[self.cfgsDictdf['label']==str(self.difmeansCbboxp1.get())]['cfg'].drop_duplicates().item())
             print(par1)
-            par2 = self.cfgsDict[self.difmeansCbboxp2.get()]
+            par2 = int(self.cfgsDictdf.loc[self.cfgsDictdf['exp']==exp2].loc[self.cfgsDictdf['label']==str(self.difmeansCbboxp2.get())]['cfg'].drop_duplicates().item())
             print(par2)
             dados_1 = pd.read_sql('select * from simulation_runs where experiment = %s and sim_perf = %s' % (exp1,par1),cnx)['results'].drop_duplicates()
             dados_2 = pd.read_sql('select * from simulation_runs where experiment = %s and sim_perf = %s' % (exp2,par2),cnx)['results'].drop_duplicates()
@@ -1330,12 +1330,13 @@ class ResultsPage(tk.Frame):
 
             if r_p < 0.05:
                 #dependent
-                d_test = stats.ttest_rel(dados_1,dados_2)
+                test_data = stats.ttest_rel(dados_1,dados_2)
                 tp = 'Paired'
             else:
-                i_test = stats.ttest_ind(dados_1,dados_2,equal_var=False)
+                test_data = stats.ttest_ind(dados_1,dados_2,equal_var=False)
                 tp = 'Independent'
-            teste = {'mean1':[mean1],'mean2':[mean2],'var1':[var1],'var2':[var2],'n':[n],'r':[r],'h0':[0],'df':[df],'statt':[i_test[0]],'pvalue':[i_test[1]],'type':tp}    
+                
+            teste = {'mean1':[mean1],'mean2':[mean2],'var1':[var1],'var2':[var2],'n':[n],'r':[r],'h0':[0],'df':[df],'statt':[test_data[0]],'pvalue':[test_data[1]],'type':tp}    
             teste_df = pd.DataFrame.from_dict(teste) 
 
             testLabel = tk.Label(frame,text='T test: paired sample mean difference')
@@ -1435,6 +1436,8 @@ class ResultsPage(tk.Frame):
 
             self.cfgsDict[labelTxt] = cfg
             labelTxt_ls.append(labelTxt)
+            self.cfgsDictdf = self.cfgsDictdf.append({'exp':exp,'label':labelTxt,'cfg':cfg},ignore_index=True)
+        #print(self.cfgsDictdf)
 
         if '3' in str(eventObject.widget):
 
@@ -1469,7 +1472,8 @@ class ResultsPage(tk.Frame):
 
             self.cfgsDict[labelTxt] = cfg
             labelTxt_ls.append(labelTxt)
-
+            self.cfgsDictdf = self.cfgsDictdf.append({'exp':exp,'label':labelTxt,'cfg':cfg},ignore_index=True)
+        #print(self.cfgsDictdf)
         self.difmeansBpWidgetFrame.winfo_children()[index_cbbx+1]['values'] = labelTxt_ls
 
     def difmeanPlot(self):
@@ -1486,14 +1490,14 @@ class ResultsPage(tk.Frame):
             difExp = self.difmeansBpSvarExpMetaList[i]
             difPar = self.difmeansBpSvarParMetaList[i]
             #data
-            exp1 = difExp[0].get()
-            par1 = self.cfgsDict[difPar[0].get()]
-            exp2 = difExp[1].get()
-            par2 = self.cfgsDict[difPar[1].get()]
-            print(exp1)
+            exp1 = int(difExp[0].get())
+            par1 = int(self.cfgsDictdf.loc[self.cfgsDictdf['exp']==exp1].loc[self.cfgsDictdf['label']==str(difPar[0].get())]['cfg'].drop_duplicates().item())
+            exp2 = int(difExp[1].get())
+            par2 = int(self.cfgsDictdf.loc[self.cfgsDictdf['exp']==exp2].loc[self.cfgsDictdf['label']==str(difPar[1].get())]['cfg'].drop_duplicates().item())
             dados_1 = pd.read_sql('select * from simulation_runs where experiment = %s and sim_perf = %s' % (exp1,par1),cnx)['results'].drop_duplicates()
             dados_2 = pd.read_sql('select * from simulation_runs where experiment = %s and sim_perf = %s' % (exp2,par2),cnx)['results'].drop_duplicates()
-
+            print('select par1: %s' % par1)
+            print('select par2: %s' % par2)
             #Analysis
             linreg = stats.linregress(dados_1, dados_2)            
             mean1 = dados_1.mean()
@@ -1579,19 +1583,28 @@ class ResultsPage(tk.Frame):
         
         self.lineChart_subplot.cla()
 
-        exp = int(eventObject.widget.get())        
+        exp = int(eventObject.widget.get()) 
+        print('plot: %s' % exp)       
         simData = self.simulation_runs.loc[self.simulation_runs['experiment'] == exp]
+        #print('simData: \n')
+        #print(simData)
         simCfgs = list(simData['sim_perf'].drop_duplicates())
+        #print('simCfgs: \n')
+        #print(simCfgs)
         self.lineChart_subplot.set_title("Perf. Measure by Parameter and replication ")
         self.lineChart_subplot.set_ylabel(list(self.datapoints_df.loc[self.datapoints_df['experiment']==exp]['perf_measure'].drop_duplicates()))
         self.lineChart_subplot.set_xlabel('Simulation Run')
 
         for cfg in simCfgs:
 
-            y_data = list(simData.loc[simData['sim_perf']==cfg]['results'].drop_duplicates())
-            x_data = list(simData.loc[simData['sim_perf']==cfg]['seed'].drop_duplicates())
+            print('cfg: %s' % cfg)
+            y_data = np.array(list(simData.loc[simData['sim_perf']==cfg]['results'].drop_duplicates()))
+            x_data = np.array(range(len(simData.loc[simData['sim_perf']==cfg]['seed'].drop_duplicates())))
             txtData = simData.loc[simData['sim_perf']==cfg].drop_duplicates(subset='parameter_name')
-            print(txtData)
+            print('y_data:\n ')
+            print(y_data)
+            print('\nx_data:\n ')
+            print(x_data)
             labelTxt = ''
 
             for index, row in txtData.iterrows():
@@ -1717,6 +1730,10 @@ class ResultsPage(tk.Frame):
         '''Reset the scroll region to encompass the inner frame'''
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
+'''class ResultsPage2(tk.Frame):
+    pass
+    def __init__(self, parent, controller):
+        pass'''
 class CalibrationPage(tk.Frame):
 
     def __init__(self, parent, controller):
@@ -2340,7 +2357,7 @@ class runCalibration:
                                     
                 self.simulationGA(name,gen_number,rep_number,ind,genes)
 
-app = SeaofBTCapp()
+app = VisLab()
 app.geometry("1920x1080")
 app.state('zoomed')
 app.mainloop()
