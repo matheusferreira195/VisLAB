@@ -1854,36 +1854,43 @@ class CalibrationPage(tk.Frame):
     def __init__(self, parent, controller):
 
         tk.Frame.__init__(self,parent)
-        frame = tk.Frame(self)
-        frame.pack(fill="both", expand=True, padx=20, pady=20)
-        frame.place(in_=self, anchor="c", relx=.5, rely=.5)
-
+        self.frame = tk.Frame(self)
+        self.frame.pack(fill="both", expand=True, padx=20, pady=20)
+        self.frame.place(in_=self, anchor="c", relx=.5, rely=.5)
+        print(path)
         #dc_data = generate_dcdf_test()
         parameter_db = pd.read_csv(path+ r'\resources\parameters.visdb') 
-        self.cfgPhoto = tk.PhotoImage(path +r"\resources\settings.png")
-        self.runPhoto = tk.PhotoImage(path +r"\resources\power.png")  #https://www.flaticon.com/packs/science-121
-        self.resultsPhoto = tk.PhotoImage(path +r"\resources\results.png")
-        
-        label = tk.Label(frame, text="Calibration", font=LARGE_FONT)
-        label.grid(row=0,column=1)
 
-        runLabel = tk.Label(frame, text="Run calibration")
-        runLabel.grid(row=1,column=2)
-        runButton = tk.Button(frame, text="Run calibration",
-                            command=lambda: self.whichPreset(),image=self.runPhoto)
-        runButton.grid(row=2,column=2)
+        self.cfgPhoto = tk.PhotoImage(file = path +r"\resources\settings.png")
+        self.runPhoto = tk.PhotoImage(file = path +r"\resources\power.png")  #https://www.flaticon.com/packs/science-121
+        self.resultsPhoto = tk.PhotoImage(file = path +r"\resources\results.png")
+        self.home = tk.PhotoImage(file = path + r"\resources\home.png")
 
-        cfgLabel = tk.Label(frame, text="Config calibration")
-        cfgLabel.grid(row=1,column=1)
-        cfgButton = tk.Button(frame, text="Config calibration",
-                            command=lambda: self.cfgCalibration(),image=self.cfgPhoto)
-        cfgButton.grid(row=2,column=1)
+        button2 = tk.Button(self.frame, 
+                            command=lambda: controller.show_frame(StartPage),
+                            image = self.home,borderwidth=0, background=backgroundColor1)
+        button2.grid(row=0,column=0, sticky='w')
 
-        resultsLabel = tk.Label(frame, text="Results calibration")
-        resultsLabel.grid(row=1,column=3)        
-        resultsButton = tk.Button(frame, text="Results calibration",
-                            command=lambda: self.resultsCalibration(),image=self.resultsPhoto)
-        resultsButton.grid(row=2,column=3)
+        self.label = tk.Label(self.frame, text="Calibration", font=LARGE_FONT)
+        self.label.grid(row=0,column=2, sticky='e')
+
+        self.runLabel = tk.Label(self.frame, text="Run calibration")
+        self.runLabel.grid(row=1,column=2)
+        self.runButton = tk.Button(self.frame,image=self.runPhoto,
+                            command=lambda: self.whichPreset())
+        self.runButton.grid(row=2,column=2)
+
+        self.cfgLabel = tk.Label(self.frame, text="Config calibration")
+        self.cfgLabel.grid(row=1,column=1)
+        self.cfgButton = tk.Button(self.frame,image=self.cfgPhoto,
+                            command=lambda: self.cfgCalibration())
+        self.cfgButton.grid(row=2,column=1)
+
+        self.resultsLabel = tk.Label(self.frame, text="Results calibration")
+        self.resultsLabel.grid(row=1,column=3)        
+        self.resultsButton = tk.Button(self.frame,image=self.resultsPhoto,
+                            command=lambda: self.resultsCalibration())
+        self.resultsButton.grid(row=2,column=3)
     
     def whichPreset(self):
         backgroundColor1 = '#202126'
@@ -2256,11 +2263,13 @@ class CalibrationPage(tk.Frame):
         alphas = [] #store the alpha individuals for each generation
 
         genNumber = len(resultsDataDrop['gen'].drop_duplicates().index) #pick the total of generations, an easy way
+        print('gen number: %s' % genNumber)
         
         for g in range(genNumber): #iterating over generations results
 
-            alpha = resultsDataDrop.loc[resultsDataDrop['gen']==g]['epam'].sort_values().reset_index(drop=True)
-            alphas.append(alpha[0]) #storing on a list
+            alpha = resultsData.loc[resultsData['gen']==g].drop_duplicates(subset='epam').reset_index().min()['epam']
+            #print(alpha)
+            alphas.append(alpha) #storing on a list
 
         x_data = range(genNumber)
         y_data = alphas
