@@ -80,7 +80,6 @@ def formatting(tipe, path):
                     skipline = int(chunk[0])
         #print(skipline)    
         return skipline
-    
 
 def calculate_shdwy(path, dc, replication):
 
@@ -91,7 +90,7 @@ def calculate_shdwy(path, dc, replication):
     headways_df = pd.DataFrame(columns=['Replication','Cicle','Position','Headway'])
     #print(mers)
     #print(len(mers))
-
+    
     for i in range(len(mers)):
 
 
@@ -1119,21 +1118,21 @@ class ResultsPage(tk.Frame):
 
         self.scatterChart_esvar = tk.StringVar()
         self.scatterChart_esvar.set('Exp.')
-        scatterChart_ecbbox = ttk.Combobox(scatterChart_framewidget, width=5,textvariable=str(self.scatterChart_esvar),state='readonly')
+        scatterChart_ecbbox = ttk.Combobox(scatterChart_framewidget, width=10,textvariable=str(self.scatterChart_esvar),state='readonly')
         scatterChart_ecbbox['values'] = list(existing_experiments['id'])
         scatterChart_ecbbox.bind('<<ComboboxSelected>>', lambda e: self.expSelect(eventObject = e)) 
         scatterChart_ecbbox.grid(row=0,column=0, sticky='w')
 
         self.scatterChart_p1svar = tk.StringVar()
         self.scatterChart_p1svar.set('Param. 1')
-        self.scatterChart_p1cbbox = ttk.Combobox(scatterChart_framewidget, width=5,textvariable=str(self.scatterChart_p1svar),state='readonly')
+        self.scatterChart_p1cbbox = ttk.Combobox(scatterChart_framewidget, width=10,textvariable=str(self.scatterChart_p1svar),state='readonly')
         self.scatterChart_p1cbbox['values'] = []
         self.scatterChart_p1cbbox.bind('<<ComboboxSelected>>', lambda e: self.plotScatterchart(eventObject = e)) 
         self.scatterChart_p1cbbox.grid(row=1,column=0, sticky='w')
 
         self.scatterChart_p2svar = tk.StringVar()
         self.scatterChart_p2svar.set('Param. 2')
-        self.scatterChart_p2cbbox = ttk.Combobox(scatterChart_framewidget, width=5,textvariable=str(self.scatterChart_p2svar),state='readonly')
+        self.scatterChart_p2cbbox = ttk.Combobox(scatterChart_framewidget, width=10,textvariable=str(self.scatterChart_p2svar),state='readonly')
         self.scatterChart_p2cbbox['values'] = []
         self.scatterChart_p2cbbox.bind('<<ComboboxSelected>>', lambda e: self.plotScatterchart(eventObject = e)) 
         self.scatterChart_p2cbbox.grid(row=2,column=0, sticky='w')
@@ -1564,11 +1563,10 @@ class ResultsPage(tk.Frame):
 
     def difmeanSelectPlot(self, eventObject):
 
-        #print(eventObject.widget)
+        print(eventObject.widget)
 
-        index_cbbx = self.difplotStuff.winfo_children().index(eventObject.widget)
+        index_cbbx = self.difmeansWidgetFrame.winfo_children().index(eventObject.widget)
         #print(index_cbbx)
-        #print(self.difmeansBpWidgetFrame.winfo_children())
 
         exp = int(eventObject.widget.get())
         simData = self.simulation_runs.loc[self.simulation_runs['experiment'] == exp]
@@ -1589,7 +1587,7 @@ class ResultsPage(tk.Frame):
             labelTxt_ls.append(labelTxt)
             self.cfgsDictdf = self.cfgsDictdf.append({'exp':exp,'label':labelTxt,'cfg':cfg},ignore_index=True)
         #print(self.cfgsDictdf)
-        self.difmeansBpWidgetFrame.winfo_children()[index_cbbx+1]['values'] = labelTxt_ls
+        self.difmeansWidgetFrame.winfo_children()[index_cbbx+1]['values'] = labelTxt_ls
 
     def difmeanPlot(self):
         
@@ -1844,11 +1842,6 @@ class ResultsPage(tk.Frame):
 
         '''Reset the scroll region to encompass the inner frame'''
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
-
-'''class ResultsPage2(tk.Frame):
-    pass
-    def __init__(self, parent, controller):
-        pass'''
 class CalibrationPage(tk.Frame):
 
     def __init__(self, parent, controller):
@@ -2304,7 +2297,6 @@ class CalibrationPage(tk.Frame):
 
             self.geneLabel = tk.Label(self.geneFrame,text='%s = %s' % (gene['par_name'],round(gene['par_value'],2)))
             self.geneLabel.pack(anchor=tk.W)
-
 class runCalibration:
 
     #data initialization
@@ -2388,8 +2380,7 @@ class runCalibration:
                                                                str(perf_measure),str(mean(results)),str(mean(rep_results))))
             #print(query)
             cursorGA.execute(query)
-            gaCnx.commit()
-        
+            gaCnx.commit()    
 
     def gen0(self):
 
@@ -2425,7 +2416,6 @@ class runCalibration:
         ind_number = cfgGA['ind'][0]
         n_generations = int(cfgGA['gen'][0])
         #print(n_generations)
-        n_
         #Vissim.Simulation.SetAttValue('NumRuns', rep_number)
 
         for gen in range(n_generations): #generations loop
@@ -2466,8 +2456,21 @@ class runCalibration:
                         genes[gene_name] = gene_value
 
                     elif rank > 1 and rank <= cutRank:  #parent gene heritage (crossover)   
+                        
+                        mutation = random.randint(0,1)
 
-                        gene_value = old_ind['par_value']*random.uniform(0.7,1.7)
+                        if mutation == 1:
+
+                            alfa_gene = old_genData_ind.loc[old_genData_ind['rank']==1 & old_genData_ind['par_name']==gene_name]['par_value']
+                            gene_value = alfa_gene
+
+                        else:
+
+                            up = parGA.loc[parGA['parameter_name']==gene_name]['parameter_u_value'].item() #gene upper limit
+                            down = parGA.loc[parGA['parameter_name']==gene_name]['parameter_b_value'].item() #gene bottom limit
+                            #print(down)
+                            gene_value = np.random.uniform(int(down),int(up))
+
                         genes[gene_name] = gene_value
 
                     else: #new random ind
