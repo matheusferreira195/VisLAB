@@ -2409,20 +2409,20 @@ class runCalibration:
 
     def genN(self):
         
-        name = 'teste'
-        cfgGA = pd.read_sql("SELECT * FROM configurationsGA WHERE name ='%s'" % name,gaCnx)
-        parGA = pd.read_sql("SELECT * FROM parametersGA WHERE name ='%s'" % name,gaCnx)
-        rep_number = cfgGA['rep'][0]
-        ind_number = cfgGA['ind'][0]
-        n_generations = int(cfgGA['gen'][0])
+        #cfgGA = pd.read_sql("SELECT * FROM configurationsGA WHERE name ='%s'" % self.name,gaCnx)
+        #parGA = pd.read_sql("SELECT * FROM parametersGA WHERE name ='%s'" % self.name,gaCnx)
+        rep_number = self.cfgGA['rep'][0]
+        ind_number = self.cfgGA['ind'][0]
+        n_generations = int(self.cfgGA['gen'][0])
         #print(n_generations)
+        print('GEN_N')
         #Vissim.Simulation.SetAttValue('NumRuns', rep_number)
 
         for gen in range(n_generations): #generations loop
             
             gen_number = gen
             #print('gen %s' % gen_number)
-            old_genData = pd.read_sql(("SELECT * FROM resultsGA WHERE gen = %s AND name = '%s'" % (gen_number,name)),gaCnx)
+            old_genData = pd.read_sql(("SELECT * FROM resultsGA WHERE gen = %s AND name = '%s'" % (gen_number,self.select_name)),gaCnx)
             #print(old_genData)
             #print('\n')
             old_genData['rank'] = old_genData['epam'].rank(method='dense')
@@ -2456,33 +2456,22 @@ class runCalibration:
                         genes[gene_name] = gene_value
 
                     elif rank > 1 and rank <= cutRank:  #parent gene heritage (crossover)   
-                        
-                        mutation = random.randint(0,1)
 
-                        if mutation == 1:
-
-                            alfa_gene = old_genData_ind.loc[old_genData_ind['rank']==1 & old_genData_ind['par_name']==gene_name]['par_value']
-                            gene_value = alfa_gene
-
-                        else:
-
-                            up = parGA.loc[parGA['parameter_name']==gene_name]['parameter_u_value'].item() #gene upper limit
-                            down = parGA.loc[parGA['parameter_name']==gene_name]['parameter_b_value'].item() #gene bottom limit
-                            #print(down)
-                            gene_value = np.random.uniform(int(down),int(up))
-
+                        gene_value = old_ind['par_value']*random.uniform(0.7,1.7)
                         genes[gene_name] = gene_value
 
                     else: #new random ind
 
-                        up = parGA.loc[parGA['parameter_name']==gene_name]['parameter_u_value'].item() #gene upper limit
-                        down = parGA.loc[parGA['parameter_name']==gene_name]['parameter_b_value'].item() #gene bottom limit
+                        up = self.parGA.loc[self.parGA['parameter_name']==gene_name]['parameter_u_value'].item() #gene upper limit
+                        down = self.parGA.loc[self.parGA['parameter_name']==gene_name]['parameter_b_value'].item() #gene bottom limit
                         #print(down)
                         gene_value = np.random.uniform(int(down),int(up))
                         #print(gene_value)
                         genes[gene_name] = gene_value
                                     
-                self.simulationGA(name,gen_number,rep_number,ind,genes)
+                self.simulationGA(gen_number,rep_number,ind,genes)
+                
+             
 
 app = VisLab()
 app.geometry("1920x1080")
