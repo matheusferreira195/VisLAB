@@ -2277,10 +2277,14 @@ class CalibrationPage(tk.Frame):
         
 
         genesNumber = len(resultsData.drop_duplicates(subset='par_name').index)
-        bestIndData = resultsData.sort_values(by='epam').reset_index(drop=True).iloc[:genesNumber]
+        print(resultsData.sort_values)
+        bestIndData = resultsData.sort_values(by='epam').drop_duplicates(subset='epam').reset_index(drop=True)
+        
         bestGen = bestIndData['gen'][0]
         bestInd = bestIndData['ind'][0]
         bestEPAM = bestIndData['epam'][0]
+
+        bestIndData_clean = resultsData.loc[resultsData['gen']==bestGen].loc[resultsData['ind']==bestInd]
 
         self.bestGenLabel = tk.Label(self.reportFrame,text='Best generation: %s' % bestGen)
         self.bestGenLabel.grid(row=0,column=0,sticky='w')
@@ -2292,8 +2296,10 @@ class CalibrationPage(tk.Frame):
         self.geneLabel.grid(row=2,column=0,sticky='w')
         self.geneFrame = tk.Frame(self.reportFrame)
         self.geneFrame.grid(row=3,column=0)
+        
+        print(bestIndData)
 
-        for index, gene in bestIndData.iterrows():
+        for index, gene in bestIndData_clean.iterrows():
 
             self.geneLabel = tk.Label(self.geneFrame,text='%s = %s' % (gene['par_name'],round(gene['par_value'],2)))
             self.geneLabel.pack(anchor=tk.W)
