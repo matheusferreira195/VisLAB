@@ -1842,48 +1842,42 @@ class ResultsPage(tk.Frame):
 
         '''Reset the scroll region to encompass the inner frame'''
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
-class CalibrationPage(tk.Frame):
+
+ class CalibrationPage(tk.Frame):
 
     def __init__(self, parent, controller):
 
         tk.Frame.__init__(self,parent)
-        self.frame = tk.Frame(self)
-        self.frame.pack(fill="both", expand=True, padx=20, pady=20)
-        self.frame.place(in_=self, anchor="c", relx=.5, rely=.5)
-        print(path)
+        frame = tk.Frame(self)
+        frame.pack(fill="both", expand=True, padx=20, pady=20)
+        frame.place(in_=self, anchor="c", relx=.5, rely=.5)
+
         #dc_data = generate_dcdf_test()
         parameter_db = pd.read_csv(path+ r'\resources\parameters.visdb') 
+        self.cfgPhoto = tk.PhotoImage(path +r"\resources\settings.png")
+        self.runPhoto = tk.PhotoImage(path +r"\resources\power.png")  #https://www.flaticon.com/packs/science-121
+        self.resultsPhoto = tk.PhotoImage(path +r"\resources\results.png")
+        
+        label = tk.Label(frame, text="Calibration", font=LARGE_FONT)
+        label.grid(row=0,column=1)
 
-        self.cfgPhoto = tk.PhotoImage(file = path +r"\resources\settings.png")
-        self.runPhoto = tk.PhotoImage(file = path +r"\resources\power.png")  #https://www.flaticon.com/packs/science-121
-        self.resultsPhoto = tk.PhotoImage(file = path +r"\resources\results.png")
-        self.home = tk.PhotoImage(file = path + r"\resources\home.png")
+        runLabel = tk.Label(frame, text="Run calibration")
+        runLabel.grid(row=1,column=2)
+        runButton = tk.Button(frame, text="Run calibration",
+                            command=lambda: self.whichPreset(),image=self.runPhoto)
+        runButton.grid(row=2,column=2)
 
-        button2 = tk.Button(self.frame, 
-                            command=lambda: controller.show_frame(StartPage),
-                            image = self.home,borderwidth=0, background=backgroundColor1)
-        button2.grid(row=0,column=0, sticky='w')
+        cfgLabel = tk.Label(frame, text="Config calibration")
+        cfgLabel.grid(row=1,column=1)
+        cfgButton = tk.Button(frame, text="Config calibration",
+                            command=lambda: self.cfgCalibration(),image=self.cfgPhoto)
+        cfgButton.grid(row=2,column=1)
 
-        self.label = tk.Label(self.frame, text="Calibration", font=LARGE_FONT)
-        self.label.grid(row=0,column=2, sticky='e')
-
-        self.runLabel = tk.Label(self.frame, text="Run calibration")
-        self.runLabel.grid(row=1,column=2)
-        self.runButton = tk.Button(self.frame,image=self.runPhoto,
-                            command=lambda: self.whichPreset())
-        self.runButton.grid(row=2,column=2)
-
-        self.cfgLabel = tk.Label(self.frame, text="Config calibration")
-        self.cfgLabel.grid(row=1,column=1)
-        self.cfgButton = tk.Button(self.frame,image=self.cfgPhoto,
-                            command=lambda: self.cfgCalibration())
-        self.cfgButton.grid(row=2,column=1)
-
-        self.resultsLabel = tk.Label(self.frame, text="Results calibration")
-        self.resultsLabel.grid(row=1,column=3)        
-        self.resultsButton = tk.Button(self.frame,image=self.resultsPhoto,
-                            command=lambda: self.resultsCalibration())
-        self.resultsButton.grid(row=2,column=3)
+        resultsLabel = tk.Label(frame, text="Results calibration")
+        resultsLabel.grid(row=1,column=3)        
+        resultsButton = tk.Button(frame, text="Results calibration",
+                            command=lambda: self.resultsCalibration(),image=self.resultsPhoto)
+        resultsButton.grid(row=2,column=3)
     
     def whichPreset(self):
         backgroundColor1 = '#202126'
@@ -2256,13 +2250,11 @@ class CalibrationPage(tk.Frame):
         alphas = [] #store the alpha individuals for each generation
 
         genNumber = len(resultsDataDrop['gen'].drop_duplicates().index) #pick the total of generations, an easy way
-        print('gen number: %s' % genNumber)
         
         for g in range(genNumber): #iterating over generations results
 
-            alpha = resultsData.loc[resultsData['gen']==g].drop_duplicates(subset='epam').reset_index().min()['epam']
-            #print(alpha)
-            alphas.append(alpha) #storing on a list
+            alpha = resultsDataDrop.loc[resultsDataDrop['gen']==g]['epam'].sort_values().reset_index(drop=True)
+            alphas.append(alpha[0]) #storing on a list
 
         x_data = range(genNumber)
         y_data = alphas
@@ -2277,14 +2269,10 @@ class CalibrationPage(tk.Frame):
         
 
         genesNumber = len(resultsData.drop_duplicates(subset='par_name').index)
-        print(resultsData.sort_values)
-        bestIndData = resultsData.sort_values(by='epam').drop_duplicates(subset='epam').reset_index(drop=True)
-        
+        bestIndData = resultsData.sort_values(by='epam').reset_index(drop=True).iloc[:genesNumber]
         bestGen = bestIndData['gen'][0]
         bestInd = bestIndData['ind'][0]
         bestEPAM = bestIndData['epam'][0]
-
-        bestIndData_clean = resultsData.loc[resultsData['gen']==bestGen].loc[resultsData['ind']==bestInd]
 
         self.bestGenLabel = tk.Label(self.reportFrame,text='Best generation: %s' % bestGen)
         self.bestGenLabel.grid(row=0,column=0,sticky='w')
@@ -2296,36 +2284,35 @@ class CalibrationPage(tk.Frame):
         self.geneLabel.grid(row=2,column=0,sticky='w')
         self.geneFrame = tk.Frame(self.reportFrame)
         self.geneFrame.grid(row=3,column=0)
-        
-        print(bestIndData)
 
-        for index, gene in bestIndData_clean.iterrows():
+        for index, gene in bestIndData.iterrows():
 
             self.geneLabel = tk.Label(self.geneFrame,text='%s = %s' % (gene['par_name'],round(gene['par_value'],2)))
             self.geneLabel.pack(anchor=tk.W)
-class runCalibration:
+
+class runCalibration():
 
     #data initialization
     def __init__(self,name):
 
-        #print(name)
+        print(name)
         self.cfgGA = pd.read_sql(("select * from configurationsGA where name = '%s'" % name),gaCnx)
         self.parGA = pd.read_sql(("select * from parametersGA where name = '%s'" % name),gaCnx)
         self.resultsGA = pd.read_sql(("select * from resultsGA where name = '%s'" % name),gaCnx)
 
+        self.select_name = name
+
         self.gen0()
         self.genN()    
-        self.name = name
+        
 
-    def simulationGA(self,name,gen,rep,ind,genes):
-
+    def simulationGA(self,gen,rep,ind,genes):
 
         datapoint_id = self.cfgGA['datapoint_id'].item()
         datapoint_name = self.cfgGA['datapoint_type'].item()
         perf_measure = self.cfgGA['perf_measure'].item()
         time_p =  'avg'
         field_value =  self.cfgGA['field_data'].item()
-        
         
         for gene_name, gene_value in genes.items(): #sets parameters (called genes here)
 
@@ -2381,16 +2368,16 @@ class runCalibration:
             #print(seed)
             #print(gen)
             query = ("""INSERT INTO resultsGA (name,seed,gen,ind,par_name,par_value,perf_measure,result_value,epam) 
-            VALUES ('%s',%s,%s,%s,'%s',%s,'%s',%s,%s)""" % (str(name),str(int(seed)),str(int(gen)),
+            VALUES ('%s',%s,%s,%s,'%s',%s,'%s',%s,%s)""" % (str(self.select_name),str(int(seed)),str(int(gen)),
                                                                str(int(ind)),str(p_name),str(p_value),
                                                                str(perf_measure),str(mean(results)),str(mean(rep_results))))
             #print(query)
             cursorGA.execute(query)
-            gaCnx.commit()    
+            gaCnx.commit()
+        
 
     def gen0(self):
 
-        name = 'teste'#TODO add name key from field in cfg window
 
         rep = self.cfgGA['rep'].item()
         ind = self.cfgGA['ind'].item()
@@ -2410,8 +2397,8 @@ class runCalibration:
                 gene_value = random.uniform(down,up)
                 genes[gene_name] = gene_value
 
-            print("\naqui esta a rep: %s\n" % rep)
-            self.simulationGA(name,gen,rep,individual,genes)
+            #print("\naqui esta a rep: %s\n" % rep)
+            self.simulationGA(gen,rep,individual,genes)
 
     def genN(self):
         
@@ -2421,7 +2408,7 @@ class runCalibration:
         ind_number = self.cfgGA['ind'][0]
         n_generations = int(self.cfgGA['gen'][0])
         #print(n_generations)
-        print('GEN_N')
+        print('')
         #Vissim.Simulation.SetAttValue('NumRuns', rep_number)
 
         for gen in range(n_generations): #generations loop
@@ -2476,7 +2463,6 @@ class runCalibration:
                         genes[gene_name] = gene_value
                                     
                 self.simulationGA(gen_number,rep_number,ind,genes)
-                
              
 
 app = VisLab()
