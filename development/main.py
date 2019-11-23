@@ -91,8 +91,7 @@ def calculate_shdwy(path, dc, replication):
     #print(mers)
     #print(len(mers))
     
-    for i in range(len(mers)):
-
+    for i in range(replication-1,replication):
 
         mer_data_raw = pd.read_csv(mers[i], sep=';', skiprows=formatting('.mer',mers[i]), skipinitialspace=True, index_col=False) 
         mer_data = mer_data_raw.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
@@ -1450,7 +1449,7 @@ class ResultsPage(tk.Frame):
                 test_data = stats.ttest_ind(dados_1,dados_2,equal_var=False)
                 tp = 'Independent'
                 
-            teste = {'mean1':[mean1],'mean2':[mean2],'var1':[var1],'var2':[var2],'n':[n],'r':[r],'h0':[0],'df':[df],'statt':[test_data[0]],'pvalue':[test_data[1]],'type':tp}    
+            teste = {'mean1':[mean1],'mean2':[mean2],'var1':[var1],'var2':[var2],'n':[n],'r':[r],'h0':[0],'df':[df],'statt':[test_data[0]],'pvalue':[test_data[1]],'type':tp, 'pearson_pvalue':r_p}    
             teste_df = pd.DataFrame.from_dict(teste) 
 
             testLabel = tk.Label(frame,text='T test: paired sample mean difference')
@@ -1486,30 +1485,35 @@ class ResultsPage(tk.Frame):
             pearsonValue = tk.Label(frame,text=teste['r'])
             pearsonValue.grid(row=5,column=2)
 
+            pvalueLabel = tk.Label(frame,text='Pearson Correlation p-value')
+            pvalueLabel.grid(row=6,column=0)
+            pearsonpValue = tk.Label(frame,text=teste['pearson_pvalue'])
+            pearsonpValue.grid(row=6,column=2)
+
             pearsonLabel = tk.Label(frame,text='Type test')
-            pearsonLabel.grid(row=6,column=0)
+            pearsonLabel.grid(row=7,column=0)
             pearsonValue = tk.Label(frame,text=teste['type'])
-            pearsonValue.grid(row=6,column=2)
+            pearsonValue.grid(row=7,column=2)
 
             h0Label = tk.Label(frame,text='Mean difference hypothesis')
-            h0Label.grid(row=7,column=0)
+            h0Label.grid(row=8,column=0)
             h0Value = tk.Label(frame,text=teste['h0'])
-            h0Value.grid(row=7,column=2)
+            h0Value.grid(row=8,column=2)
 
             dfLabel = tk.Label(frame,text='Degrees of freedom')
-            dfLabel.grid(row=8,column=0)
+            dfLabel.grid(row=9,column=0)
             dfValue = tk.Label(frame,text=teste['df'])
-            dfValue.grid(row=8,column=2)
+            dfValue.grid(row=9,column=2)
 
             stattLabel = ttk.Label(frame,text='Stat t')
-            stattLabel.grid(row=9,column=0)
+            stattLabel.grid(row=10,column=0)
             stattValue = ttk.Label(frame,text=teste['statt'])
-            stattValue.grid(row=9,column=2)
+            stattValue.grid(row=10,column=2)
 
             criticaltLabel = ttk.Label(frame,text='Two-tailed teste p-value')
-            criticaltLabel.grid(row=10,column=0)
+            criticaltLabel.grid(row=11,column=0)
             criticaltValue = ttk.Label(frame,text=teste['pvalue'])
-            criticaltValue.grid(row=10,column=2)
+            criticaltValue.grid(row=11,column=2)
 
             vertical1 = ttk.Separator(frame, orient="vertical")
             vertical1.grid(row=0, column=1, sticky='ns', rowspan=100)
@@ -1517,9 +1521,9 @@ class ResultsPage(tk.Frame):
             vertical2.grid(row=0, column=3, sticky='ns', rowspan=100)
 
             blank = tk.Label(frame,text='')
-            blank.grid(row=11,column=2)
+            blank.grid(row=12,column=2)
             copyButton = ttk.Button(frame,text='Copy to clipboard',command= lambda: teste_df.to_clipboard())
-            copyButton.grid(row=12,column=2)
+            copyButton.grid(row=13,column=2)
         
         except:
 
@@ -1704,7 +1708,7 @@ class ResultsPage(tk.Frame):
         simCfgs = list(simData['sim_perf'].drop_duplicates())
         #print('simCfgs: \n')
         #print(simCfgs)
-        self.lineChart_subplot.set_title("Perf. Measure by Parameter and replication ")
+        self.lineChart_subplot.set_title("Parameter Level and Replications ")
         self.lineChart_subplot.set_ylabel(list(self.datapoints_df.loc[self.datapoints_df['experiment']==exp]['perf_measure'].drop_duplicates()))
         self.lineChart_subplot.set_xlabel('Simulation Run')
 
@@ -1714,21 +1718,21 @@ class ResultsPage(tk.Frame):
             y_data = np.array(list(simData.loc[simData['sim_perf']==cfg]['results'].drop_duplicates()))
             x_data = np.array(range(len(simData.loc[simData['sim_perf']==cfg]['seed'].drop_duplicates())))
             txtData = simData.loc[simData['sim_perf']==cfg].drop_duplicates(subset='parameter_name')
-            print('y_data:\n ')
-            print(y_data)
-            print('\nx_data:\n ')
-            print(x_data)
+            #print('y_data:\n ')
+            #print(y_data)
+            #print('\nx_data:\n ')
+            #print(x_data)
             labelTxt = ''
 
             for index, row in txtData.iterrows():
 
                 labelTxt = labelTxt + '|%s = %s|\n ' % (str(row['parameter_name']),str(row['parameter_value']))
 
-            print(labelTxt)
-            self.lineChart_subplot.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.,prop={'size': 8})
-            self.lineChart_canvas.draw()
+            print(labelTxt)                      
             self.lineChart_subplot.plot(x_data,y_data,label=labelTxt)
             self.lineChart_plot.subplots_adjust(right=0.64) #adjust legend problem here!
+            self.lineChart_subplot.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.,prop={'size': 6})  
+            self.lineChart_canvas.draw()
 
     def plotScatterchart(self,eventObject): #function that plots the scatter chart
 
@@ -1842,44 +1846,51 @@ class ResultsPage(tk.Frame):
 
         '''Reset the scroll region to encompass the inner frame'''
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
-
- class CalibrationPage(tk.Frame):
+class CalibrationPage(tk.Frame):
 
     def __init__(self, parent, controller):
 
         tk.Frame.__init__(self,parent)
-        frame = tk.Frame(self)
-        frame.pack(fill="both", expand=True, padx=20, pady=20)
-        frame.place(in_=self, anchor="c", relx=.5, rely=.5)
-
+        self.frame = tk.Frame(self)
+        self.frame.pack(fill="both", expand=True, padx=20, pady=20)
+        self.frame.place(in_=self, anchor="c", relx=.5, rely=.5)
+        print(path)
         #dc_data = generate_dcdf_test()
         parameter_db = pd.read_csv(path+ r'\resources\parameters.visdb') 
-        self.cfgPhoto = tk.PhotoImage(path +r"\resources\settings.png")
-        self.runPhoto = tk.PhotoImage(path +r"\resources\power.png")  #https://www.flaticon.com/packs/science-121
-        self.resultsPhoto = tk.PhotoImage(path +r"\resources\results.png")
-        
-        label = tk.Label(frame, text="Calibration", font=LARGE_FONT)
-        label.grid(row=0,column=1)
 
-        runLabel = tk.Label(frame, text="Run calibration")
-        runLabel.grid(row=1,column=2)
-        runButton = tk.Button(frame, text="Run calibration",
-                            command=lambda: self.whichPreset(),image=self.runPhoto)
-        runButton.grid(row=2,column=2)
+        self.cfgPhoto = tk.PhotoImage(file = path +r"\resources\settings.png")
+        self.runPhoto = tk.PhotoImage(file = path +r"\resources\power.png")  #https://www.flaticon.com/packs/science-121
+        self.resultsPhoto = tk.PhotoImage(file = path +r"\resources\results.png")
+        self.home = tk.PhotoImage(file = path + r"\resources\home.png")
 
-        cfgLabel = tk.Label(frame, text="Config calibration")
-        cfgLabel.grid(row=1,column=1)
-        cfgButton = tk.Button(frame, text="Config calibration",
-                            command=lambda: self.cfgCalibration(),image=self.cfgPhoto)
-        cfgButton.grid(row=2,column=1)
+        button2 = tk.Button(self.frame, 
+                            command=lambda: controller.show_frame(StartPage),
+                            image = self.home,borderwidth=0, background=backgroundColor1)
+        button2.grid(row=0,column=0, sticky='w')
 
-        resultsLabel = tk.Label(frame, text="Results calibration")
-        resultsLabel.grid(row=1,column=3)        
-        resultsButton = tk.Button(frame, text="Results calibration",
-                            command=lambda: self.resultsCalibration(),image=self.resultsPhoto)
-        resultsButton.grid(row=2,column=3)
+        self.label = tk.Label(self.frame, text="Calibration", font=LARGE_FONT)
+        self.label.grid(row=0,column=2, sticky='e')
+
+        self.runLabel = tk.Label(self.frame, text="Run calibration")
+        self.runLabel.grid(row=1,column=2)
+        self.runButton = tk.Button(self.frame,image=self.runPhoto,
+                            command=lambda: self.whichPreset())
+        self.runButton.grid(row=2,column=2)
+
+        self.cfgLabel = tk.Label(self.frame, text="Config calibration")
+        self.cfgLabel.grid(row=1,column=1)
+        self.cfgButton = tk.Button(self.frame,image=self.cfgPhoto,
+                            command=lambda: self.cfgCalibration())
+        self.cfgButton.grid(row=2,column=1)
+
+        self.resultsLabel = tk.Label(self.frame, text="Results calibration")
+        self.resultsLabel.grid(row=1,column=3)        
+        self.resultsButton = tk.Button(self.frame,image=self.resultsPhoto,
+                            command=lambda: self.resultsCalibration())
+        self.resultsButton.grid(row=2,column=3)
     
     def whichPreset(self):
+
         backgroundColor1 = '#202126'
         self.presets = pd.read_sql("SELECT * FROM configurationsGA",gaCnx)
 
@@ -2250,11 +2261,13 @@ class ResultsPage(tk.Frame):
         alphas = [] #store the alpha individuals for each generation
 
         genNumber = len(resultsDataDrop['gen'].drop_duplicates().index) #pick the total of generations, an easy way
+        print('gen number: %s' % genNumber)
         
         for g in range(genNumber): #iterating over generations results
 
-            alpha = resultsDataDrop.loc[resultsDataDrop['gen']==g]['epam'].sort_values().reset_index(drop=True)
-            alphas.append(alpha[0]) #storing on a list
+            alpha = resultsData.loc[resultsData['gen']==g].drop_duplicates(subset='epam').reset_index().min()['epam']
+            #print(alpha)
+            alphas.append(alpha) #storing on a list
 
         x_data = range(genNumber)
         y_data = alphas
@@ -2269,10 +2282,14 @@ class ResultsPage(tk.Frame):
         
 
         genesNumber = len(resultsData.drop_duplicates(subset='par_name').index)
-        bestIndData = resultsData.sort_values(by='epam').reset_index(drop=True).iloc[:genesNumber]
+        print(resultsData.sort_values)
+        bestIndData = resultsData.sort_values(by='epam').drop_duplicates(subset='epam').reset_index(drop=True)
+        
         bestGen = bestIndData['gen'][0]
         bestInd = bestIndData['ind'][0]
         bestEPAM = bestIndData['epam'][0]
+
+        bestIndData_clean = resultsData.loc[resultsData['gen']==bestGen].loc[resultsData['ind']==bestInd]
 
         self.bestGenLabel = tk.Label(self.reportFrame,text='Best generation: %s' % bestGen)
         self.bestGenLabel.grid(row=0,column=0,sticky='w')
@@ -2284,35 +2301,36 @@ class ResultsPage(tk.Frame):
         self.geneLabel.grid(row=2,column=0,sticky='w')
         self.geneFrame = tk.Frame(self.reportFrame)
         self.geneFrame.grid(row=3,column=0)
+        
+        print(bestIndData)
 
-        for index, gene in bestIndData.iterrows():
+        for index, gene in bestIndData_clean.iterrows():
 
             self.geneLabel = tk.Label(self.geneFrame,text='%s = %s' % (gene['par_name'],round(gene['par_value'],2)))
             self.geneLabel.pack(anchor=tk.W)
-
-class runCalibration():
+class runCalibration:
 
     #data initialization
     def __init__(self,name):
 
-        print(name)
+        #print(name)
         self.cfgGA = pd.read_sql(("select * from configurationsGA where name = '%s'" % name),gaCnx)
         self.parGA = pd.read_sql(("select * from parametersGA where name = '%s'" % name),gaCnx)
         self.resultsGA = pd.read_sql(("select * from resultsGA where name = '%s'" % name),gaCnx)
 
-        self.select_name = name
-
         self.gen0()
         self.genN()    
-        
+        self.name = name
 
-    def simulationGA(self,gen,rep,ind,genes):
+    def simulationGA(self,name,gen,rep,ind,genes):
+
 
         datapoint_id = self.cfgGA['datapoint_id'].item()
         datapoint_name = self.cfgGA['datapoint_type'].item()
         perf_measure = self.cfgGA['perf_measure'].item()
         time_p =  'avg'
         field_value =  self.cfgGA['field_data'].item()
+        
         
         for gene_name, gene_value in genes.items(): #sets parameters (called genes here)
 
@@ -2368,16 +2386,16 @@ class runCalibration():
             #print(seed)
             #print(gen)
             query = ("""INSERT INTO resultsGA (name,seed,gen,ind,par_name,par_value,perf_measure,result_value,epam) 
-            VALUES ('%s',%s,%s,%s,'%s',%s,'%s',%s,%s)""" % (str(self.select_name),str(int(seed)),str(int(gen)),
+            VALUES ('%s',%s,%s,%s,'%s',%s,'%s',%s,%s)""" % (str(name),str(int(seed)),str(int(gen)),
                                                                str(int(ind)),str(p_name),str(p_value),
                                                                str(perf_measure),str(mean(results)),str(mean(rep_results))))
             #print(query)
             cursorGA.execute(query)
-            gaCnx.commit()
-        
+            gaCnx.commit()    
 
     def gen0(self):
 
+        name = 'teste'#TODO add name key from field in cfg window
 
         rep = self.cfgGA['rep'].item()
         ind = self.cfgGA['ind'].item()
@@ -2397,8 +2415,8 @@ class runCalibration():
                 gene_value = random.uniform(down,up)
                 genes[gene_name] = gene_value
 
-            #print("\naqui esta a rep: %s\n" % rep)
-            self.simulationGA(gen,rep,individual,genes)
+            print("\naqui esta a rep: %s\n" % rep)
+            self.simulationGA(name,gen,rep,individual,genes)
 
     def genN(self):
         
@@ -2408,7 +2426,7 @@ class runCalibration():
         ind_number = self.cfgGA['ind'][0]
         n_generations = int(self.cfgGA['gen'][0])
         #print(n_generations)
-        print('')
+        print('GEN_N')
         #Vissim.Simulation.SetAttValue('NumRuns', rep_number)
 
         for gen in range(n_generations): #generations loop
@@ -2463,6 +2481,7 @@ class runCalibration():
                         genes[gene_name] = gene_value
                                     
                 self.simulationGA(gen_number,rep_number,ind,genes)
+                
              
 
 app = VisLab()
