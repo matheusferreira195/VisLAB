@@ -1827,7 +1827,7 @@ class ResultsPage(tk.Frame):
             labels.append('%sº difference\n %s' % (i+1,tp))
 
         self.difmeansBpPlotSubplot.set_ylabel(list(self.datapoints_df.loc[self.datapoints_df['experiment']==(int(exp1))]['perf_measure'].drop_duplicates()))   
-        self.difmeansBpPlotSubplot.errorbar(labels, ys, yerr=Es, fmt='s',capsize=5)
+        self.difmeansBpPlotSubplot.errorbar(labels, ys, yerr=Es, fmt='bo',capsize=5)
         self.difmeansBpPlotSubplot.set_xticklabels(labels,rotation=45,fontsize=8)
         self.difmeansBpPlotFigure.tight_layout()        
         self.difmeansBpPlotCanvas.draw()
@@ -2002,7 +2002,7 @@ class ResultsPage(tk.Frame):
         e = list(simStats['ci'])
         self.ciboxplotSubplot.set_xticklabels(labels,rotation=45,fontsize=8)
         self.ciboxplotSubplot.set_ylabel(list(self.datapoints_df.loc[self.datapoints_df['experiment']==exp]['perf_measure'].drop_duplicates()))   
-        self.ciboxplotSubplot.errorbar(x, y, yerr=e, fmt='s',capsize=5)
+        self.ciboxplotSubplot.errorbar(x, y, yerr=e, fmt='bo',capsize=5)
         self.ciboxplotFigure.tight_layout()
         self.ciboxplotCanvas.draw()
 
