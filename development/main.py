@@ -5,6 +5,8 @@ Created on Tue Oct 15 21:05:28 2019
 """
 import tkinter as tk
 import sqlite3
+import sys
+from subprocess import Popen
 import pandas as pd
 import math
 from statistics import mean
@@ -36,6 +38,7 @@ from tkinter import filedialog
 from time import time
 import time
 from threading import Thread
+import threading
 
 sys.path.append(os.path.realpath('..'))
 
@@ -58,10 +61,6 @@ cursorGA = gaCnx.cursor()
 
 backgroundColor1 = '#202126'
 backgroundColor2 = '#3d68d5'
-
-global updatepbBarCount
-
-updatepbBarCount = False
 
 def formatting(tipe, path):
     skipline = 0
@@ -151,11 +150,10 @@ def calculate_shdwy(path, dc, replication):
                 pass
                 ##print('erro df.empty')
     return headway_mean 
-    
         
-def vissim_simulation(experiment, Vissim, default = 0):
+def vissim_simulation(experiment, Vissim):
 
-    plop = time()
+    plop = time.time()
     #Loading initial data sources
     simCfg = pd.read_sql(str('SELECT * FROM simulation_cfg WHERE experiment = %s' % experiment),cnx)
     selected_datapts = pd.read_sql(str('SELECT * FROM datapoints WHERE experiment = %s' % experiment),cnx) #self.datapoints_df.loc[self.datapoints_df['experiment']==experiment]
@@ -167,101 +165,51 @@ def vissim_simulation(experiment, Vissim, default = 0):
     runs = int(simCfg['replications'][0])
     seed = int(simCfg['initial_seed'][0])
     seed_inc = int(simCfg['seed_increment'][0])
-    
-    if default == 1:
 
-        #Runs the net with default parameter values 
+    Vissim.Simulation.SetAttValue('RandSeed', seed)
+    Vissim.Simulation.SetAttValue('NumRuns', runs)
 
-        Vissim.Simulation.SetAttValue('RandSeed', seed)
-        Vissim.Graphics.CurrentNetworkWindow.SetAttValue("QuickMode",1) #Ativando Quick Mode
-        Vissim.Simulation.RunContinuous() #Iniciando Simulação 
+    raw_possibilities = {}
 
-        for index, dc_data in selected_datapts.iterrows(): #TODO testar se roda pros defaults
-                
-                for replication in range(1,runs+1):
-                    
-                    if dc_data['dc_type'] == 'Data Collector':
-
-                        if dc_data['perf_measure'] == 'Saturation Headway':
-                            ##print('problema')
-                            result = calculate_shdwy(vissimFile, dc_data['dc_number'].item, replication) 
-                            
-                        else:
-                           # #print(dc_data['time_p'])
-                            selected_dc = Vissim.Net.DataCollectionMeasurements.ItemByKey(int(dc_data['dc_number'])) 
-                            result = selected_dc.AttValue('{}({},{},All)'.format(str(dc_data['perf_measure']), 
-                                                        str(replication), 
-                                                        str(dc_data['time_p'])))
-
-                    elif dc_data['dc_type'] == 'Travel Time Collector':
-
-                        selected_ttc = Vissim.Net.DelayMeasurements.ItemByKey(int(dc_data['dc_number']))
-                        result = selected_ttc.AttValue('{}({},{},All)'.format(str(dc_data['perf_measure']), 
-                                                    str(replication), 
-                                                    str(dc_data['time_p'])))
-                                                    
-                    else:    
-                        
-                        selected_qc = Vissim.Net.QueueCounters.ItemByKey(int(dc_data['dc_number']))
-                        result = selected_qc.AttValue('{}({},{})'.format(str(dc_data['perf_measure']), 
-                                                    str(replication), 
-                                                    str(dc_data['time_p'])))
-                    
-
-                    for p_name,p_value in dc_data.iteritems():
-
-                        seedDb = seed + replication*seed_inc
-
-                        cursor.execute("UPDATE simulation_runs SET results = %s WHERE experiment = %s AND parameter_name = '%s' AND parameter_value = %s AND seed = %s" % (result,experiment,'default','default',seedDb))
-                        cnx.commit()
-    else:
-
-        Vissim.Simulation.SetAttValue('RandSeed', seed)
-        Vissim.Simulation.SetAttValue('NumRuns', runs)
-
-        raw_possibilities = {}
-
-        for index, item in selected_parameters.iterrows(): #gets the parameter data for the selected experiment
-            
-            ##print(item)
-            
-            parameter = item['parameter_name']
-            inf = item['parameter_b_value']
-            sup = item['parameter_u_value']
-            step = item['parameter_step']
-            
-            if type(inf) == type(sup) == int or type(inf) == type(sup) == float: #verifies if the parameter is a int/float type or str/bool
-                ##print(type(inf))                                                #and processes accordingly
-                total_values = np.arange(inf, sup+step, step)
-                
-            else:
-                ##print(inf)
-                total_values = [inf, sup]
-                
-            ##print(total_values)
-            
-            raw_possibilities[parameter] = total_values #stores all the parameters values to be used later
-
-            
-        allNames = sorted(raw_possibilities)
-        combinations = list(it.product(*(raw_possibilities[Name] for Name in allNames))) #generates a list with all possible permutations
-        ##print(combinations)                                                             #of parameters
-        ##print(list(df.Parameter))
+    for index, item in selected_parameters.iterrows(): #gets the parameter data for the selected experiment
         
-        selectedParameters = list(selected_parameters['parameter_name'])  #stores the parameter's names
-        ##print(selectedParameters)
-        parameters_df = pd.DataFrame(combinations, columns=selectedParameters) #organizes all runs cfg data
-        ##print(parameters_df)
+        ##print(item)
+        
+        parameter = item['parameter_name']
+        inf = item['parameter_b_value']
+        sup = item['parameter_u_value']
+        step = item['parameter_step']
+        
+        #if type(inf) == type(sup) == int or type(inf) == type(sup) == float: #verifies if the parameter is a int/float type or str/bool
+            ##print(type(inf))                                                #and processes accordingly
+        total_values = np.arange(inf, sup+step, step)
+            
+        #else:
+            ##print(inf)
+           # total_values = [inf, sup]
+            
+        #print(total_values)
+        
+        raw_possibilities[parameter] = total_values #stores all the parameters values to be used later
 
-        #------------------------------------#
-                
-        for index, row in parameters_df.iterrows():
-            #print(index)
-            #print(row)
+    allNames = sorted(raw_possibilities)
+    combinations = list(it.product(*(raw_possibilities[Name] for Name in allNames))) #generates a list with all possible permutations
+    ##print(combinations)                                                             #of parameters
+    ##print(list(df.Parameter))
+    
+    selectedParameters = list(selected_parameters['parameter_name'])  #stores the parameter's names
+    ##print(selectedParameters)
+    parameters_df = pd.DataFrame(combinations, columns=selectedParameters) #organizes all runs cfg data
+    #print(parameters_df)
+
+    #------------------------------------#
+            
+    for index_p, row in parameters_df.iterrows():
+
+            print(index_p)
+
             parameter_names = list(parameters_df)
-            ##print(parameter_names)
-            ##print('parameter_names')
-            ##print(parameter_names)
+
             #Configures the simulation
 
             for i in range(len(parameter_names)): #loop that cfgs the simulation's parameters
@@ -279,7 +227,7 @@ def vissim_simulation(experiment, Vissim, default = 0):
                     query = "INSERT INTO simulation_runs (experiment,parameter_name,parameter_value,seed,sim_perf) VALUES (%s,'%s',%s,%s,%s)" % (str(experiment),
                                                                                                                             str(parameter_name),
                                                                                                                             str(parameter_df_),
-                                                                                                                            str(seed_t),str(index))
+                                                                                                                            str(seed_t),str(index_p))
                     #print(query)
                     cursor.execute(query)
                     cnx.commit() 
@@ -329,11 +277,18 @@ def vissim_simulation(experiment, Vissim, default = 0):
                     for p_name,p_value in row.iteritems():
 
                         seedDb = seed + replication*seed_inc
-
-                        cursor.execute("UPDATE simulation_runs SET results = %s WHERE experiment = %s AND parameter_name = '%s' AND parameter_value = %s AND seed = %s" % (result,experiment,p_name,p_value,seedDb))
+                        query = """UPDATE simulation_runs 
+                                          SET results = %s 
+                                          WHERE experiment = %s 
+                                          AND parameter_name = '%s' 
+                                          AND parameter_value = %s 
+                                          AND seed = %s 
+                                          AND sim_perf = %s""" % (result,experiment,p_name,p_value,seedDb,index_p)
+                        print(query)
+                        cursor.execute(query)
                         cnx.commit()
     
-    plip = time()
+    plip = time.time()
     return (plip-plop)
  
 class VisLab(tk.Tk):
@@ -444,6 +399,7 @@ class StartPage(tk.Frame):
             ##print(dc_data)
             
 parameter_db = pd.read_csv(path + r'\resources\parameters.visdb')       
+
 class Board(tk.Frame):
 
     #Experiment page, where the user models the sensitivity analysis experiments
@@ -646,7 +602,6 @@ class Board(tk.Frame):
 
     def runSim(self):
 
-        self.updatepbBarCount = False
 
         NORMIE_FONT_exp = ("Segoe UI", 15)
 
@@ -677,55 +632,30 @@ class Board(tk.Frame):
 
             except:
                 pass
+            self.runningLabel = tk.Label(selectPopup,text='Running experiment %s... ' % exp, 
+                                                  font = self.NORMIE_FONT_exp,
+                                                  background='white',
+                                                  fg=self.backgroundColor2,
+                                                  anchor=tk.W, 
+                                                  justify=tk.LEFT)
+            self.runningLabel.grid(row=item,column=0)
+            self.update()
 
-            #selectLabel = tk.Label(selectPopup,text='Running Experiment: %s' % exp, 
-                                                    font = NORMIE_FONT_exp,
-                                                    background='white',
-                                                    fg=self.backgroundColor2,
-                                                    anchor=tk.W, 
-                                                    justify=tk.LEFT)
-                                                
-            #selectLabel.grid(row=0,column=0,sticky='w')
-
-            '''self.processing_bar = ttk.Progressbar(selectPopup, orient='horizontal', mode='indeterminate')
-            self.processing_bar.grid(row=1, column=0)
-            k=1
-
-            print('start thread')
-            thread = Thread(target=self.updateBar, args=(exp,k))
-            thread.daemon = True
-            thread.start()      
-            print('finished thread')'''
-
-            time.sleep(5)  
-
-             
-            
             exec_time = vissim_simulation(exp,Vissim)
-
-            cursor.execute("INSERT INTO simulation_cfg (date_last_run,runned_in) VALUES (%s,%s) WHERE experiment = %i" % (time(),exp,exec_time))
+            current_time = time.time()
+            cursor.execute("INSERT INTO simulation_cfg (date_last_run,runned_in) VALUES (%s,%s) WHERE experiment = %i" % (current_time,exp,exec_time))
             cnx.commit()
-            
 
-            messagebox.showinfo("Sucess!", "Experiment %s sucessfully run" % exp)
-            print('passou')
+            self.concludedLabel = tk.Label(selectPopup,text='Experiment %s sucessfully run!' % exp, 
+                                                  font = self.NORMIE_FONT_exp,
+                                                  background='white',
+                                                  fg=self.backgroundColor2,
+                                                  anchor=tk.W, 
+                                                  justify=tk.LEFT)
+            self.concludedLabel.grid(row=item,column=1)
 
-    '''def updateBar(self,exp,k):
-
-        NORMIE_FONT_exp = ("Segoe UI", 15)
-
-        self.selectPopup1 = tk.Toplevel()
-        selectLabel = tk.Label(self.selectPopup1,text='Running Experiment: %s' % exp, 
-                                                    font = NORMIE_FONT_exp,
-                                                    background='white',
-                                                    fg=self.backgroundColor2,
-                                                    anchor=tk.W, 
-                                                    justify=tk.LEFT)
-                                                
-        selectLabel.grid(row=0,column=0,sticky='w')
-        self.processing_bar = ttk.Progressbar(self.selectPopup1, orient='horizontal', mode='indeterminate')
-        self.processing_bar.grid(row=1, column=0)
-        self.processing_bar.start()'''
+        messagebox.showinfo("Sucess!", "All selected experiments runned!")
+        selectPopup.destroy()
 
     def deleteExperiments(self):
 
@@ -1512,7 +1442,7 @@ class ResultsPage(tk.Frame):
 
         self.difmeansBpSvarp1 = tk.StringVar()
         self.difmeansBpSvarp1.set('Param.')
-        self.difmeansBpCbboxp1 = ttk.Combobox(self.difmeansWidgetFrame,width=10,textvariable=str(self.difmeansBpSvarp1),state='readonly')
+        self.difmeansBpCbboxp1 = ttk.Combobox(self.difmeansWidgetFrame,width=15,textvariable=str(self.difmeansBpSvarp1),state='readonly')
         self.difmeansBpCbboxp1['values'] = []
         #self.difmeansCbboxp1.bind('<<ComboboxSelected>>', lambda e: self.difmeanSelect(eventObject=e))
         self.difmeansBpCbboxp1.grid(row=2,column=1, sticky='w', padx=(0,15))
@@ -1526,7 +1456,7 @@ class ResultsPage(tk.Frame):
         
         self.difmeansBpSvarp2 = tk.StringVar()
         self.difmeansBpSvarp2.set('Param.')
-        self.difmeansBpCbboxp2 = ttk.Combobox(self.difmeansWidgetFrame,width=10,textvariable=str(self.difmeansBpSvarp2),state='readonly')
+        self.difmeansBpCbboxp2 = ttk.Combobox(self.difmeansWidgetFrame,width=15,textvariable=str(self.difmeansBpSvarp2),state='readonly')
         self.difmeansBpCbboxp2['values'] = []
         self.difmeansBpCbboxp2.grid(row=3,column=1,pady=(0,5), sticky='w', padx=(0,15))
 
@@ -1546,7 +1476,7 @@ class ResultsPage(tk.Frame):
 
         self.difmeansBpSvarp3 = tk.StringVar()
         self.difmeansBpSvarp3.set('Param.')
-        self.difmeansBpCbboxp3 = ttk.Combobox(self.difmeansWidgetFrame,width=10,textvariable=str(self.difmeansBpSvarp3),state='readonly')
+        self.difmeansBpCbboxp3 = ttk.Combobox(self.difmeansWidgetFrame,width=15,textvariable=str(self.difmeansBpSvarp3),state='readonly')
         self.difmeansBpCbboxp3['values'] = []
         #self.difmeansCbboxp1.bind('<<ComboboxSelected>>', lambda e: self.difmeanSelect(eventObject=e))
         self.difmeansBpCbboxp3.grid(row=5,column=1, sticky='w', padx=(0,15))
@@ -1561,7 +1491,7 @@ class ResultsPage(tk.Frame):
 
         self.difmeansBpSvarp4 = tk.StringVar()
         self.difmeansBpSvarp4.set('Param.')
-        self.difmeansBpCbboxp4 = ttk.Combobox(self.difmeansWidgetFrame,width=10,textvariable=str(self.difmeansBpSvarp4),state='readonly')
+        self.difmeansBpCbboxp4 = ttk.Combobox(self.difmeansWidgetFrame,width=15,textvariable=str(self.difmeansBpSvarp4),state='readonly')
         self.difmeansBpCbboxp4['values'] = []
         self.difmeansBpCbboxp4.grid(row=6,column=1, sticky='w', padx=(0,15))
 
@@ -1581,7 +1511,7 @@ class ResultsPage(tk.Frame):
 
         self.difmeansBpSvarp5 = tk.StringVar()
         self.difmeansBpSvarp5.set('Param.')
-        self.difmeansBpCbboxp5 = ttk.Combobox(self.difmeansWidgetFrame,width=10,textvariable=str(self.difmeansBpSvarp5),state='readonly')
+        self.difmeansBpCbboxp5 = ttk.Combobox(self.difmeansWidgetFrame,width=15,textvariable=str(self.difmeansBpSvarp5),state='readonly')
         self.difmeansBpCbboxp5['values'] = []
         #self.difmeansCbboxp1.bind('<<ComboboxSelected>>', lambda e: self.difmeanSelect(eventObject=e))
         self.difmeansBpCbboxp5.grid(row=8,column=1, sticky='w', padx=(0,15))
@@ -1595,7 +1525,7 @@ class ResultsPage(tk.Frame):
 
         self.difmeansBpSvarp6 = tk.StringVar()
         self.difmeansBpSvarp6.set('Param.')
-        self.difmeansBpCbboxp6 = ttk.Combobox(self.difmeansWidgetFrame,width=10,textvariable=str(self.difmeansBpSvarp6),state='readonly')
+        self.difmeansBpCbboxp6 = ttk.Combobox(self.difmeansWidgetFrame,width=15,textvariable=str(self.difmeansBpSvarp6),state='readonly')
         self.difmeansBpCbboxp6['values'] = []
         self.difmeansBpCbboxp6.grid(row=9,column=1, sticky='w', padx=(0,15))
         self.genButton = tk.Button(self.difplotStuff,text='Plot', command= self.difmeanPlot, background=backgroundColor1, fg=backgroundColor2,borderwidth=0)
@@ -1940,8 +1870,8 @@ class ResultsPage(tk.Frame):
         ##print('simData: \n')
         ##print(simData)
         simCfgs = list(simData['sim_perf'].drop_duplicates())
-        ##print('simCfgs: \n')
-        ##print(simCfgs)
+        print('simCfgs: \n')
+        print(simCfgs)
         self.lineChart_subplot.set_title("Parameter Level and Replications ")
         self.lineChart_subplot.set_ylabel(list(self.datapoints_df.loc[self.datapoints_df['experiment']==exp]['perf_measure'].drop_duplicates()))
         self.lineChart_subplot.set_xlabel('Simulation Run')
@@ -1950,12 +1880,12 @@ class ResultsPage(tk.Frame):
 
             #print('cfg: %s' % cfg)
             y_data = np.array(list(simData.loc[simData['sim_perf']==cfg]['results'].drop_duplicates()))
-            x_data = np.array(range(len(simData.loc[simData['sim_perf']==cfg]['seed'].drop_duplicates())))
+            x_data = np.array(range(len(simData.loc[simData['sim_perf']==cfg]['results'].drop_duplicates())))
             txtData = simData.loc[simData['sim_perf']==cfg].drop_duplicates(subset='parameter_name')
-            ##print('y_data:\n ')
-            ##print(y_data)
-            ##print('\nx_data:\n ')
-            ##print(x_data)
+            print('y_data:\n ')
+            print(y_data)
+            print('\nx_data:\n ')
+            print(x_data)
             labelTxt = ''
 
             for index, row in txtData.iterrows():
@@ -2084,45 +2014,57 @@ class CalibrationPage(tk.Frame):
 
     def __init__(self, parent, controller):
 
-        tk.Frame.__init__(self,parent)
-        self.frame = tk.Frame(self)
-        self.frame.pack(fill="both", expand=True, padx=20, pady=20)
-        self.frame.place(in_=self, anchor="c", relx=.5, rely=.5)
-        #print(path)
-        #dc_data = generate_dcdf_test()
-        parameter_db = pd.read_csv(path+ r'\resources\parameters.visdb') 
+        self.backgroundColor1 = '#202126'
+        self.backgroundColor2 = '#3d68d5'
+        self.WELCOME_FONT_exp = ("Segoe UI", 32)
+        self.NORMIE_FONT_exp = ("Segoe UI", 15)
+        self.TINY_FONT_exp = ("Segoe UI", 10)
 
-        self.cfgPhoto = tk.PhotoImage(file = path +r"\resources\settings.png")
-        self.runPhoto = tk.PhotoImage(file = path +r"\resources\power.png")  #https://www.flaticon.com/packs/science-121
-        self.resultsPhoto = tk.PhotoImage(file = path +r"\resources\results.png")
+        self.addIcon = tk.PhotoImage(file = path + r"\resources\add-config.png")  #https://www.flaticon.com/packs/science-121
+        self.deleteIcon = tk.PhotoImage(file = path + r"\resources\delete.png")
+        self.runIcon = tk.PhotoImage(file = path + r"\resources\play-button-arrowhead.png")
         self.home = tk.PhotoImage(file = path + r"\resources\home.png")
 
-        button2 = tk.Button(self.frame, 
+        tk.Frame.__init__(self,parent, background='white')
+
+        #SIDE BAR
+
+        self.sideBar = tk.Frame(self,background=self.backgroundColor1)
+        self.sideBar.pack(side="left", fill="y")
+
+        self.welcomeFrame = tk.Frame(self.sideBar,background=self.backgroundColor1)
+        self.welcomeFrame.grid(row=0,column=0, sticky='w')
+
+        self.welcomeLabel = tk.Label(self.welcomeFrame,text='Calibration', 
+                                                  font = self.WELCOME_FONT_exp,
+                                                  background=self.backgroundColor1,
+                                                  fg=self.backgroundColor2,
+                                                  anchor=tk.W, 
+                                                  justify=tk.LEFT)
+        self.welcomeLabel.grid(row=0,column=0,sticky='w',pady=(50,0),padx=10)
+        
+        self.addConfigure = tk.Button(self.welcomeFrame, text="   Add & Config Presets",
+                            command= lambda: self.cfgCalibration(),image=self.addIcon,background=self.backgroundColor1, highlightthickness = 0, bd = 0,compound="left",fg='white')
+        self.addConfigure.grid(row=1,column=0,pady=(50,0),padx=30,sticky='w')
+
+        self.runExp = tk.Button(self.welcomeFrame, text="   Run Calibration",
+                            command= lambda: self.whichPreset(),image=self.runIcon,background=self.backgroundColor1, highlightthickness = 0, bd = 0,compound="left",fg='white')
+        self.runExp.grid(row=2,column=0,pady=(50,0),padx=30,sticky='w')
+
+        self.navbutton = tk.Button(self.welcomeFrame, 
                             command=lambda: controller.show_frame(StartPage),
                             image = self.home,borderwidth=0, background=backgroundColor1)
-        button2.grid(row=0,column=0, sticky='w')
+        self.navbutton.grid(row=0,column=1, sticky='w',pady=(50,0),padx=10)
 
-        self.label = tk.Label(self.frame, text="Calibration", font=LARGE_FONT)
-        self.label.grid(row=0,column=2, sticky='e')
+        #LEFT AREA
 
-        self.runLabel = tk.Label(self.frame, text="Run calibration")
-        self.runLabel.grid(row=1,column=2)
-        self.runButton = tk.Button(self.frame,image=self.runPhoto,
-                            command=lambda: self.whichPreset())
-        self.runButton.grid(row=2,column=2)
+        self.leftArea = tk.Frame(self, background='white')
+        self.leftArea.pack(side='left', fill='x', anchor='nw')
 
-        self.cfgLabel = tk.Label(self.frame, text="Config calibration")
-        self.cfgLabel.grid(row=1,column=1)
-        self.cfgButton = tk.Button(self.frame,image=self.cfgPhoto,
-                            command=lambda: self.cfgCalibration())
-        self.cfgButton.grid(row=2,column=1)
+        parameter_db = pd.read_csv(path+ r'\resources\parameters.visdb') 
 
-        self.resultsLabel = tk.Label(self.frame, text="Results calibration")
-        self.resultsLabel.grid(row=1,column=3)        
-        self.resultsButton = tk.Button(self.frame,image=self.resultsPhoto,
-                            command=lambda: self.resultsCalibration())
-        self.resultsButton.grid(row=2,column=3)
-    
+        self.resultsCalibration()
+
     def whichPreset(self):
 
         backgroundColor1 = '#202126'
@@ -2443,32 +2385,47 @@ class CalibrationPage(tk.Frame):
     def resultsCalibration(self):
         
         self.presets = pd.read_sql("SELECT * FROM configurationsGA",gaCnx)
-        self.resultsGAWindow = tk.Toplevel()
-        self.resultsGAWindow.wm_title("GA Calibration Results")
+        #self.resultsGAWindow = tk.Toplevel()
+        #self.resultsGAWindow.wm_title("GA Calibration Results")
         
-        self.resultsGAFrame = tk.Frame(self.resultsGAWindow)
+        self.resultsGAFrame = tk.Frame(self.leftArea, background='white')
         self.resultsGAFrame.grid(row=0,column=0)
 
         #perf chart section
-        self.cbboxLabelFrame = tk.Frame(self.resultsGAFrame)
+        self.cbboxLabelFrame = tk.Frame(self.resultsGAFrame,background='white')
         self.cbboxLabelFrame.grid(row=0,column=0,sticky='w')
-        self.resultsGALabel = tk.Label(self.cbboxLabelFrame, text="GA Calibration results")
+        self.resultsGALabel = tk.Label(self.cbboxLabelFrame, text="GA Calibration results",
+                                                             font = self.NORMIE_FONT_exp,
+                                                             background='white',
+                                                             fg=self.backgroundColor2,
+                                                             anchor=tk.W, 
+                                                             justify=tk.LEFT)
         self.resultsGALabel.grid(row=0,column=0,sticky='w')
         
-        self.selectCfgLabel = tk.Label(self.cbboxLabelFrame, text="\n Select saved config preset: ")
+        self.selectCfgLabel = tk.Label(self.cbboxLabelFrame, text="\n Select saved config preset: ",
+                                                             font = self.NORMIE_FONT_exp,
+                                                             background='white',
+                                                             fg=self.backgroundColor2,
+                                                             anchor=tk.W, 
+                                                             justify=tk.LEFT)
         self.selectCfgLabel.grid(row=1,column=0,sticky='w')
         self.selectCfgSvar = tk.StringVar()
         self.selectCfgCbbox = ttk.Combobox(self.cbboxLabelFrame, width=5,textvariable=self.selectCfgSvar,state='readonly')
         self.selectCfgCbbox['values'] = list(self.presets['name'].drop_duplicates())
         self.selectCfgCbbox.bind('<<ComboboxSelected>>', lambda e: self.presetSelectResults(eventObject=e))
         self.selectCfgCbbox.configure(font=('Roboto', 8))
-        self.selectCfgCbbox.grid(row=1,column=1,sticky='w')
+        self.selectCfgCbbox.grid(row=1,column=1,sticky='w',pady=(30,0))
 
-        self.perfChartLabel = tk.Label(self.resultsGAFrame, text="\n Performance: ")
+        self.perfChartLabel = tk.Label(self.resultsGAFrame, text="\n Performance: ",
+                                                            font = self.NORMIE_FONT_exp,
+                                                            background='white',
+                                                            fg=self.backgroundColor2,
+                                                            anchor=tk.W, 
+                                                            justify=tk.LEFT)
         self.perfChartLabel.grid(row=2,column=0,sticky='w')
 
-        perfChart_frame = tk.Frame(self.resultsGAFrame,highlightbackground="green", highlightcolor="green", highlightthickness=1, width=100, height=100, bd= 0)
-        perfChart_frame.grid(row=3,column=0,sticky='w')
+        perfChart_frame = tk.Frame(self.resultsGAFrame,background='white')
+        perfChart_frame.grid(row=3,column=0,sticky='w', padx=(20,0))
 
         self.perfChart_plot = Figure(figsize=(5,4), dpi=100)
         self.perfChart_subplot = self.perfChart_plot.add_subplot(111)
@@ -2476,7 +2433,7 @@ class CalibrationPage(tk.Frame):
         self.perfChart_canvas = FigureCanvasTkAgg(self.perfChart_plot, perfChart_frame) 
         self.perfChart_canvas.draw()
         self.perfChart_canvas._tkcanvas.grid(row=4,column=0,sticky='e')
-        perfChart_tframe = tk.Frame(perfChart_frame)
+        perfChart_tframe = tk.Frame(perfChart_frame,background='white')
         perfChart_tframe.grid(row=5,column=0)
         perfChart_toolbar = NavigationToolbar2Tk(self.perfChart_canvas,perfChart_tframe)
 
@@ -2501,7 +2458,7 @@ class CalibrationPage(tk.Frame):
 
             alpha = resultsData.loc[resultsData['gen']==g].drop_duplicates(subset='epam').reset_index().min()['epam']
             ##print(alpha)
-            alphas.append(alpha) #storing on a list
+            alphas.append(alpha*100) #storing on a list
 
         x_data = range(genNumber)
         y_data = alphas
@@ -2511,36 +2468,62 @@ class CalibrationPage(tk.Frame):
 
         #report Section
 
-        self.reportFrame = tk.Frame(self.resultsGAWindow)
-        self.reportFrame.grid(row=0,column=1)
+        self.reportFrame = tk.Frame(self.resultsGAFrame, background='white')
+        self.reportFrame.grid(row=0,column=1, pady=(100,0))
         
 
         genesNumber = len(resultsData.drop_duplicates(subset='par_name').index)
         #print(resultsData.sort_values)
         bestIndData = resultsData.sort_values(by='epam').drop_duplicates(subset='epam').reset_index(drop=True)
-        
         bestGen = bestIndData['gen'][0]
         bestInd = bestIndData['ind'][0]
         bestEPAM = bestIndData['epam'][0]
 
         bestIndData_clean = resultsData.loc[resultsData['gen']==bestGen].loc[resultsData['ind']==bestInd]
 
-        self.bestGenLabel = tk.Label(self.reportFrame,text='Best generation: %s' % bestGen)
+        self.bestGenLabel = tk.Label(self.reportFrame,text='Best generation: %s' % bestGen,
+                                                      font = self.NORMIE_FONT_exp,
+                                                      background='white',
+                                                      fg=self.backgroundColor2,
+                                                      anchor=tk.W, 
+                                                      justify=tk.LEFT)
+
         self.bestGenLabel.grid(row=0,column=0,sticky='w')
-        self.bestIndLabel = tk.Label(self.reportFrame,text='Best individual: %s\n' % bestInd)
+        self.bestIndLabel = tk.Label(self.reportFrame,text='Best individual: %s\n' % bestInd,
+                                                      font = self.NORMIE_FONT_exp,
+                                                      background='white',
+                                                      fg=self.backgroundColor2,
+                                                      anchor=tk.W, 
+                                                      justify=tk.LEFT)
         self.bestIndLabel.grid(row=1,column=0,sticky='w')
-        self.bestEPAMLabel = tk.Label(self.reportFrame,text='Best EPAM: %s %%' % (round(bestEPAM*100,2)))
+        self.bestEPAMLabel = tk.Label(self.reportFrame,text='Best EPAM: %s %%' % (round(bestEPAM*100,2)),
+                                                       font = self.NORMIE_FONT_exp,
+                                                       background='white',
+                                                       fg=self.backgroundColor2,
+                                                       anchor=tk.W, 
+                                                       justify=tk.LEFT)
         self.bestEPAMLabel.grid(row=0,column=1,padx=10) 
-        self.geneLabel = tk.Label(self.reportFrame,text='Genes: ')
+        self.geneLabel = tk.Label(self.reportFrame,text='Genes: ',
+                                                   font = self.NORMIE_FONT_exp,
+                                                   background='white',
+                                                   fg=self.backgroundColor2,
+                                                   anchor=tk.W, 
+                                                   justify=tk.LEFT)
+
         self.geneLabel.grid(row=2,column=0,sticky='w')
-        self.geneFrame = tk.Frame(self.reportFrame)
+        self.geneFrame = tk.Frame(self.reportFrame, background='white')
         self.geneFrame.grid(row=3,column=0)
         
         #print(bestIndData)
 
         for index, gene in bestIndData_clean.iterrows():
 
-            self.geneLabel = tk.Label(self.geneFrame,text='%s = %s' % (gene['par_name'],round(gene['par_value'],2)))
+            self.geneLabel = tk.Label(self.geneFrame,text='%s = %s' % (gene['par_name'],round(gene['par_value'],2)),
+                                                      font = self.TINY_FONT_exp,
+                                                      background='white',
+                                                      fg=self.backgroundColor2,
+                                                      anchor=tk.W, 
+                                                      justify=tk.LEFT)
             self.geneLabel.pack(anchor=tk.W)
 class runCalibration:
 
