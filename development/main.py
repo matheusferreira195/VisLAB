@@ -47,7 +47,7 @@ NORM_FONT= ("Segoe UI", 10)
 NORM_FONT_BOLD= ("Segoe UI Bold", 20)
 LARGE_FONT = ("Roboto", 20)
 WELCOME_FONT = ("Segoe UI", 60)
-path = (os.getcwd())
+path = (os.getcwd()+r'\VisLab')
 #Database connection and set up
 print(path)
 cnx = sqlite3.connect(path + r'\resources\vislab.db')#, isolation_level=None)
@@ -290,7 +290,60 @@ def vissim_simulation(experiment, Vissim):
     
     plip = time.time()
     return (plip-plop)
- 
+
+class CreateToolTip(object):
+    """
+    create a tooltip for a given widget
+    """
+    def __init__(self, widget, text='widget info'):
+        self.waittime = 500     #miliseconds
+        self.wraplength = 180   #pixels
+        self.widget = widget
+        self.text = text
+        self.widget.bind("<Enter>", self.enter)
+        self.widget.bind("<Leave>", self.leave)
+        self.widget.bind("<ButtonPress>", self.leave)
+        self.id = None
+        self.tw = None
+
+    def enter(self, event=None):
+        self.schedule()
+
+    def leave(self, event=None):
+        self.unschedule()
+        self.hidetip()
+
+    def schedule(self):
+        self.unschedule()
+        self.id = self.widget.after(self.waittime, self.showtip)
+
+    def unschedule(self):
+        id = self.id
+        self.id = None
+        if id:
+            self.widget.after_cancel(id)
+
+    def showtip(self, event=None):
+        x = y = 0
+        x, y, cx, cy = self.widget.bbox("insert")
+        x += self.widget.winfo_rootx() + 25
+        y += self.widget.winfo_rooty() + 20
+        # creates a toplevel window
+        self.tw = tk.Toplevel(self.widget)
+        # Leaves only the label and removes the app window
+        self.tw.wm_overrideredirect(True)
+        self.tw.wm_geometry("+%d+%d" % (x, y))
+        label = tk.Label(self.tw, text=self.text, justify='left',
+                       background="#ffffff", relief='solid', borderwidth=1,
+                       wraplength = self.wraplength)
+        label.pack(ipadx=1)
+
+    def hidetip(self):
+        tw = self.tw
+        self.tw= None
+        if tw:
+            tw.destroy()
+
 class VisLab(tk.Tk):
 
     def __init__(self, *args, **kwargs):
@@ -1297,7 +1350,7 @@ class ResultsPage(tk.Frame):
                                                          fg=backgroundColor2)
         scatterChart_label.grid(row=0, column=0, sticky='w',padx=15)    
 
-        scatterChart_framewidget = tk.Frame(self.scatterStuff)
+        scatterChart_framewidget = tk.Frame(self.scatterStuff, background=backgroundColor1)
         scatterChart_framewidget.grid(row=2,column=0, sticky='w', padx=15)
 
         scatterChart_popupButton = tk.Button(scatterChartLabel_frame,
@@ -1321,14 +1374,22 @@ class ResultsPage(tk.Frame):
 
         self.scatterChart_p1svar = tk.StringVar()
         self.scatterChart_p1svar.set('Param. 1')
-        self.scatterChart_p1cbbox = ttk.Combobox(scatterChart_framewidget, width=10,textvariable=str(self.scatterChart_p1svar),state='readonly')
+        self.scatterChart_p1cbbox = ttk.Combobox(scatterChart_framewidget, 
+                                                 width=40,
+                                                 textvariable=str(self.scatterChart_p1svar),
+                                                 state='readonly',
+                                                 font="Roboto 8")
         self.scatterChart_p1cbbox['values'] = []
         self.scatterChart_p1cbbox.bind('<<ComboboxSelected>>', lambda e: self.plotScatterchart(eventObject = e)) 
         self.scatterChart_p1cbbox.grid(row=1,column=0, sticky='w')
 
         self.scatterChart_p2svar = tk.StringVar()
         self.scatterChart_p2svar.set('Param. 2')
-        self.scatterChart_p2cbbox = ttk.Combobox(scatterChart_framewidget, width=10,textvariable=str(self.scatterChart_p2svar),state='readonly')
+        self.scatterChart_p2cbbox = ttk.Combobox(scatterChart_framewidget, 
+                                                 width=40,
+                                                 textvariable=str(self.scatterChart_p2svar),
+                                                 state='readonly',
+                                                 font="Roboto 8")
         self.scatterChart_p2cbbox['values'] = []
         self.scatterChart_p2cbbox.bind('<<ComboboxSelected>>', lambda e: self.plotScatterchart(eventObject = e)) 
         self.scatterChart_p2cbbox.grid(row=2,column=0, sticky='w')
@@ -1479,7 +1540,7 @@ class ResultsPage(tk.Frame):
         self.difmeansBpFrame = tk.Frame(self.rightPanel,background='white')#highlightbackground="green", highlightcolor="green", highlightthickness=1, width=100, height=100, bd= 0)
         self.difmeansBpFrame.grid(row=1,column=3, sticky='w')
 
-        self.difmeansBpMainLabel_frame = tk.Frame(self.rightPanel,background='white')
+        self.difmeansBpMainLabel_frame = tk.Frame(self.difmeansBpFrame,background='white')
         self.difmeansBpMainLabel_frame.grid(row=0, column=0)
 
         self.difmeansBpMainLabel = tk.Label(self.difmeansBpMainLabel_frame, text="Difference of means CI plot", 
@@ -1573,6 +1634,8 @@ class ResultsPage(tk.Frame):
         self.difmeansBpCbboxp4 = ttk.Combobox(self.difmeansWidgetFrame,width=15,textvariable=str(self.difmeansBpSvarp4),state='readonly')
         self.difmeansBpCbboxp4['values'] = []
         self.difmeansBpCbboxp4.grid(row=6,column=1, sticky='w', padx=(0,15))
+
+        
 
         self.difmeansBpLabel3 = tk.Label(self.difmeansWidgetFrame, text="Third Difference:", 
                                                                     font = TINY_FONT_exp,
@@ -1738,16 +1801,16 @@ class ResultsPage(tk.Frame):
             difmeansBp_frame_p = tk.Frame(difmeansBpWindow_p,background='white')
             difmeansBp_frame_p.grid(row=0,column=0)
 
-            self.difmeansBpFigure_p = Figure(figsize=(8,6), dpi=100)
-            self.difmeansBpPlotSubplot_p = self.difmeansBpPlotSubplot_p.add_subplot(111)
+            self.difmeansBpPlotFigure_p = Figure(figsize=(8,6), dpi=100)
+            self.difmeansBpPlotSubplot_p = self.difmeansBpPlotFigure_p.add_subplot(111)
 
-            self.difmeansBpPlotCanvas_p = FigureCanvasTkAgg(self.difmeansBpFigure_p, difmeansBp_frame_p) 
+            self.difmeansBpPlotCanvas_p = FigureCanvasTkAgg(self.difmeansBpPlotFigure_p, difmeansBp_frame_p) 
             self.difmeansBpPlotCanvas_p.draw()
             self.difmeansBpPlotCanvas_p._tkcanvas.grid(row=3,column=0)
 
             difmeansBp_tframe_p = tk.Frame(difmeansBp_frame_p)
             difmeansBp_tframe_p.grid(row=4,column=0)
-            difmeansBp_toolbar_p = NavigationToolbar2Tk(self.difmeansBpPlotCanvas_p, difmeansBp_frame_p)
+            difmeansBp_toolbar_p = NavigationToolbar2Tk(self.difmeansBpPlotCanvas_p, difmeansBp_tframe_p)
 
             self.difmeanPlot(popup=1)
 
@@ -1936,6 +1999,7 @@ class ResultsPage(tk.Frame):
             self.cfgsDictdf = self.cfgsDictdf.append({'exp':exp,'label':labelTxt,'cfg':cfg},ignore_index=True)
         ##print(self.cfgsDictdf)
         self.difmeansWidgetFrame.winfo_children()[index_cbbx+1]['values'] = labelTxt_ls
+        #self.difmeansBpCbboxp4_tooltip = CreateToolTip(self.difmeansWidgetFrame.winfo_children()[index_cbbx+1], labelTxt_ls)
 
     def difmeanPlot(self, popup=0):
         
@@ -2043,7 +2107,7 @@ class ResultsPage(tk.Frame):
             for index, row in txtData.iterrows():
 
                 labelTxt = labelTxt + '|%s = %s|' % (str(row['parameter_name']),str(row['parameter_value']))
-                ##print(labelTxt)
+                print(labelTxt)
 
             self.cfgsDict[labelTxt] = cfg
             labelTxt_ls.append(labelTxt)
