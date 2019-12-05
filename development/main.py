@@ -47,9 +47,9 @@ NORM_FONT= ("Segoe UI", 10)
 NORM_FONT_BOLD= ("Segoe UI Bold", 20)
 LARGE_FONT = ("Roboto", 20)
 WELCOME_FONT = ("Segoe UI", 60)
-path = os.path.realpath('..')+r'\VisLab'
+path = (os.getcwd())+r'\VisLab'
 #Database connection and set up
-#print(path)
+print(path)
 cnx = sqlite3.connect(path + r'\resources\vislab.db')#, isolation_level=None)
 gaCnx = sqlite3.connect(path + r'\resources\ga.db')
 
@@ -1243,20 +1243,36 @@ class ResultsPage(tk.Frame):
         #Line chart
         lineChart_frame = tk.Frame(self.rightPanel, background='white')#,highlightbackground="green", highlightcolor="green", highlightthickness=1, width=100, height=100, bd= 0)
         lineChart_frame.grid(row=1,column=0,sticky='w')
-        lineChart_label = tk.Label(lineChart_frame,text="Line chart",
+
+        lineChartLabel_frame = tk.Frame(lineChart_frame, background='white')
+        lineChartLabel_frame.grid(row=0,column=0,sticky='w')
+
+        lineChart_label = tk.Label(lineChartLabel_frame,text="Line chart",
                                                    anchor=tk.W,
                                                    background='white',
                                                    font=NORMIE_FONT_exp,
                                                    fg=backgroundColor2)
-        lineChart_label.grid(row=0, column=0, sticky='w', padx=20)
-        
+        lineChart_label.grid(row=0, column=0, sticky='w', padx=(20,0))
+
+        lineChart_popupButton = tk.Button(lineChartLabel_frame,
+                                                          anchor=tk.W,
+                                                          text='Pop up graph',
+                                                          background='white',
+                                                          font=TINY_FONT_exp,
+                                                          fg=backgroundColor2,
+                                                          command=lambda: self.popupCharts(chart='linechart'))
+                                                          #height = 10, 
+                                                          #width = 1)
+
+        lineChart_popupButton.grid(row=0, column=1, sticky='w')
+
         self.lineChart_svar = tk.StringVar()
         self.lineChart_svar.set('Exp.')
 
-        lineChart_cbbox = ttk.Combobox(self.lineStuff, width=5,textvariable=str(self.lineChart_svar),state='readonly')
-        lineChart_cbbox['values'] = list(existing_experiments['id'])
-        lineChart_cbbox.bind('<<ComboboxSelected>>', lambda e: self.plotLinechart(eventObject = e)) 
-        lineChart_cbbox.grid(row=1,column=0, sticky='w', padx=15)
+        self.lineChart_cbbox = ttk.Combobox(self.lineStuff, width=5,textvariable=str(self.lineChart_svar),state='readonly')
+        self.lineChart_cbbox['values'] = list(existing_experiments['id'])
+        self.lineChart_cbbox.bind('<<ComboboxSelected>>', lambda e: self.plotLinechart(eventObject = e, popup=0)) 
+        self.lineChart_cbbox.grid(row=1,column=0, sticky='w', padx=15)
 
         self.lineChart_plot = Figure(figsize=(4,3), dpi=100)
         self.lineChart_subplot = self.lineChart_plot.add_subplot(111)
@@ -1272,12 +1288,31 @@ class ResultsPage(tk.Frame):
         
         scatterChart_frame = tk.Frame(self.rightPanel, background='white')#,highlightbackground="green", highlightcolor="green", highlightthickness=1, width=100, height=100, bd= 0)
         scatterChart_frame.grid(row=2,column=0)
-        scatterChart_label = tk.Label(scatterChart_frame,text="Scatter Plot" ,anchor=tk.W, background='white', 
+
+        scatterChartLabel_frame = tk.Frame(scatterChart_frame, background='white')
+        scatterChartLabel_frame.grid(row=0,column=0,sticky='w')
+
+        scatterChart_label = tk.Label(scatterChartLabel_frame,text="Scatter Plot" ,anchor=tk.W, background='white', 
                                                          font=NORMIE_FONT_exp,
                                                          fg=backgroundColor2)
-        scatterChart_label.grid(row=0, column=0, sticky='w',padx=15)        
+        scatterChart_label.grid(row=0, column=0, sticky='w',padx=15)    
+
         scatterChart_framewidget = tk.Frame(self.scatterStuff)
         scatterChart_framewidget.grid(row=2,column=0, sticky='w', padx=15)
+
+        
+
+        scatterChart_popupButton = tk.Button(scatterChartLabel_frame,
+                                                          anchor=tk.W,
+                                                          text='Pop up graph',
+                                                          background='white',
+                                                          font=TINY_FONT_exp,
+                                                          fg=backgroundColor2,
+                                                          command=lambda: self.popupCharts(chart='scatterchart'))
+                                                          #height = 10, 
+                                                          #width = 1)
+
+        scatterChart_popupButton.grid(row=0, column=1, sticky='w')
 
         self.scatterChart_esvar = tk.StringVar()
         self.scatterChart_esvar.set('Exp.')
@@ -1571,6 +1606,50 @@ class ResultsPage(tk.Frame):
         self.difmeansBpPlotTFrame.grid(row=1,column=0)
         self.difmeansBpPlotToolbar = NavigationToolbar2Tk(self.difmeansBpPlotCanvas, self.difmeansBpPlotTFrame)
 
+    def popupCharts(self,chart):
+
+        print(chart)
+
+        if chart == 'linechart':
+
+            lineChart_window_p = tk.Toplevel()
+
+            lineChart_frame_p = tk.Frame(lineChart_window_p,background='white')
+            lineChart_frame_p.grid(row=0,column=0)
+
+            self.lineChart_plot_p = Figure(figsize=(8,6), dpi=100)
+            self.lineChart_subplot_p = self.lineChart_plot_p.add_subplot(111)
+
+            self.lineChart_canvas_p = FigureCanvasTkAgg(self.lineChart_plot_p, lineChart_frame_p) 
+            self.lineChart_canvas_p.draw()
+            self.lineChart_canvas_p._tkcanvas.grid(row=2,column=0,sticky='e')
+            lineChart_tframe = tk.Frame(lineChart_frame_p,background='white')
+            lineChart_tframe.grid(row=3,column=0)
+            lineChart_toolbar = NavigationToolbar2Tk(self.lineChart_canvas_p,lineChart_tframe)
+
+            self.plotLinechart(eventObject = self.lineChart_cbbox, popup=1)
+
+        elif chart == 'scatterchart':
+
+            scatterChart_window_p = tk.Toplevel()
+
+            scatterChart_frame_f = tk.Frame(scatterChart_window_p,background='white')
+            scatterChart_frame_f.grid(row=0,column=0)
+
+            self.scatterChart_plot_f = Figure(figsize=(8,6), dpi=100)
+            self.scatterChart_subplot_f = self.scatterChart_plot_f.add_subplot(111)
+
+            self.scatterChart_canvas_f = FigureCanvasTkAgg(self.scatterChart_plot_f, scatterChart_frame_f) 
+            self.scatterChart_canvas_f.draw()
+            self.scatterChart_canvas_f._tkcanvas.grid(row=3,column=0)
+            scatterChart_tframe_f = tk.Frame(scatterChart_frame_f)
+            scatterChart_tframe_f.grid(row=4,column=0)
+            scatterChart_toolbar_f = NavigationToolbar2Tk(self.scatterChart_canvas_f,scatterChart_tframe_f)
+
+            self.plotScatterchart(popup=1)
+
+
+
     def difmeanReport(self):
 
         try:            
@@ -1860,11 +1939,26 @@ class ResultsPage(tk.Frame):
 
         self.scatterChart_p1cbbox['values'] = self.scatterChart_p2cbbox['values'] = labelTxt_ls   
 
-    def plotLinechart(self,eventObject): #function that plots the line chart getting input from lineChart_cbbox
-        
-        self.lineChart_subplot.cla()
+    def plotLinechart(self,eventObject, popup): #function that plots the line chart getting input from lineChart_cbbox
 
-        exp = int(eventObject.widget.get()) 
+
+        if popup == 1:
+
+            lineChart_subplot = self.lineChart_subplot_p
+            lineChart_plot = self.lineChart_plot_p
+            lineChart_canvas = self.lineChart_canvas_p
+            #eventObject = self.lineChart_cbbox
+
+        else:
+
+            self.expPlotline = int(eventObject.widget.get()) 
+            lineChart_subplot = self.lineChart_subplot
+            lineChart_plot = self.lineChart_plot
+            lineChart_canvas = self.lineChart_canvas
+
+        lineChart_subplot.cla()
+
+        exp = self.expPlotline
         #print('plot: %s' % exp)       
         simData = self.simulation_runs.loc[self.simulation_runs['experiment'] == exp]
         ##print('simData: \n')
@@ -1872,9 +1966,9 @@ class ResultsPage(tk.Frame):
         simCfgs = list(simData['sim_perf'].drop_duplicates())
         print('simCfgs: \n')
         print(simCfgs)
-        self.lineChart_subplot.set_title("Parameter Level and Replications ")
-        self.lineChart_subplot.set_ylabel(list(self.datapoints_df.loc[self.datapoints_df['experiment']==exp]['perf_measure'].drop_duplicates()))
-        self.lineChart_subplot.set_xlabel('Simulation Run')
+        lineChart_subplot.set_title("Parameter Level and Replications ")
+        lineChart_subplot.set_ylabel(list(self.datapoints_df.loc[self.datapoints_df['experiment']==exp]['perf_measure'].drop_duplicates()))
+        lineChart_subplot.set_xlabel('Simulation Run')
 
         for cfg in simCfgs:
 
@@ -1893,16 +1987,31 @@ class ResultsPage(tk.Frame):
                 labelTxt = labelTxt + '|%s = %s|\n ' % (str(row['parameter_name']),str(row['parameter_value']))
 
             #print(labelTxt)                      
-            self.lineChart_subplot.plot(x_data,y_data,label=labelTxt)
-            self.lineChart_plot.subplots_adjust(right=0.64) #adjust legend problem here!
-            self.lineChart_subplot.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.,prop={'size': 6})  
-            self.lineChart_canvas.draw()
+            lineChart_subplot.plot(x_data,y_data,label=labelTxt)
+            lineChart_plot.subplots_adjust(right=0.64) #adjust legend problem here!
+            lineChart_subplot.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.,prop={'size': 6})  
+            lineChart_canvas.draw()
 
-    def plotScatterchart(self,eventObject): #function that plots the scatter chart
+    def plotScatterchart(self,eventObject=None, popup=0): #function that plots the scatter chart
+
+        if popup == 1:
+
+            scatterChart_subplot = self.scatterChart_subplot_f
+            scatterChart_plot = self.scatterChart_plot_f
+            scatterChart_canvas = self.scatterChart_canvas_f
+            #eventObject = self.lineChart_cbbox
+
+        else:
+
+            self.expScatterline = int(self.scatterChart_esvar.get())
+            scatterChart_subplot = self.scatterChart_subplot
+            scatterChart_plot = self.scatterChart_plot
+            scatterChart_canvas = self.scatterChart_canvas
 
         self.scatterChart_subplot.cla()
 
-        exp = int(self.scatterChart_esvar.get())
+        exp = self.expScatterline
+
         parPerf_key_1 = self.scatterChart_p1cbbox.get()
         parPerf_key_2 = self.scatterChart_p2cbbox.get()
         cfg_1 = self.cfgsDict[parPerf_key_1]
@@ -1919,14 +2028,14 @@ class ResultsPage(tk.Frame):
         #self.scatterChart_subplot.text(x_data[0], y_data[0], 'R-squared = %0.2f' % r_squared)
         anchored_text = matplotlib.offsetbox.AnchoredText('R = %0.2f \n P-value = %0.2f' % (r,linreg.pvalue), loc=4, prop = dict(fontsize=8))
         
-        self.scatterChart_subplot.add_artist(anchored_text)
-        self.scatterChart_subplot.plot(np.unique(x_data), np.poly1d(np.polyfit(x_data, y_data, 1))(np.unique(x_data)))
-        self.scatterChart_subplot.scatter(x_data,y_data)
-        #self.scatterChart_plot.subplots_adjust(left=0.1) #adjust legend problem here!
-        self.scatterChart_subplot.set_title(labelTxt,fontsize=8)
-        self.scatterChart_subplot.set_ylabel(list(self.datapoints_df.loc[self.datapoints_df['experiment']==exp]['perf_measure'].drop_duplicates()))
-        self.scatterChart_subplot.set_xlabel(list(self.datapoints_df.loc[self.datapoints_df['experiment']==exp]['perf_measure'].drop_duplicates()))
-        self.scatterChart_canvas.draw()
+        scatterChart_subplot.add_artist(anchored_text)
+        scatterChart_subplot.plot(np.unique(x_data), np.poly1d(np.polyfit(x_data, y_data, 1))(np.unique(x_data)))
+        scatterChart_subplot.scatter(x_data,y_data)
+        #.scatterChart_plot.subplots_adjust(left=0.1) #adjust legend problem here!
+        scatterChart_subplot.set_title(labelTxt,fontsize=8)
+        scatterChart_subplot.set_ylabel(list(self.datapoints_df.loc[self.datapoints_df['experiment']==exp]['perf_measure'].drop_duplicates()))
+        scatterChart_subplot.set_xlabel(list(self.datapoints_df.loc[self.datapoints_df['experiment']==exp]['perf_measure'].drop_duplicates()))
+        scatterChart_canvas.draw()
         #self.scatterChart_subplot.tight_layout()
 
     def boxPlot(self, eventObject):
@@ -1961,7 +2070,7 @@ class ResultsPage(tk.Frame):
 
     def ciboxPlot(self,eventObject):
         
-        self.boxplotSubplot.cla()
+        self.ciboxplotSubplot.cla()
 
         exp = int(eventObject.widget.get())        
         simData = self.simulation_runs.loc[self.simulation_runs['experiment'] == exp]
