@@ -47,7 +47,7 @@ NORM_FONT= ("Segoe UI", 10)
 NORM_FONT_BOLD= ("Segoe UI Bold", 20)
 LARGE_FONT = ("Roboto", 20)
 WELCOME_FONT = ("Segoe UI", 60)
-path = (os.getcwd())+r'\VisLab'
+path = (os.getcwd())
 #Database connection and set up
 print(path)
 cnx = sqlite3.connect(path + r'\resources\vislab.db')#, isolation_level=None)
@@ -1300,8 +1300,6 @@ class ResultsPage(tk.Frame):
         scatterChart_framewidget = tk.Frame(self.scatterStuff)
         scatterChart_framewidget.grid(row=2,column=0, sticky='w', padx=15)
 
-        
-
         scatterChart_popupButton = tk.Button(scatterChartLabel_frame,
                                                           anchor=tk.W,
                                                           text='Pop up graph',
@@ -1350,10 +1348,25 @@ class ResultsPage(tk.Frame):
         self.boxplotFrame = tk.Frame(self.rightPanel, background='white')#,highlightbackground="green", highlightcolor="green", highlightthickness=1, width=100, height=100, bd= 0)
         self.boxplotFrame.grid(row=1,column=1)
 
-        self.boxplotLabel = tk.Label(self.boxplotFrame,text='Mean Box Plot', background='white', 
+        self.boxplotLabel_frame = tk.Frame(self.boxplotFrame, background='white')
+        self.boxplotLabel_frame.grid(row=0, column=0)
+
+        self.boxplotLabel = tk.Label(self.boxplotLabel_frame,text='Mean Box Plot', background='white', 
                                                                              font=NORMIE_FONT_exp,
                                                                              fg=backgroundColor2)
-        self.boxplotLabel.grid(row=0,column=0, sticky='w', padx=15)
+        self.boxplotLabel.grid(row=0,column=0, sticky='w')
+
+        boxplot_popupButton = tk.Button(self.boxplotLabel_frame,
+                                                          anchor=tk.W,
+                                                          text='Pop up graph',
+                                                          background='white',
+                                                          font=TINY_FONT_exp,
+                                                          fg=backgroundColor2,
+                                                          command=lambda: self.popupCharts(chart='boxplotchart'))
+                                                          #height = 10, 
+                                                          #width = 1)
+
+        boxplot_popupButton.grid(row=0, column=1, sticky='w')
 
         self.boxplotWidgetframe = tk.Frame(self.boxplotStuff)
         self.boxplotWidgetframe.grid(row=1,column=0,sticky='w', padx=15)
@@ -1374,16 +1387,31 @@ class ResultsPage(tk.Frame):
         self.boxplotTFrame.grid(row=2,column=0)
         self.boxplotToolbar = NavigationToolbar2Tk(self.boxplotCanvas, self.boxplotTFrame)
         
-        #Boxplot c/ I.C
+        #I.C
 
         self.ciboxplotFrame = tk.Frame(self.rightPanel,background='white')#highlightbackground="green", highlightcolor="green", highlightthickness=1, width=100, height=100, bd= 0)
         self.ciboxplotFrame.grid(row=2,column=1)
 
-        self.ciboxplotLabel = tk.Label(self.ciboxplotFrame, text='CI Plot',
+        self.ciboxplotLabel_frame = tk.Frame(self.ciboxplotFrame,background='white')
+        self.ciboxplotLabel_frame.grid(row=0,column=0)
+
+        self.ciboxplotLabel = tk.Label(self.ciboxplotLabel_frame, text='CI Plot',
                                                             background='white',
                                                             font=NORMIE_FONT_exp,
                                                             fg=backgroundColor2)
         self.ciboxplotLabel.grid(row=0, column=0, sticky='w', padx=15)
+
+        ciboxplot_popupButton = tk.Button(self.ciboxplotLabel_frame,
+                                                          anchor=tk.W,
+                                                          text='Pop up graph',
+                                                          background='white',
+                                                          font=TINY_FONT_exp,
+                                                          fg=backgroundColor2,
+                                                          command=lambda: self.popupCharts(chart='cichart'))
+                                                          #height = 10, 
+                                                          #width = 1)
+
+        ciboxplot_popupButton.grid(row=0, column=1, sticky='w')
 
         self.ciboxplotWidgetframe = tk.Frame(self.ciStuff,background=backgroundColor1)
         self.ciboxplotWidgetframe.grid(row=1,column=0, sticky='w', padx=15)
@@ -1393,6 +1421,7 @@ class ResultsPage(tk.Frame):
         self.ciboxplotexpCbbox['values'] = list(existing_experiments['id'])
         self.ciboxplotexpCbbox.bind('<<ComboboxSelected>>', lambda e: self.ciboxPlot(eventObject=e))
         self.ciboxplotexpCbbox.grid(row=1,column=1)
+
         self.ciboxplotFigure = Figure(figsize=(4,3), dpi=100)
         self.ciboxplotSubplot = self.ciboxplotFigure.add_subplot(111)
         self.ciboxplotCanvas = FigureCanvasTkAgg(self.ciboxplotFigure, self.ciboxplotFrame)
@@ -1402,11 +1431,11 @@ class ResultsPage(tk.Frame):
         self.ciboxplotTFrame.grid(row=2,column=0)
         self.ciboxplotToolbar = NavigationToolbar2Tk(self.ciboxplotCanvas, self.ciboxplotTFrame)
 
-
         #Dif. means
-        #Here how to use StatsModels' CompareMeans to calculate the confidence interval for the difference between means:
-        self.difmeansFrame = tk.Frame(self.rightPanel,background='white')#highlightbackground="green", highlightcolor="green", highlightthickness=1, width=100, height=100, bd= 0)
+
+        self.difmeansFrame = tk.Frame(self.rightPanel,background='white')
         self.difmeansFrame.grid(row=2,column=3, sticky='w')
+
         self.difmeansMainText = tk.Label(self.difmeansFrame, text="Difference of means test", anchor=tk.CENTER,
                                                              background='white',
                                                              font=NORMIE_FONT_exp,
@@ -1415,6 +1444,7 @@ class ResultsPage(tk.Frame):
 
         self.difmeansSvar1 = tk.StringVar()
         self.difmeansSvar1.set('Exp.')
+
         self.difmeansExp1Cbbox = ttk.Combobox(self.difmeansFrame,width=5,textvariable=str(self.difmeansSvar1),state='readonly')
         self.difmeansExp1Cbbox['values'] = list(existing_experiments['id'])
         self.difmeansExp1Cbbox.bind('<<ComboboxSelected>>', lambda e: self.difmeanSelect(eventObject=e))
@@ -1448,13 +1478,28 @@ class ResultsPage(tk.Frame):
 
         self.difmeansBpFrame = tk.Frame(self.rightPanel,background='white')#highlightbackground="green", highlightcolor="green", highlightthickness=1, width=100, height=100, bd= 0)
         self.difmeansBpFrame.grid(row=1,column=3, sticky='w')
-        self.difmeansBpMainLabel = tk.Label(self.difmeansBpFrame, text="Difference of means CI plot", 
+
+        self.difmeansBpMainLabel_frame = tk.Frame(self.rightPanel,background='white')
+        self.difmeansBpMainLabel_frame.grid(row=0, column=0)
+
+        self.difmeansBpMainLabel = tk.Label(self.difmeansBpMainLabel_frame, text="Difference of means CI plot", 
                                                                   anchor=tk.W,
                                                                   background='white',
                                                                   font=NORMIE_FONT_exp,
-                                                                  fg=backgroundColor2)        
-                                                                  
+                                                                  fg=backgroundColor2)                                                           
         self.difmeansBpMainLabel.grid(row=0,column=0,sticky='w')
+
+        difmeansbp_popupButton = tk.Button(self.difmeansBpMainLabel_frame,
+                                                          anchor=tk.W,
+                                                          text='Pop up graph',
+                                                          background='white',
+                                                          font=TINY_FONT_exp,
+                                                          fg=backgroundColor2,
+                                                          command=lambda: self.popupCharts(chart='difmeanschart'))
+                                                          #height = 10, 
+                                                          #width = 1)
+
+        difmeansbp_popupButton.grid(row=0, column=1, sticky='w')
 
         self.difmeansBpSvarExpList = []
         self.difmeansBpSvarParList = []
@@ -1515,7 +1560,6 @@ class ResultsPage(tk.Frame):
         self.difmeansBpCbboxp3['values'] = []
         #self.difmeansCbboxp1.bind('<<ComboboxSelected>>', lambda e: self.difmeanSelect(eventObject=e))
         self.difmeansBpCbboxp3.grid(row=5,column=1, sticky='w', padx=(0,15))
-
 
         self.difmeansBpSvar4 = tk.StringVar()
         self.difmeansBpSvar4.set('Exp')
@@ -1648,7 +1692,64 @@ class ResultsPage(tk.Frame):
 
             self.plotScatterchart(popup=1)
 
+        elif chart == 'boxplotchart':
 
+            boxplotWindow_p = tk.Toplevel()
+
+            boxplot_frame_p = tk.Frame(boxplotWindow_p,background='white')
+            boxplot_frame_p.grid(row=0,column=0)
+
+            self.boxplot_plot_p = Figure(figsize=(8,6), dpi=100)
+            self.boxplot_subplot_p = self.boxplot_plot_p.add_subplot(111)
+
+            self.boxplotCanvas_p = FigureCanvasTkAgg(self.boxplot_plot_p, boxplot_frame_p) 
+            self.boxplotCanvas_p.draw()
+            self.boxplotCanvas_p._tkcanvas.grid(row=3,column=0)
+            boxplot_tframe_p = tk.Frame(boxplot_frame_p)
+            boxplot_tframe_p.grid(row=4,column=0)
+            boxplot_toolbar_p = NavigationToolbar2Tk(self.boxplotCanvas_p,boxplot_tframe_p)
+
+            self.boxPlot(popup=1)
+
+        elif chart == 'cichart':
+
+            ciboxplotWindow_p = tk.Toplevel()
+
+            ciboxplot_frame_p = tk.Frame(ciboxplotWindow_p,background='white')
+            ciboxplot_frame_p.grid(row=0,column=0)
+
+            self.ciboxplotFigure_p = Figure(figsize=(8,6), dpi=100)
+            self.ciboxplotSubplot_p = self.ciboxplotFigure_p.add_subplot(111)
+
+            self.ciboxplotCanvas_p = FigureCanvasTkAgg(self.ciboxplotFigure_p, ciboxplot_frame_p) 
+            self.ciboxplotCanvas_p.draw()
+            self.ciboxplotCanvas_p._tkcanvas.grid(row=3,column=0)
+
+            ciboxplot_tframe_p = tk.Frame(ciboxplot_frame_p)
+            ciboxplot_tframe_p.grid(row=4,column=0)
+            ciboxplot_toolbar_p = NavigationToolbar2Tk(self.ciboxplotCanvas_p, ciboxplot_tframe_p)
+
+            self.ciboxPlot(popup=1)
+
+        elif chart == 'difmeanschart':
+
+            difmeansBpWindow_p = tk.Toplevel()
+
+            difmeansBp_frame_p = tk.Frame(difmeansBpWindow_p,background='white')
+            difmeansBp_frame_p.grid(row=0,column=0)
+
+            self.difmeansBpFigure_p = Figure(figsize=(8,6), dpi=100)
+            self.difmeansBpPlotSubplot_p = self.difmeansBpPlotSubplot_p.add_subplot(111)
+
+            self.difmeansBpPlotCanvas_p = FigureCanvasTkAgg(self.difmeansBpFigure_p, difmeansBp_frame_p) 
+            self.difmeansBpPlotCanvas_p.draw()
+            self.difmeansBpPlotCanvas_p._tkcanvas.grid(row=3,column=0)
+
+            difmeansBp_tframe_p = tk.Frame(difmeansBp_frame_p)
+            difmeansBp_tframe_p.grid(row=4,column=0)
+            difmeansBp_toolbar_p = NavigationToolbar2Tk(self.difmeansBpPlotCanvas_p, difmeansBp_frame_p)
+
+            self.difmeanPlot(popup=1)
 
     def difmeanReport(self):
 
@@ -1836,9 +1937,21 @@ class ResultsPage(tk.Frame):
         ##print(self.cfgsDictdf)
         self.difmeansWidgetFrame.winfo_children()[index_cbbx+1]['values'] = labelTxt_ls
 
-    def difmeanPlot(self):
+    def difmeanPlot(self, popup=0):
         
-        self.difmeansBpPlotSubplot.cla()
+        if popup == 1:
+
+            difmeansBpPlotSubplot = self.difmeansBpPlotSubplot_p
+            difmeansBpPlotCanvas = self.difmeansBpPlotCanvas_p
+            difmeansBpPlotFigure = self.difmeansBpPlotFigure_p
+
+        else:
+
+            difmeansBpPlotSubplot = self.difmeansBpPlotSubplot
+            difmeansBpPlotCanvas = self.difmeansBpPlotCanvas
+            difmeansBpPlotFigure = self.difmeansBpPlotFigure
+
+        difmeansBpPlotSubplot.cla()
         xs=[]
         ys=[]
         Es=[]
@@ -1905,11 +2018,11 @@ class ResultsPage(tk.Frame):
             Es.append(E)
             labels.append('%sº difference\n %s' % (i+1,tp))
 
-        self.difmeansBpPlotSubplot.set_ylabel(list(self.datapoints_df.loc[self.datapoints_df['experiment']==(int(exp1))]['perf_measure'].drop_duplicates()))   
-        self.difmeansBpPlotSubplot.errorbar(labels, ys, yerr=Es, fmt='bo',capsize=5)
-        self.difmeansBpPlotSubplot.set_xticklabels(labels,rotation=45,fontsize=8)
-        self.difmeansBpPlotFigure.tight_layout()        
-        self.difmeansBpPlotCanvas.draw()
+        difmeansBpPlotSubplot.set_ylabel(list(self.datapoints_df.loc[self.datapoints_df['experiment']==(int(exp1))]['perf_measure'].drop_duplicates()))   
+        difmeansBpPlotSubplot.errorbar(labels, ys, yerr=Es, fmt='bo',capsize=5)
+        difmeansBpPlotSubplot.set_xticklabels(labels,rotation=45,fontsize=8)
+        difmeansBpPlotFigure.tight_layout()        
+        difmeansBpPlotCanvas.draw()
 
     def expSelect(self,eventObject):
 
@@ -2008,7 +2121,7 @@ class ResultsPage(tk.Frame):
             scatterChart_plot = self.scatterChart_plot
             scatterChart_canvas = self.scatterChart_canvas
 
-        self.scatterChart_subplot.cla()
+        scatterChart_subplot.cla()
 
         exp = self.expScatterline
 
@@ -2038,11 +2151,25 @@ class ResultsPage(tk.Frame):
         scatterChart_canvas.draw()
         #self.scatterChart_subplot.tight_layout()
 
-    def boxPlot(self, eventObject):
+    def boxPlot(self, eventObject=None, popup=0):
 
-        self.boxplotSubplot.cla()
+        if popup == 1:
 
-        exp = int(eventObject.widget.get())        
+            boxplotSubplot = self.boxplot_subplot_p
+            boxplotCanvas = self.boxplotCanvas_p
+            boxplotFigure = self.boxplot_plot_p
+
+        else:
+
+            self.expboxplot = int(eventObject.widget.get()) 
+
+            boxplotSubplot = self.boxplotSubplot
+            boxplotCanvas = self.boxplotCanvas
+            boxplotFigure = self.boxplotFigure
+
+        boxplotSubplot.cla()
+
+        exp = self.expboxplot       
         simData = self.simulation_runs.loc[self.simulation_runs['experiment'] == exp]
         simCfgs = list(simData['sim_perf'].drop_duplicates())
 
@@ -2062,17 +2189,31 @@ class ResultsPage(tk.Frame):
             labels.append(labelTxt)
 
         ##print(labels)
-        self.boxplotSubplot.set_xticklabels(labels,rotation=45,fontsize=8)     
-        self.boxplotSubplot.set_ylabel(list(self.datapoints_df.loc[self.datapoints_df['experiment']==exp]['perf_measure'].drop_duplicates()))   
-        self.boxplotSubplot.boxplot(samples)
-        self.boxplotFigure.tight_layout()#subplots_adjust(bottom=0.15)
-        self.boxplotCanvas.draw()
+        boxplotSubplot.set_xticklabels(labels,rotation=45,fontsize=8)     
+        boxplotSubplot.set_ylabel(list(self.datapoints_df.loc[self.datapoints_df['experiment']==exp]['perf_measure'].drop_duplicates()))   
+        boxplotSubplot.boxplot(samples)
+        boxplotFigure.tight_layout()#subplots_adjust(bottom=0.15)
+        boxplotCanvas.draw()
 
-    def ciboxPlot(self,eventObject):
-        
-        self.ciboxplotSubplot.cla()
+    def ciboxPlot(self,eventObject=None,popup=0):
 
-        exp = int(eventObject.widget.get())        
+        if popup == 1:
+
+            ciboxplotSubplot = self.ciboxplotSubplot_p
+            ciboxplotCanvas = self.ciboxplotCanvas_p
+            ciboxplotFigure = self.ciboxplotFigure_p
+
+        else:
+
+            self.ciplot = int(eventObject.widget.get()) 
+
+            ciboxplotSubplot = self.ciboxplotSubplot
+            ciboxplotCanvas = self.ciboxplotCanvas
+            ciboxplotFigure = self.ciboxplotFigure
+
+        ciboxplotSubplot.cla()
+
+        exp = self.ciplot       
         simData = self.simulation_runs.loc[self.simulation_runs['experiment'] == exp]
         simCfgs = list(simData['sim_perf'].drop_duplicates())
 
@@ -2109,11 +2250,11 @@ class ResultsPage(tk.Frame):
         x = list(labels)
         y = list(simStats['mean'])
         e = list(simStats['ci'])
-        self.ciboxplotSubplot.set_xticklabels(labels,rotation=45,fontsize=8)
-        self.ciboxplotSubplot.set_ylabel(list(self.datapoints_df.loc[self.datapoints_df['experiment']==exp]['perf_measure'].drop_duplicates()))   
-        self.ciboxplotSubplot.errorbar(x, y, yerr=e, fmt='bo',capsize=5)
-        self.ciboxplotFigure.tight_layout()
-        self.ciboxplotCanvas.draw()
+        ciboxplotSubplot.set_xticklabels(labels,rotation=45,fontsize=8)
+        ciboxplotSubplot.set_ylabel(list(self.datapoints_df.loc[self.datapoints_df['experiment']==exp]['perf_measure'].drop_duplicates()))   
+        ciboxplotSubplot.errorbar(x, y, yerr=e, fmt='bo',capsize=5)
+        ciboxplotFigure.tight_layout()
+        ciboxplotCanvas.draw()
 
     def onFrameConfigure(self, event):
 
