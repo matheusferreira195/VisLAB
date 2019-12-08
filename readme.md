@@ -35,6 +35,8 @@ NOTE: Separating the .exe of it's folder, changing name/deleting/relocating the 
 
 ## How to use
 
+NOTE: It can take a few seconds to load.
+
 First of all, you need to have a Vissim license active on your computer/network, and start a COM server. To do this, open Vissim, go to Help > Start COM server. That will not work on student's version. After that, it's pretty straight foward. Soon I will be adding a more in depth tutorial with a study case of a signalized intersection.
 
 ## Support
