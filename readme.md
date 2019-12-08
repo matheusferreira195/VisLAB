@@ -28,7 +28,7 @@ You can also automatically export the Sensitivity Analysis results to a Genetic 
 
 ## Installation
 
-Download the "VisLAB" folder to any place of your machine. Inside of that folder is a file named "vislab.exe". That is the gui's launcher. Inside of "resources" is two sqlite databases: "vislab.db" and "ga.db". The first one stores the sensitivity analysis results and configurations, while the second one stores all the data regarding the calibration process. It can be easily explored using DB Browser.
+Download the main.rar file and extract it to any place of your machine. Inside of the extracted folder is a file named "vislab.exe". That is the gui's launcher. Inside of "resources" is two sqlite databases: "vislab.db" and "ga.db". The first one stores the sensitivity analysis results and configurations, while the second one stores all the data regarding the calibration process. It can be easily explored using DB Browser.
 After that, you can add a shortcut in your desktop for quick acess.
 
 NOTE: Separating the .exe of it's folder, changing name/deleting/relocating the databases and any content of /resources module will cause the program to crash.  
