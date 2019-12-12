@@ -1,0 +1,10 @@
+{
+	"folders": [
+		{
+			"path": "E:\\Google Drive\\Scripts"
+		}
+	],
+	"settings": {
+		"sqltools.useNodeRuntime": true
+	}
+}
